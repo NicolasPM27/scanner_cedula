@@ -1,2 +1,265 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// =============================================================================
+// MATERIAL DESIGN 3 THEME - Scanner Cédula
+// =============================================================================
+// Paleta moderna basada en Material Design 3 con tokens de diseño
+// Docs: https://ionicframework.com/docs/theming/
+
+// -----------------------------------------------------------------------------
+// TIPOGRAFÍA - Google Fonts (Inter para cuerpo, Plus Jakarta Sans para títulos)
+// -----------------------------------------------------------------------------
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+// -----------------------------------------------------------------------------
+// TOKENS DE DISEÑO - Espaciado, Radio, Elevación
+// -----------------------------------------------------------------------------
+:root {
+  // Espaciado (escala de 4px)
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  // Radio de bordes (MD3 usa bordes más suaves)
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  // Elevaciones (sombras MD3)
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.05), 0 3px 6px rgba(0, 0, 0, 0.1);
+  --elevation-3: 0 4px 8px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.12);
+  --elevation-4: 0 8px 16px rgba(0, 0, 0, 0.1), 0 12px 24px rgba(0, 0, 0, 0.15);
+
+  // Transiciones suaves
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// -----------------------------------------------------------------------------
+// PALETA MATERIAL DESIGN 3 - MODO CLARO
+// -----------------------------------------------------------------------------
+// Paleta primaria: Índigo vibrante con tonos modernos
+// Generada siguiendo los roles tonales de MD3
+:root {
+  // === COLORES PRIMARIOS ===
+  --ion-color-primary: #4F46E5;
+  --ion-color-primary-rgb: 79, 70, 229;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #4338CA;
+  --ion-color-primary-tint: #6366F1;
+
+  // === COLORES SECUNDARIOS ===
+  --ion-color-secondary: #0EA5E9;
+  --ion-color-secondary-rgb: 14, 165, 233;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #0284C7;
+  --ion-color-secondary-tint: #38BDF8;
+
+  // === COLORES TERCIARIOS ===
+  --ion-color-tertiary: #8B5CF6;
+  --ion-color-tertiary-rgb: 139, 92, 246;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #7C3AED;
+  --ion-color-tertiary-tint: #A78BFA;
+
+  // === ÉXITO ===
+  --ion-color-success: #10B981;
+  --ion-color-success-rgb: 16, 185, 129;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #059669;
+  --ion-color-success-tint: #34D399;
+
+  // === ADVERTENCIA ===
+  --ion-color-warning: #F59E0B;
+  --ion-color-warning-rgb: 245, 158, 11;
+  --ion-color-warning-contrast: #1a1a1a;
+  --ion-color-warning-contrast-rgb: 26, 26, 26;
+  --ion-color-warning-shade: #D97706;
+  --ion-color-warning-tint: #FBBF24;
+
+  // === PELIGRO ===
+  --ion-color-danger: #EF4444;
+  --ion-color-danger-rgb: 239, 68, 68;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #DC2626;
+  --ion-color-danger-tint: #F87171;
+
+  // === TONOS NEUTROS ===
+  --ion-color-medium: #64748B;
+  --ion-color-medium-rgb: 100, 116, 139;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #475569;
+  --ion-color-medium-tint: #94A3B8;
+
+  --ion-color-light: #F1F5F9;
+  --ion-color-light-rgb: 241, 245, 249;
+  --ion-color-light-contrast: #1E293B;
+  --ion-color-light-contrast-rgb: 30, 41, 59;
+  --ion-color-light-shade: #E2E8F0;
+  --ion-color-light-tint: #F8FAFC;
+
+  // === SUPERFICIES Y FONDOS (MD3) ===
+  --ion-background-color: #FAFBFC;
+  --ion-background-color-rgb: 250, 251, 252;
+
+  --ion-text-color: #1E293B;
+  --ion-text-color-rgb: 30, 41, 59;
+
+  // Surface colors (MD3 tonal elevation)
+  --surface-dim: #E2E8F0;
+  --surface-default: #F8FAFC;
+  --surface-bright: #FFFFFF;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #F8FAFC;
+  --surface-container: #F1F5F9;
+  --surface-container-high: #E2E8F0;
+  --surface-container-highest: #CBD5E1;
+
+  // === TIPOGRAFÍA ===
+  --ion-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ion-heading-font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+
+  // === COMPONENTES IONIC ===
+  --ion-toolbar-background: var(--surface-bright);
+  --ion-toolbar-color: var(--ion-text-color);
+  --ion-item-background: var(--surface-container-low);
+  --ion-card-background: var(--surface-bright);
+
+  // === BORDES ===
+  --ion-border-color: #E2E8F0;
+}
+
+// -----------------------------------------------------------------------------
+// PALETA MATERIAL DESIGN 3 - MODO OSCURO
+// -----------------------------------------------------------------------------
+@media (prefers-color-scheme: dark) {
+  :root {
+    // === COLORES PRIMARIOS (más brillantes en oscuro) ===
+    --ion-color-primary: #818CF8;
+    --ion-color-primary-rgb: 129, 140, 248;
+    --ion-color-primary-contrast: #1a1a2e;
+    --ion-color-primary-contrast-rgb: 26, 26, 46;
+    --ion-color-primary-shade: #6366F1;
+    --ion-color-primary-tint: #A5B4FC;
+
+    // === COLORES SECUNDARIOS ===
+    --ion-color-secondary: #38BDF8;
+    --ion-color-secondary-rgb: 56, 189, 248;
+    --ion-color-secondary-contrast: #0c4a6e;
+    --ion-color-secondary-contrast-rgb: 12, 74, 110;
+    --ion-color-secondary-shade: #0EA5E9;
+    --ion-color-secondary-tint: #7DD3FC;
+
+    // === COLORES TERCIARIOS ===
+    --ion-color-tertiary: #A78BFA;
+    --ion-color-tertiary-rgb: 167, 139, 250;
+    --ion-color-tertiary-contrast: #2e1065;
+    --ion-color-tertiary-contrast-rgb: 46, 16, 101;
+    --ion-color-tertiary-shade: #8B5CF6;
+    --ion-color-tertiary-tint: #C4B5FD;
+
+    // === ÉXITO ===
+    --ion-color-success: #34D399;
+    --ion-color-success-rgb: 52, 211, 153;
+    --ion-color-success-contrast: #064e3b;
+    --ion-color-success-contrast-rgb: 6, 78, 59;
+    --ion-color-success-shade: #10B981;
+    --ion-color-success-tint: #6EE7B7;
+
+    // === ADVERTENCIA ===
+    --ion-color-warning: #FBBF24;
+    --ion-color-warning-rgb: 251, 191, 36;
+    --ion-color-warning-contrast: #78350f;
+    --ion-color-warning-contrast-rgb: 120, 53, 15;
+    --ion-color-warning-shade: #F59E0B;
+    --ion-color-warning-tint: #FCD34D;
+
+    // === PELIGRO ===
+    --ion-color-danger: #F87171;
+    --ion-color-danger-rgb: 248, 113, 113;
+    --ion-color-danger-contrast: #7f1d1d;
+    --ion-color-danger-contrast-rgb: 127, 29, 29;
+    --ion-color-danger-shade: #EF4444;
+    --ion-color-danger-tint: #FCA5A5;
+
+    // === TONOS NEUTROS ===
+    --ion-color-medium: #94A3B8;
+    --ion-color-medium-rgb: 148, 163, 184;
+    --ion-color-medium-contrast: #1E293B;
+    --ion-color-medium-contrast-rgb: 30, 41, 59;
+    --ion-color-medium-shade: #64748B;
+    --ion-color-medium-tint: #CBD5E1;
+
+    --ion-color-light: #334155;
+    --ion-color-light-rgb: 51, 65, 85;
+    --ion-color-light-contrast: #F1F5F9;
+    --ion-color-light-contrast-rgb: 241, 245, 249;
+    --ion-color-light-shade: #1E293B;
+    --ion-color-light-tint: #475569;
+
+    // === SUPERFICIES Y FONDOS (MD3 Dark) ===
+    --ion-background-color: #0F172A;
+    --ion-background-color-rgb: 15, 23, 42;
+
+    --ion-text-color: #F1F5F9;
+    --ion-text-color-rgb: 241, 245, 249;
+
+    // Surface colors (MD3 tonal elevation - dark)
+    --surface-dim: #0F172A;
+    --surface-default: #1E293B;
+    --surface-bright: #334155;
+    --surface-container-lowest: #0B1120;
+    --surface-container-low: #0F172A;
+    --surface-container: #1E293B;
+    --surface-container-high: #334155;
+    --surface-container-highest: #475569;
+
+    // === COMPONENTES IONIC ===
+    --ion-toolbar-background: var(--surface-container);
+    --ion-toolbar-color: var(--ion-text-color);
+    --ion-item-background: var(--surface-container-low);
+    --ion-card-background: var(--surface-container);
+
+    // === BORDES ===
+    --ion-border-color: #334155;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// UTILIDADES DE COLOR PERSONALIZADAS
+// -----------------------------------------------------------------------------
+// Clase para superficies con tinte primario (MD3 surface tint)
+.surface-tint {
+  background: linear-gradient(
+    180deg,
+    rgba(var(--ion-color-primary-rgb), 0.05) 0%,
+    transparent 100%
+  );
+}
+
+// Estado hover con overlay primario
+.state-hover {
+  &:hover {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.08);
+  }
+}
+
+// Estado pressed
+.state-pressed {
+  &:active {
+    background-color: rgba(var(--ion-color-primary-rgb), 0.12);
+  }
+}

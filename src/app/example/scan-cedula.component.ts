@@ -1,5 +1,56 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonBackButton,
+  IonButton,
+  IonIcon,
+  IonChip,
+  IonLabel,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonList,
+  IonItem,
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import {
+  camera,
+  sync,
+  closeCircle,
+  checkmarkCircle,
+  shieldCheckmark,
+  warning,
+  alertCircle,
+  settingsOutline,
+  idCard,
+  fingerPrint,
+  person,
+  informationCircle,
+  calendar,
+  maleFemale,
+  water,
+  time,
+  location,
+  businessOutline,
+  mapOutline,
+  codeWorking,
+  analytics,
+  refresh,
+  helpCircle,
+  documentOutline,
+  cardOutline,
+  sunnyOutline,
+  handLeftOutline,
+  barcodeOutline,
+  documentTextOutline,
+} from 'ionicons/icons';
 import { ScannerService } from '../services/scanner.service';
 import { CedulaData, ScanErrorCode } from '../models/cedula.model';
 
@@ -16,535 +67,775 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
 @Component({
   selector: 'app-scan-cedula',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonButtons,
+    IonBackButton,
+    IonButton,
+    IonIcon,
+    IonChip,
+    IonLabel,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardContent,
+    IonList,
+    IonItem,
+  ],
   template: `
-    <div class="scanner-container">
-      <h2>Escáner de Cédula Colombiana</h2>
+    <ion-header [translucent]="true">
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-back-button defaultHref="/home"></ion-back-button>
+        </ion-buttons>
+        <ion-title>Escáner de Cédula</ion-title>
+      </ion-toolbar>
+    </ion-header>
 
-      <!-- Estado del dispositivo -->
-      @if (deviceInfo()) {
-        <div class="device-info">
-          <span class="status-badge" [class.active]="deviceInfo()?.isSupported">
-            {{ deviceInfo()?.isSupported ? '✓ Dispositivo compatible' : '✗ No compatible' }}
-          </span>
-          <span class="status-badge" [class.active]="deviceInfo()?.hasPermissions">
-            {{ deviceInfo()?.hasPermissions ? '✓ Permisos OK' : '✗ Sin permisos' }}
-          </span>
+    <ion-content [fullscreen]="true" class="scanner-content">
+      <ion-header collapse="condense">
+        <ion-toolbar>
+          <ion-title size="large">Escáner de Cédula</ion-title>
+        </ion-toolbar>
+      </ion-header>
+
+      <div class="scanner-container">
+        <!-- Estado del dispositivo -->
+        @if (deviceInfo()) {
+          <div class="device-status">
+            <ion-chip [color]="deviceInfo()?.isSupported ? 'success' : 'medium'">
+              <ion-icon [name]="deviceInfo()?.isSupported ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <ion-label>{{ deviceInfo()?.isSupported ? 'Compatible' : 'No compatible' }}</ion-label>
+            </ion-chip>
+            <ion-chip [color]="deviceInfo()?.hasPermissions ? 'success' : 'warning'">
+              <ion-icon [name]="deviceInfo()?.hasPermissions ? 'shield-checkmark' : 'warning'"></ion-icon>
+              <ion-label>{{ deviceInfo()?.hasPermissions ? 'Permisos OK' : 'Sin permisos' }}</ion-label>
+            </ion-chip>
+          </div>
+        }
+
+        <!-- Botones de acción -->
+        <div class="action-section">
+          <ion-button
+            expand="block"
+            size="large"
+            class="scan-button-primary"
+            (click)="scanCedula()"
+            [disabled]="isScanning()">
+            <ion-icon slot="start" [name]="isScanning() ? 'sync' : 'camera'"></ion-icon>
+            {{ isScanning() ? 'Escaneando...' : 'Escanear Cédula' }}
+          </ion-button>
+
+          <div class="button-row">
+            <ion-button
+              expand="block"
+              fill="outline"
+              (click)="scanPDF417Only()"
+              [disabled]="isScanning()">
+              <ion-icon slot="start" name="barcode-outline"></ion-icon>
+              PDF417
+            </ion-button>
+
+            <ion-button
+              expand="block"
+              fill="outline"
+              (click)="scanMRZOnly()"
+              [disabled]="isScanning()">
+              <ion-icon slot="start" name="document-text-outline"></ion-icon>
+              MRZ
+            </ion-button>
+          </div>
+
+          @if (isScanning()) {
+            <ion-button expand="block" fill="clear" color="danger" (click)="cancelScan()">
+              <ion-icon slot="start" name="close-circle"></ion-icon>
+              Cancelar escaneo
+            </ion-button>
+          }
         </div>
-      }
 
-      <!-- Botones de acción -->
-      <div class="actions">
-        <button
-          (click)="scanCedula()"
-          [disabled]="isScanning()"
-          class="btn-primary">
-          {{ isScanning() ? 'Escaneando...' : '📷 Escanear Cédula' }}
-        </button>
+        <!-- Mensaje de error -->
+        @if (errorMessage()) {
+          <ion-card class="error-card">
+            <ion-card-content>
+              <div class="error-content">
+                <ion-icon name="alert-circle" color="danger"></ion-icon>
+                <div class="error-text">
+                  <strong>Error</strong>
+                  <p>{{ errorMessage() }}</p>
+                </div>
+              </div>
+              @if (showSettingsButton()) {
+                <ion-button fill="clear" size="small" (click)="openSettings()">
+                  <ion-icon slot="start" name="settings-outline"></ion-icon>
+                  Abrir Configuración
+                </ion-button>
+              }
+            </ion-card-content>
+          </ion-card>
+        }
 
-        <div class="btn-group">
-          <button
-            (click)="scanPDF417Only()"
-            [disabled]="isScanning()"
-            class="btn-secondary">
-            Cédula Antigua (PDF417)
-          </button>
+        <!-- Datos escaneados -->
+        @if (cedulaData()) {
+          <ion-card class="cedula-card animate-slide-up">
+            <div class="card-header-custom">
+              <div class="header-info">
+                <ion-icon name="id-card"></ion-icon>
+                <h3>Datos de la Cédula</h3>
+              </div>
+              <ion-chip [color]="cedulaData()?.tipoDocumento === 'ANTIGUA' ? 'warning' : 'primary'" class="tipo-chip">
+                <ion-label>{{ cedulaData()?.tipoDocumento === 'ANTIGUA' ? 'Antigua' : 'Nueva' }}</ion-label>
+              </ion-chip>
+            </div>
 
-          <button
-            (click)="scanMRZOnly()"
-            [disabled]="isScanning()"
-            class="btn-secondary">
-            Cédula Nueva (MRZ)
-          </button>
-        </div>
+            <ion-card-content>
+              <!-- Número de cédula destacado -->
+              <div class="cedula-number">
+                <span class="label">Número de Cédula</span>
+                <span class="number">{{ formatCedula(cedulaData()?.numeroDocumento) }}</span>
+              </div>
 
-        @if (isScanning()) {
-          <button (click)="cancelScan()" class="btn-danger">
-            Cancelar
-          </button>
+              @if (cedulaData()?.nuip) {
+                <div class="nuip-badge">
+                  <ion-icon name="finger-print"></ion-icon>
+                  <span>NUIP: {{ cedulaData()?.nuip }}</span>
+                </div>
+              }
+
+              <!-- Información personal -->
+              <div class="info-section">
+                <h4>
+                  <ion-icon name="person"></ion-icon>
+                  Datos Personales
+                </h4>
+                
+                <ion-list lines="none" class="data-list">
+                  <ion-item>
+                    <ion-label>
+                      <p>Primer Apellido</p>
+                      <h3>{{ cedulaData()?.primerApellido }}</h3>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>
+                      <p>Segundo Apellido</p>
+                      <h3>{{ cedulaData()?.segundoApellido || '—' }}</h3>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>
+                      <p>Primer Nombre</p>
+                      <h3>{{ cedulaData()?.primerNombre }}</h3>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>
+                      <p>Segundo Nombre</p>
+                      <h3>{{ cedulaData()?.segundoNombre || '—' }}</h3>
+                    </ion-label>
+                  </ion-item>
+                </ion-list>
+
+                @if (cedulaData()?.nombresTruncados) {
+                  <div class="warning-chip">
+                    <ion-icon name="warning"></ion-icon>
+                    <span>Nombres posiblemente truncados en MRZ</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Información adicional -->
+              <div class="info-section">
+                <h4>
+                  <ion-icon name="information-circle"></ion-icon>
+                  Información Adicional
+                </h4>
+
+                <div class="info-grid">
+                  <div class="info-item">
+                    <ion-icon name="calendar"></ion-icon>
+                    <span class="info-label">Nacimiento</span>
+                    <span class="info-value">{{ formatDate(cedulaData()?.fechaNacimiento) }}</span>
+                  </div>
+
+                  <div class="info-item">
+                    <ion-icon name="male-female"></ion-icon>
+                    <span class="info-label">Género</span>
+                    <span class="info-value">{{ formatGenero(cedulaData()?.genero) }}</span>
+                  </div>
+
+                  <div class="info-item rh-item">
+                    <ion-icon name="water"></ion-icon>
+                    <span class="info-label">RH</span>
+                    <span class="info-value rh-value">{{ cedulaData()?.rh || 'N/A' }}</span>
+                  </div>
+
+                  @if (cedulaData()?.fechaExpiracion) {
+                    <div class="info-item">
+                      <ion-icon name="time"></ion-icon>
+                      <span class="info-label">Vencimiento</span>
+                      <span class="info-value">{{ formatDate(cedulaData()?.fechaExpiracion) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Ubicación -->
+              @if (cedulaData()?.ubicacion?.municipio) {
+                <div class="info-section">
+                  <h4>
+                    <ion-icon name="location"></ion-icon>
+                    Lugar de Expedición
+                  </h4>
+
+                  <ion-list lines="none" class="data-list">
+                    <ion-item>
+                      <ion-icon name="business-outline" slot="start" color="medium"></ion-icon>
+                      <ion-label>
+                        <p>Municipio</p>
+                        <h3>{{ cedulaData()?.ubicacion?.municipio }}</h3>
+                      </ion-label>
+                    </ion-item>
+                    <ion-item>
+                      <ion-icon name="map-outline" slot="start" color="medium"></ion-icon>
+                      <ion-label>
+                        <p>Departamento</p>
+                        <h3>{{ cedulaData()?.ubicacion?.departamento }}</h3>
+                      </ion-label>
+                    </ion-item>
+                  </ion-list>
+                </div>
+              }
+
+              <!-- Datos técnicos -->
+              @if (cedulaData()?.documentoInfo?.codigoAfis) {
+                <div class="info-section technical">
+                  <h4>
+                    <ion-icon name="code-working"></ion-icon>
+                    Datos Técnicos
+                  </h4>
+                  
+                  <div class="tech-data">
+                    <div class="tech-item">
+                      <span class="tech-label">AFIS</span>
+                      <code>{{ cedulaData()?.documentoInfo?.codigoAfis }}</code>
+                    </div>
+                    @if (cedulaData()?.documentoInfo?.tarjetaDactilar) {
+                      <div class="tech-item">
+                        <span class="tech-label">Tarjeta Dactilar</span>
+                        <code>{{ cedulaData()?.documentoInfo?.tarjetaDactilar }}</code>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Barra de confianza -->
+              @if (cedulaData()?.confianza !== undefined) {
+                <div class="confidence-section">
+                  <div class="confidence-header">
+                    <ion-icon name="analytics"></ion-icon>
+                    <span>Confianza del escaneo</span>
+                    <strong>{{ cedulaData()?.confianza }}%</strong>
+                  </div>
+                  <div class="confidence-bar">
+                    <div class="confidence-fill" [style.width.%]="cedulaData()?.confianza"></div>
+                  </div>
+                </div>
+              }
+
+              <ion-button expand="block" fill="outline" color="medium" (click)="clearData()">
+                <ion-icon slot="start" name="refresh"></ion-icon>
+                Limpiar y escanear de nuevo
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        }
+
+        <!-- Instrucciones -->
+        @if (!cedulaData() && !isScanning()) {
+          <ion-card class="instructions-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="help-circle"></ion-icon>
+                Instrucciones
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list lines="none" class="instructions-list">
+                <ion-item>
+                  <ion-icon name="document-outline" slot="start" color="warning"></ion-icon>
+                  <ion-label class="ion-text-wrap">
+                    <strong>Cédula Antigua (amarilla)</strong>
+                    <p>Enfoque el código de barras en la parte posterior</p>
+                  </ion-label>
+                </ion-item>
+                <ion-item>
+                  <ion-icon name="card-outline" slot="start" color="primary"></ion-icon>
+                  <ion-label class="ion-text-wrap">
+                    <strong>Cédula Nueva (holográfica)</strong>
+                    <p>Enfoque las 3 líneas de texto en la parte posterior (zona MRZ)</p>
+                  </ion-label>
+                </ion-item>
+                <ion-item>
+                  <ion-icon name="sunny-outline" slot="start" color="tertiary"></ion-icon>
+                  <ion-label class="ion-text-wrap">
+                    <p>Asegúrese de tener buena iluminación</p>
+                  </ion-label>
+                </ion-item>
+                <ion-item>
+                  <ion-icon name="hand-left-outline" slot="start" color="medium"></ion-icon>
+                  <ion-label class="ion-text-wrap">
+                    <p>Mantenga el documento estable mientras escanea</p>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
         }
       </div>
-
-      <!-- Mensaje de error -->
-      @if (errorMessage()) {
-        <div class="error-message">
-          <strong>Error:</strong>
-          <p>{{ errorMessage() }}</p>
-          @if (showSettingsButton()) {
-            <button (click)="openSettings()" class="btn-link">
-              Abrir Configuración del Dispositivo
-            </button>
-          }
-        </div>
-      }
-
-      <!-- Datos escaneados -->
-      @if (cedulaData()) {
-        <div class="cedula-card">
-          <div class="card-header">
-            <h3>Datos de la Cédula</h3>
-            <span class="tipo-badge" [class.antigua]="cedulaData()?.tipoDocumento === 'ANTIGUA'">
-              {{ cedulaData()?.tipoDocumento === 'ANTIGUA' ? '🟡 Cédula Antigua' : '🔵 Cédula Nueva' }}
-            </span>
-          </div>
-
-          <!-- Información principal -->
-          <div class="card-section">
-            <h4>Identificación</h4>
-
-            <div class="data-row">
-              <span class="label">Número de Cédula:</span>
-              <span class="value highlight">{{ formatCedula(cedulaData()?.numeroDocumento) }}</span>
-            </div>
-
-            @if (cedulaData()?.nuip) {
-              <div class="data-row">
-                <span class="label">NUIP:</span>
-                <span class="value">{{ cedulaData()?.nuip }}</span>
-              </div>
-            }
-          </div>
-
-          <!-- Nombres -->
-          <div class="card-section">
-            <h4>Datos Personales</h4>
-
-            <div class="data-row">
-              <span class="label">Primer Apellido:</span>
-              <span class="value">{{ cedulaData()?.primerApellido }}</span>
-            </div>
-
-            <div class="data-row">
-              <span class="label">Segundo Apellido:</span>
-              <span class="value">{{ cedulaData()?.segundoApellido || '—' }}</span>
-            </div>
-
-            <div class="data-row">
-              <span class="label">Primer Nombre:</span>
-              <span class="value">{{ cedulaData()?.primerNombre }}</span>
-            </div>
-
-            <div class="data-row">
-              <span class="label">Segundo Nombre:</span>
-              <span class="value">{{ cedulaData()?.segundoNombre || '—' }}</span>
-            </div>
-
-            @if (cedulaData()?.nombresTruncados) {
-              <div class="warning-badge">
-                ⚠️ Nombres posiblemente truncados en MRZ
-              </div>
-            }
-          </div>
-
-          <!-- Datos demográficos -->
-          <div class="card-section">
-            <h4>Información Adicional</h4>
-
-            <div class="data-grid">
-              <div class="data-item">
-                <span class="label">Fecha Nacimiento</span>
-                <span class="value">{{ formatDate(cedulaData()?.fechaNacimiento) }}</span>
-              </div>
-
-              <div class="data-item">
-                <span class="label">Género</span>
-                <span class="value">{{ formatGenero(cedulaData()?.genero) }}</span>
-              </div>
-
-              <div class="data-item">
-                <span class="label">Tipo de Sangre</span>
-                <span class="value rh">{{ cedulaData()?.rh || 'N/A' }}</span>
-              </div>
-
-              @if (cedulaData()?.fechaExpiracion) {
-                <div class="data-item">
-                  <span class="label">Vencimiento</span>
-                  <span class="value">{{ formatDate(cedulaData()?.fechaExpiracion) }}</span>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Ubicación -->
-          @if (cedulaData()?.ubicacion?.municipio) {
-            <div class="card-section">
-              <h4>Lugar de Expedición</h4>
-
-              <div class="data-row">
-                <span class="label">Municipio:</span>
-                <span class="value">{{ cedulaData()?.ubicacion?.municipio }}</span>
-              </div>
-
-              <div class="data-row">
-                <span class="label">Departamento:</span>
-                <span class="value">{{ cedulaData()?.ubicacion?.departamento }}</span>
-              </div>
-
-              <div class="data-row subtle">
-                <span class="label">Código DIVIPOLA:</span>
-                <span class="value">{{ cedulaData()?.ubicacion?.codigoMunicipio }}-{{ cedulaData()?.ubicacion?.codigoDepartamento }}</span>
-              </div>
-            </div>
-          }
-
-          <!-- Información técnica (solo cédulas antiguas) -->
-          @if (cedulaData()?.documentoInfo?.codigoAfis) {
-            <div class="card-section technical">
-              <h4>Datos Técnicos</h4>
-
-              <div class="data-row">
-                <span class="label">Código AFIS:</span>
-                <span class="value mono">{{ cedulaData()?.documentoInfo?.codigoAfis }}</span>
-              </div>
-
-              @if (cedulaData()?.documentoInfo?.tarjetaDactilar) {
-                <div class="data-row">
-                  <span class="label">Tarjeta Dactilar:</span>
-                  <span class="value mono">{{ cedulaData()?.documentoInfo?.tarjetaDactilar }}</span>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Nivel de confianza -->
-          @if (cedulaData()?.confianza !== undefined) {
-            <div class="confidence-bar">
-              <span>Confianza del escaneo:</span>
-              <div class="bar">
-                <div class="fill" [style.width.%]="cedulaData()?.confianza"></div>
-              </div>
-              <span>{{ cedulaData()?.confianza }}%</span>
-            </div>
-          }
-
-          <button (click)="clearData()" class="btn-clear">
-            Limpiar datos
-          </button>
-        </div>
-      }
-
-      <!-- Instrucciones -->
-      @if (!cedulaData() && !isScanning()) {
-        <div class="instructions">
-          <h4>Instrucciones</h4>
-          <ul>
-            <li><strong>Cédula Antigua (amarilla):</strong> Enfoque el código de barras en la parte posterior</li>
-            <li><strong>Cédula Nueva (holográfica):</strong> Enfoque las 3 líneas de texto en la parte posterior (zona MRZ)</li>
-            <li>Asegúrese de tener buena iluminación</li>
-            <li>Mantenga el documento estable mientras escanea</li>
-          </ul>
-        </div>
-      }
-    </div>
+    </ion-content>
   `,
   styles: [`
+    /* ============================================
+       SCANNER COMPONENT - Material Design 3 Styles
+       ============================================ */
+
+    .scanner-content {
+      --background: var(--ion-background-color);
+    }
+
     .scanner-container {
-      padding: 16px;
+      padding: var(--space-md, 16px);
       max-width: 600px;
       margin: 0 auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    h2 {
-      text-align: center;
-      color: #1a1a2e;
-      margin-bottom: 16px;
-    }
-
-    .device-info {
+    /* Device Status */
+    .device-status {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      margin-bottom: 20px;
+      gap: var(--space-xs, 8px);
+      margin-bottom: var(--space-lg, 24px);
+      flex-wrap: wrap;
     }
 
-    .status-badge {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: #f0f0f0;
-      color: #666;
-    }
-
-    .status-badge.active {
-      background: #e8f5e9;
-      color: #2e7d32;
-    }
-
-    .actions {
+    /* Action Section */
+    .action-section {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 24px;
+      gap: var(--space-sm, 12px);
+      margin-bottom: var(--space-lg, 24px);
     }
 
-    .btn-group {
+    .scan-button-primary {
+      --background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-tertiary) 100%);
+      --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+      --border-radius: var(--radius-md, 12px);
+      height: 56px;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .scan-button-primary:hover {
+      --box-shadow: 0 6px 20px rgba(var(--ion-color-primary-rgb), 0.4);
+    }
+
+    .scan-button-primary ion-icon {
+      font-size: 1.4rem;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm, 12px);
+    }
+
+    .button-row ion-button {
+      --border-radius: var(--radius-md, 12px);
+      height: 48px;
+      font-size: 0.9rem;
+    }
+
+    /* Error Card */
+    .error-card {
+      --background: rgba(var(--ion-color-danger-rgb), 0.08);
+      border-left: 4px solid var(--ion-color-danger);
+      margin-bottom: var(--space-lg, 24px);
+    }
+
+    .error-content {
       display: flex;
-      gap: 8px;
+      gap: var(--space-md, 16px);
+      align-items: flex-start;
     }
 
-    button {
-      padding: 14px 20px;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
+    .error-content ion-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
     }
 
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .error-text strong {
+      color: var(--ion-color-danger);
+      font-size: 1rem;
     }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-size: 18px;
+    .error-text p {
+      margin: var(--space-xs, 8px) 0 0;
+      color: var(--ion-color-danger-shade);
     }
 
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn-secondary {
-      background: #f5f5f5;
-      color: #333;
-      flex: 1;
-      font-size: 14px;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: #e8e8e8;
-    }
-
-    .btn-danger {
-      background: #ef5350;
-      color: white;
-    }
-
-    .btn-link {
-      background: transparent;
-      color: #667eea;
-      text-decoration: underline;
-      padding: 8px;
-    }
-
-    .btn-clear {
-      background: #ff7043;
-      color: white;
-      width: 100%;
-      margin-top: 16px;
-    }
-
-    .btn-test {
-      background: #ff9800;
-      color: white;
-      width: 100%;
-      margin-top: 8px;
-      font-size: 14px;
-    }
-
-    .btn-test:hover:not(:disabled) {
-      background: #f57c00;
-    }
-
-    .error-message {
-      background: #ffebee;
-      border-left: 4px solid #ef5350;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 24px;
-    }
-
-    .error-message strong {
-      color: #c62828;
-    }
-
-    .error-message p {
-      color: #b71c1c;
-      margin: 8px 0;
-    }
-
+    /* Cedula Card */
     .cedula-card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border-radius: var(--radius-xl, 24px);
       overflow: hidden;
+      margin-bottom: var(--space-lg, 24px);
     }
 
-    .card-header {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 20px;
+    .card-header-custom {
+      background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-tertiary) 100%);
+      padding: var(--space-lg, 24px);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      color: white;
     }
 
-    .card-header h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .tipo-badge {
-      background: rgba(255,255,255,0.2);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-    }
-
-    .tipo-badge.antigua {
-      background: rgba(255, 193, 7, 0.3);
-    }
-
-    .card-section {
-      padding: 16px 20px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .card-section:last-of-type {
-      border-bottom: none;
-    }
-
-    .card-section h4 {
-      margin: 0 0 12px 0;
-      font-size: 14px;
-      color: #667eea;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .card-section.technical {
-      background: #fafafa;
-    }
-
-    .data-row {
+    .header-info {
       display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #f5f5f5;
+      align-items: center;
+      gap: var(--space-sm, 12px);
     }
 
-    .data-row:last-child {
+    .header-info ion-icon {
+      font-size: 1.75rem;
+    }
+
+    .header-info h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      font-family: var(--ion-heading-font-family);
+    }
+
+    .tipo-chip {
+      --padding-start: var(--space-sm, 12px);
+      --padding-end: var(--space-sm, 12px);
+    }
+
+    /* Cedula Number Highlight */
+    .cedula-number {
+      text-align: center;
+      padding: var(--space-lg, 24px);
+      background: var(--surface-container, #f1f5f9);
+      border-radius: var(--radius-lg, 16px);
+      margin-bottom: var(--space-md, 16px);
+    }
+
+    .cedula-number .label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ion-color-medium);
+      margin-bottom: var(--space-xs, 8px);
+    }
+
+    .cedula-number .number {
+      font-size: 1.75rem;
+      font-weight: 700;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      color: var(--ion-color-primary);
+      letter-spacing: 0.02em;
+    }
+
+    .nuip-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs, 8px);
+      padding: var(--space-sm, 12px);
+      background: rgba(var(--ion-color-tertiary-rgb), 0.1);
+      border-radius: var(--radius-md, 12px);
+      margin-bottom: var(--space-md, 16px);
+      font-size: 0.875rem;
+      color: var(--ion-color-tertiary);
+      font-weight: 500;
+    }
+
+    /* Info Sections */
+    .info-section {
+      margin-bottom: var(--space-lg, 24px);
+      padding-bottom: var(--space-md, 16px);
+      border-bottom: 1px solid var(--ion-border-color, #e2e8f0);
+    }
+
+    .info-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: var(--space-md, 16px);
+    }
+
+    .info-section h4 {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs, 8px);
+      margin: 0 0 var(--space-md, 16px);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ion-color-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .info-section h4 ion-icon {
+      font-size: 1.1rem;
+    }
+
+    .info-section.technical {
+      background: var(--surface-container, #f1f5f9);
+      margin: 0 calc(-1 * var(--space-md, 16px));
+      padding: var(--space-md, 16px);
+      border-radius: 0;
       border-bottom: none;
     }
 
-    .data-row.subtle {
-      opacity: 0.7;
-      font-size: 13px;
+    /* Data List */
+    .data-list {
+      padding: 0;
+      background: transparent;
     }
 
-    .label {
-      color: #666;
-      font-size: 14px;
+    .data-list ion-item {
+      --background: var(--surface-container-low, #f8fafc);
+      --padding-start: var(--space-md, 16px);
+      --padding-end: var(--space-md, 16px);
+      --inner-padding-end: 0;
+      --min-height: 56px;
+      border-radius: var(--radius-md, 12px);
+      margin-bottom: var(--space-xs, 8px);
     }
 
-    .value {
-      color: #1a1a2e;
+    .data-list ion-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .data-list ion-label p {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+      margin-bottom: 2px;
+    }
+
+    .data-list ion-label h3 {
+      font-size: 1rem;
       font-weight: 600;
-      font-size: 14px;
+      color: var(--ion-text-color);
+      margin: 0;
     }
 
-    .value.highlight {
-      color: #667eea;
-      font-size: 18px;
-      font-family: 'SF Mono', Monaco, monospace;
-    }
-
-    .value.mono {
-      font-family: 'SF Mono', Monaco, monospace;
-      font-size: 12px;
-    }
-
-    .value.rh {
-      background: #e3f2fd;
-      color: #1565c0;
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-
-    .data-grid {
+    /* Info Grid */
+    .info-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
+      gap: var(--space-sm, 12px);
     }
 
-    .data-item {
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-md, 16px);
+      background: var(--surface-container-low, #f8fafc);
+      border-radius: var(--radius-md, 12px);
       text-align: center;
-      padding: 12px;
-      background: #f8f9fa;
-      border-radius: 8px;
     }
 
-    .data-item .label {
-      display: block;
-      font-size: 12px;
+    .info-item ion-icon {
+      font-size: 1.5rem;
+      color: var(--ion-color-primary);
+      margin-bottom: var(--space-xs, 8px);
+    }
+
+    .info-item .info-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--ion-color-medium);
       margin-bottom: 4px;
     }
 
-    .data-item .value {
-      display: block;
-      font-size: 16px;
+    .info-item .info-value {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--ion-text-color);
     }
 
-    .warning-badge {
-      background: #fff3e0;
-      color: #e65100;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-top: 8px;
+    .info-item.rh-item .info-value.rh-value {
+      background: rgba(var(--ion-color-secondary-rgb), 0.15);
+      color: var(--ion-color-secondary);
+      padding: 4px 12px;
+      border-radius: var(--radius-sm, 8px);
+      font-weight: 700;
+    }
+
+    /* Warning Chip */
+    .warning-chip {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs, 8px);
+      padding: var(--space-sm, 12px);
+      background: rgba(var(--ion-color-warning-rgb), 0.12);
+      border-radius: var(--radius-md, 12px);
+      margin-top: var(--space-sm, 12px);
+      font-size: 0.8125rem;
+      color: var(--ion-color-warning-shade);
+    }
+
+    .warning-chip ion-icon {
+      font-size: 1.1rem;
+      color: var(--ion-color-warning);
+    }
+
+    /* Technical Data */
+    .tech-data {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm, 12px);
+    }
+
+    .tech-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-sm, 12px);
+      background: var(--surface-container-high, #e2e8f0);
+      border-radius: var(--radius-sm, 8px);
+    }
+
+    .tech-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--ion-color-medium);
+      text-transform: uppercase;
+    }
+
+    .tech-item code {
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--ion-text-color);
+      background: var(--surface-container-highest, #cbd5e1);
+      padding: 4px 8px;
+      border-radius: var(--radius-xs, 4px);
+    }
+
+    /* Confidence Section */
+    .confidence-section {
+      padding: var(--space-md, 16px);
+      background: var(--surface-container, #f1f5f9);
+      border-radius: var(--radius-md, 12px);
+      margin-bottom: var(--space-md, 16px);
+    }
+
+    .confidence-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs, 8px);
+      margin-bottom: var(--space-sm, 12px);
+      font-size: 0.875rem;
+      color: var(--ion-color-medium);
+    }
+
+    .confidence-header ion-icon {
+      color: var(--ion-color-primary);
+    }
+
+    .confidence-header strong {
+      margin-left: auto;
+      color: var(--ion-color-primary);
+      font-size: 1rem;
     }
 
     .confidence-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 20px;
-      background: #f8f9fa;
-      font-size: 13px;
-      color: #666;
-    }
-
-    .confidence-bar .bar {
-      flex: 1;
       height: 8px;
-      background: #e0e0e0;
-      border-radius: 4px;
+      background: var(--surface-container-high, #e2e8f0);
+      border-radius: var(--radius-full, 9999px);
       overflow: hidden;
     }
 
-    .confidence-bar .fill {
+    .confidence-fill {
       height: 100%;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      border-radius: 4px;
-      transition: width 0.3s;
+      background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-tertiary));
+      border-radius: var(--radius-full, 9999px);
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .instructions {
-      background: #e3f2fd;
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 24px;
+    /* Instructions Card */
+    .instructions-card {
+      border-radius: var(--radius-xl, 24px);
+      background: rgba(var(--ion-color-primary-rgb), 0.05);
     }
 
-    .instructions h4 {
-      margin: 0 0 12px 0;
-      color: #1565c0;
+    .instructions-card ion-card-header {
+      padding-bottom: var(--space-xs, 8px);
     }
 
-    .instructions ul {
-      margin: 0;
-      padding-left: 20px;
+    .instructions-card ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs, 8px);
+      font-size: 1.125rem;
+      color: var(--ion-color-primary);
     }
 
-    .instructions li {
-      margin: 8px 0;
-      color: #333;
-      line-height: 1.5;
+    .instructions-card ion-card-title ion-icon {
+      font-size: 1.25rem;
+    }
+
+    .instructions-list {
+      padding: 0;
+      background: transparent;
+    }
+
+    .instructions-list ion-item {
+      --background: transparent;
+      --padding-start: 0;
+      --inner-padding-end: 0;
+      --min-height: 48px;
+    }
+
+    .instructions-list ion-item ion-icon {
+      font-size: 1.25rem;
+      margin-right: var(--space-sm, 12px);
+    }
+
+    .instructions-list ion-label strong {
+      font-size: 0.9375rem;
+      color: var(--ion-text-color);
+    }
+
+    .instructions-list ion-label p {
+      font-size: 0.8125rem;
+      color: var(--ion-color-medium);
+      margin-top: 2px;
+    }
+
+    /* Animation */
+    .animate-slide-up {
+      animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   `]
 })
@@ -561,7 +852,42 @@ export class ScanCedulaComponent implements OnInit {
     hasPermissions: boolean;
   } | null>(null);
 
-  constructor(private scannerService: ScannerService) {}
+  constructor(
+    private scannerService: ScannerService,
+    private route: ActivatedRoute
+  ) {
+    addIcons({
+      camera,
+      sync,
+      closeCircle,
+      checkmarkCircle,
+      shieldCheckmark,
+      warning,
+      alertCircle,
+      settingsOutline,
+      idCard,
+      fingerPrint,
+      person,
+      informationCircle,
+      calendar,
+      maleFemale,
+      water,
+      time,
+      location,
+      businessOutline,
+      mapOutline,
+      codeWorking,
+      analytics,
+      refresh,
+      helpCircle,
+      documentOutline,
+      cardOutline,
+      sunnyOutline,
+      handLeftOutline,
+      barcodeOutline,
+      documentTextOutline,
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     // Obtener información del dispositivo al iniciar
@@ -570,8 +896,37 @@ export class ScanCedulaComponent implements OnInit {
       const info = await this.scannerService.getCapabilities();
       console.log('✅ Capacidades obtenidas:', info);
       this.deviceInfo.set(info);
+      await this.handleRouteAction();
     } catch (error) {
       console.error('❌ Error obteniendo información del dispositivo:', error);
+    }
+  }
+
+  private async handleRouteAction(): Promise<void> {
+    const mode = this.route.snapshot.queryParamMap.get('mode');
+    if (!mode || this.isScanning()) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    if (mode === 'auto') {
+      await this.scanCedula();
+      return;
+    }
+
+    if (mode === 'pdf417') {
+      await this.scanPDF417Only();
+      return;
+    }
+
+    if (mode === 'mrz') {
+      await this.scanMRZOnly();
+      return;
+    }
+
+    if (mode === 'test') {
+      await this.testNativeScan();
     }
   }
 

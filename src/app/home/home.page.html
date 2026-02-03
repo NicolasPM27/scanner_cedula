@@ -1,20 +1,119 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>
-      Blank
+      Scanner Cédula
     </ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
   <ion-header collapse="condense">
     <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
+      <ion-title size="large">Scanner Cédula</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+  <!-- Hero Section -->
+  <div class="hero-section animate-fade-in">
+    <div class="hero-icon">
+      <ion-icon name="scan-outline"></ion-icon>
+    </div>
+    <h2 class="headline-medium">Escanea tu documento</h2>
+    <p class="body-large text-muted">Captura información de cédulas de identidad de forma rápida y segura</p>
+
+    <div class="status-row" *ngIf="deviceInfo">
+      <ion-chip [color]="deviceInfo.isSupported ? 'success' : 'medium'">
+        <ion-label>
+          {{ deviceInfo.isSupported ? '✓ Dispositivo compatible' : '✗ No compatible' }}
+        </ion-label>
+      </ion-chip>
+      <ion-chip [color]="deviceInfo.hasPermissions ? 'success' : 'warning'">
+        <ion-label>
+          {{ deviceInfo.hasPermissions ? '✓ Permisos OK' : '⚠️ Permisos requeridos' }}
+        </ion-label>
+      </ion-chip>
+    </div>
   </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <ion-button expand="block" size="large" class="scan-button" (click)="goToScanner('auto')">
+      <ion-icon slot="start" name="camera-outline"></ion-icon>
+      Escanear Cédula
+    </ion-button>
+
+    <div class="action-row">
+      <ion-button expand="block" fill="outline" size="large" (click)="goToScanner('pdf417')">
+        <ion-icon slot="start" name="document-text-outline"></ion-icon>
+        Cédula Antigua (PDF417)
+      </ion-button>
+
+      <ion-button expand="block" fill="outline" size="large" (click)="goToScanner('mrz')">
+        <ion-icon slot="start" name="images-outline"></ion-icon>
+        Cédula Nueva (MRZ)
+      </ion-button>
+    </div>
+
+    <ion-button expand="block" fill="clear" size="small" (click)="goToScanner('test')">
+      Probar escáner nativo
+    </ion-button>
+  </div>
+
+  <!-- Features Card -->
+  <ion-card class="features-card animate-slide-up">
+    <ion-card-header>
+      <ion-card-title>Características</ion-card-title>
+      <ion-card-subtitle>Procesamiento inteligente de documentos</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list lines="none" class="features-list">
+        <ion-item>
+          <ion-icon slot="start" name="flash-outline" color="primary"></ion-icon>
+          <ion-label>
+            <h3>Reconocimiento Rápido</h3>
+            <p>Extracción de datos en segundos</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="shield-checkmark-outline" color="success"></ion-icon>
+          <ion-label>
+            <h3>100% Seguro</h3>
+            <p>Procesamiento local en tu dispositivo</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="sparkles-outline" color="tertiary"></ion-icon>
+          <ion-label>
+            <h3>ML Kit Integrado</h3>
+            <p>Tecnología de Google para OCR</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Recent Scans Section -->
+  <div class="section-header">
+    <h3 class="title-large">Escaneos Recientes</h3>
+    <ion-button fill="clear" size="small">Ver todos</ion-button>
+  </div>
+
+  <div class="empty-state">
+    <ion-icon name="document-text-outline"></ion-icon>
+    <p class="body-medium text-muted">No hay escaneos recientes</p>
+    <p class="body-small text-muted">Los documentos escaneados aparecerán aquí</p>
+  </div>
+
 </ion-content>
+
+<!-- FAB para escaneo rápido -->
+<ion-fab slot="fixed" vertical="bottom" horizontal="end">
+  <ion-fab-button>
+    <ion-icon name="scan"></ion-icon>
+  </ion-fab-button>
+</ion-fab>
