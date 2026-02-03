@@ -52,6 +52,7 @@ import {
   documentTextOutline,
 } from 'ionicons/icons';
 import { ScannerService } from '../services/scanner.service';
+import { FlujoActualizacionService } from '../services/flujo-actualizacion.service';
 import { CedulaData, ScanErrorCode } from '../models/cedula.model';
 
 /**
@@ -347,6 +348,11 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
                   </div>
                 </div>
               }
+
+              <ion-button expand="block" color="primary" (click)="continuarActualizacion()" [disabled]="isScanning()">
+                <ion-icon slot="start" name="checkmark-circle"></ion-icon>
+                Continuar con la actualización
+              </ion-button>
 
               <ion-button expand="block" fill="outline" color="medium" (click)="clearData()">
                 <ion-icon slot="start" name="refresh"></ion-icon>
@@ -854,7 +860,8 @@ export class ScanCedulaComponent implements OnInit {
 
   constructor(
     private scannerService: ScannerService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private flujoActualizacion: FlujoActualizacionService
   ) {
     addIcons({
       camera,
@@ -1031,6 +1038,18 @@ export class ScanCedulaComponent implements OnInit {
   clearData(): void {
     this.cedulaData.set(null);
     this.errorMessage.set(null);
+  }
+
+  /**
+   * Inicia el flujo de actualización con la cédula escaneada
+   */
+  async continuarActualizacion(): Promise<void> {
+    const data = this.cedulaData();
+    if (!data || this.isScanning()) {
+      return;
+    }
+
+    await this.flujoActualizacion.iniciarFlujo(data);
   }
 
   /**
