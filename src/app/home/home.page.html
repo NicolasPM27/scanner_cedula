@@ -1,8 +1,6 @@
-<ion-header [translucent]="true">
+<ion-header [translucent]="true" class="ion-no-border">
   <ion-toolbar>
-    <ion-title>
-      Scanner Cédula
-    </ion-title>
+    <ion-title>Actualización de datos</ion-title>
     <ion-buttons slot="end">
       <ion-button fill="clear">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
@@ -11,22 +9,28 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Scanner Cédula</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content>
+
+  <!-- FOMAG Branding Section -->
+  <header class="fomag-branding-section" role="banner">
+    <img 
+      src="assets/logos/FOMAGMesa-de-trabajo-34@2x.png" 
+      alt="FOMAG - Administrado por Fiduprevisora" 
+      class="fomag-logo"
+      loading="eager"
+    >
+  </header>
 
   <!-- Hero Section -->
-  <div class="hero-section animate-fade-in">
-    <div class="hero-icon">
+  <section class="hero-section animate-fade-in" aria-labelledby="hero-title">
+    <div class="hero-icon" aria-hidden="true">
       <ion-icon name="scan-outline"></ion-icon>
     </div>
-    <h2 class="headline-medium">Escanea tu documento</h2>
-    <p class="body-large text-muted">Captura información de cédulas de identidad de forma rápida y segura</p>
+    <h2 id="hero-title" class="headline-medium">Actualiza tu información</h2>
+    <p class="body-large text-muted">Captura y actualiza la información de tu documento de identidad de forma rápida y segura</p>
 
-    <div class="status-row" *ngIf="deviceInfo">
+    <!-- Status chips - solo visibles en modo desarrollo -->
+    <div class="status-row" *ngIf="isDev && deviceInfo">
       <ion-chip [color]="deviceInfo.isSupported ? 'success' : 'medium'">
         <ion-label>
           {{ deviceInfo.isSupported ? '✓ Dispositivo compatible' : '✗ No compatible' }}
@@ -38,7 +42,7 @@
         </ion-label>
       </ion-chip>
     </div>
-  </div>
+  </section>
 
   <!-- Quick Actions -->
   <div class="quick-actions">
@@ -47,21 +51,13 @@
       Escanear Cédula
     </ion-button>
 
-    <div class="action-row">
-      <ion-button expand="block" fill="outline" size="large" (click)="goToScanner('pdf417')">
-        <ion-icon slot="start" name="document-text-outline"></ion-icon>
-        Cédula Antigua (PDF417)
-      </ion-button>
-
-      <ion-button expand="block" fill="outline" size="large" (click)="goToScanner('mrz')">
-        <ion-icon slot="start" name="images-outline"></ion-icon>
-        Cédula Nueva (MRZ)
+    <!-- Dev bypass button -->
+    <div *ngIf="isDev" class="dev-bypass-separator">
+      <ion-button expand="block" fill="outline" color="warning" (click)="goToVerification()">
+        <ion-icon slot="start" name="person-circle"></ion-icon>
+        Ir a Verificación (Dev)
       </ion-button>
     </div>
-
-    <ion-button expand="block" fill="clear" size="small" (click)="goToScanner('test')">
-      Probar escáner nativo
-    </ion-button>
   </div>
 
   <!-- Features Card -->
@@ -109,11 +105,9 @@
     <p class="body-small text-muted">Los documentos escaneados aparecerán aquí</p>
   </div>
 
-</ion-content>
-
 <!-- FAB para escaneo rápido -->
 <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-  <ion-fab-button>
+  <ion-fab-button (click)="goToScanner('auto')" color="primary">
     <ion-icon name="scan"></ion-icon>
   </ion-fab-button>
 </ion-fab>

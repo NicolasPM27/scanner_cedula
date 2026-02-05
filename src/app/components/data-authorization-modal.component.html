@@ -1,0 +1,71 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="modal-toolbar">
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()" color="medium">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="authorization-content">
+  <div class="authorization-container">
+    
+    <div class="header-section">
+      <div class="icon-wrapper">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+      </div>
+      <h1>Autorización de Tratamiento de Datos</h1>
+      <p class="subtitle">Ley 1581 de 2012</p>
+    </div>
+
+    <div class="legal-notice-card">
+      <h3 class="notice-title">AVISO LEGAL</h3>
+      <p>
+        De conformidad con la <strong>Ley 1581 de 2012</strong> y el Decreto 1377 de 2013, autorizo de manera libre, previa, expresa e informada a <strong>FOMAG</strong> para recolectar, almacenar, usar, circular y suprimir mis datos personales.
+      </p>
+      <p>
+        Esta información será utilizada exclusivamente para la validación de identidad, actualización de la Maestría de Afiliados y gestión de servicios asociados.
+      </p>
+    </div>
+
+    <div class="consent-group">
+      <div class="checkbox-wrapper">
+        <ion-checkbox mode="md" labelPlacement="end" justify="start" [(ngModel)]="authorizationData.dataProcessingAgreed">
+          <div class="label-text">
+            <strong>Autorizo el tratamiento de mis datos personales</strong>
+            <span>Acepto la recolección y procesamiento de mi información personal.</span>
+          </div>
+        </ion-checkbox>
+      </div>
+
+      <div class="checkbox-wrapper">
+        <ion-checkbox mode="md" labelPlacement="end" justify="start" [(ngModel)]="authorizationData.privacyPolicyAgreed">
+          <div class="label-text">
+            <strong>He leído y acepto la Política de Privacidad</strong>
+            <span>Entiendo mis derechos como titular de los datos.</span>
+          </div>
+        </ion-checkbox>
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <ion-button 
+        expand="block" 
+        class="main-button" 
+        [disabled]="!isFormValid()"
+        (click)="confirm()">
+        Autorizar y Continuar
+      </ion-button>
+      
+      <ion-button 
+        expand="block" 
+        fill="clear" 
+        class="secondary-button"
+        (click)="cancel()">
+        No, cancelar proceso
+      </ion-button>
+    </div>
+
+  </div>
+</ion-content>

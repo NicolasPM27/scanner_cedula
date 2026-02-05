@@ -98,17 +98,17 @@ function matchValidator(controlName: string, matchingControlName: string) {
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button defaultHref="/forms/sociodemographic"></ion-back-button>
+          <ion-back-button defaultHref="/verification"></ion-back-button>
         </ion-buttons>
         <ion-title>Información de Contacto</ion-title>
       </ion-toolbar>
       <ion-toolbar>
         <div class="progress-container">
           <div class="progress-info">
-            <span class="step-label">Paso 2 de 4</span>
+            <span class="step-label">Paso 1 de 4</span>
             <span class="step-title">Datos de contacto</span>
           </div>
-          <ion-progress-bar [value]="0.50" color="primary"></ion-progress-bar>
+          <ion-progress-bar [value]="0.25" color="primary"></ion-progress-bar>
         </div>
       </ion-toolbar>
     </ion-header>
@@ -353,10 +353,20 @@ function matchValidator(controlName: string, matchingControlName: string) {
     </ion-content>
   `,
   styles: [`
+    /* ==================================
+       SHARED FORM STYLES - MD3
+       ================================== */
+
+    :host {
+      --form-max-width: 600px;
+      --form-padding: var(--space-md, 16px);
+    }
+
     .form-content {
       --background: var(--ion-background-color);
     }
 
+    /* Progress Indicator */
     .progress-container {
       padding: var(--space-sm, 12px) var(--space-md, 16px);
     }
@@ -364,41 +374,48 @@ function matchValidator(controlName: string, matchingControlName: string) {
     .progress-info {
       display: flex;
       justify-content: space-between;
+      align-items: baseline;
       margin-bottom: var(--space-xs, 8px);
     }
 
     .step-label {
       font-size: 0.75rem;
       color: var(--ion-color-primary);
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.05em;
     }
 
     .step-title {
-      font-size: 0.875rem;
-      color: var(--ion-color-medium);
+      font-size: 0.8125rem;
+      color: var(--ion-color-medium-shade);
+      font-weight: 500;
     }
 
     ion-progress-bar {
-      height: 4px;
+      height: 6px;
       border-radius: var(--radius-full, 9999px);
+      --buffer-background: rgba(var(--ion-color-primary-rgb), 0.08);
     }
 
+    /* Form Container */
     .form-container {
-      padding: var(--space-md, 16px);
-      max-width: 600px;
+      padding: var(--form-padding);
+      max-width: var(--form-max-width);
       margin: 0 auto;
+      padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
+    /* Info Banner */
     .info-banner {
       display: flex;
       gap: var(--space-sm, 12px);
       padding: var(--space-md, 16px);
-      background: rgba(var(--ion-color-primary-rgb), 0.1);
+      background: rgba(var(--ion-color-primary-rgb), 0.08);
       border-radius: var(--radius-lg, 16px);
-      margin-bottom: var(--space-md, 16px);
+      margin-bottom: var(--space-lg, 24px);
       align-items: flex-start;
+      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.12);
     }
 
     .info-banner ion-icon {
@@ -410,14 +427,20 @@ function matchValidator(controlName: string, matchingControlName: string) {
 
     .info-banner p {
       margin: 0;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       color: var(--ion-text-color);
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
+    /* Cards */
     .form-card {
       margin-bottom: var(--space-md, 16px);
-      border-radius: var(--radius-xl, 24px);
+      border-radius: var(--radius-lg, 16px);
+      box-shadow: var(--elevation-1, 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1));
+    }
+
+    .form-card ion-card-header {
+      padding-bottom: var(--space-xs, 8px);
     }
 
     .form-card ion-card-title {
@@ -426,19 +449,24 @@ function matchValidator(controlName: string, matchingControlName: string) {
       gap: var(--space-sm, 12px);
       font-size: 1rem;
       font-weight: 600;
+      line-height: 1.3;
     }
 
     .form-card ion-card-title ion-icon {
       font-size: 1.25rem;
       color: var(--ion-color-primary);
+      flex-shrink: 0;
     }
 
     .optional-chip {
-      --background: var(--surface-container);
+      --background: var(--surface-container, #f1f5f9);
       font-size: 0.625rem;
       height: 20px;
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
+    /* Lists & Items */
     ion-list {
       background: transparent;
     }
@@ -446,18 +474,24 @@ function matchValidator(controlName: string, matchingControlName: string) {
     ion-item {
       --background: var(--surface-container, #f1f5f9);
       --border-radius: var(--radius-md, 12px);
+      --min-height: 56px;
       margin-bottom: var(--space-sm, 12px);
       --padding-start: var(--space-md, 16px);
       --padding-end: var(--space-md, 16px);
-      transition: all 0.2s ease;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     ion-item.valid {
-      --background: rgba(var(--ion-color-success-rgb), 0.1);
+      --background: rgba(var(--ion-color-success-rgb), 0.06);
     }
 
     ion-item:last-child {
       margin-bottom: 0;
+    }
+
+    ion-item:focus-within {
+      --background: rgba(var(--ion-color-primary-rgb), 0.06);
+      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
     }
 
     ion-input {
@@ -469,47 +503,57 @@ function matchValidator(controlName: string, matchingControlName: string) {
       font-size: 1.25rem;
     }
 
+    /* Error Notes */
     .error-note {
       display: block;
       padding: var(--space-xs, 8px) var(--space-md, 16px);
       font-size: 0.75rem;
-      margin-top: -8px;
+      font-weight: 500;
+      margin-top: -4px;
       margin-bottom: var(--space-sm, 12px);
     }
 
+    /* Match Indicator */
     .match-indicator {
       display: flex;
       justify-content: center;
-      padding: var(--space-sm, 12px) 0;
+      padding: var(--space-xs, 8px) 0 var(--space-sm, 12px);
     }
 
     .match-indicator ion-chip {
       --background: transparent;
+      font-size: 0.8125rem;
+      font-weight: 500;
     }
 
     .match-indicator.match ion-chip {
-      --background: rgba(var(--ion-color-success-rgb), 0.1);
+      --background: rgba(var(--ion-color-success-rgb), 0.08);
     }
 
     .match-indicator.no-match ion-chip {
-      --background: rgba(var(--ion-color-danger-rgb), 0.1);
+      --background: rgba(var(--ion-color-danger-rgb), 0.08);
     }
 
+    /* Form Actions */
     .form-actions {
       display: flex;
       justify-content: space-between;
       gap: var(--space-md, 16px);
-      margin-top: var(--space-lg, 24px);
-      padding-bottom: var(--space-xl, 32px);
+      margin-top: var(--space-xl, 32px);
+      padding-bottom: calc(var(--space-xl, 32px) + env(safe-area-inset-bottom, 0));
     }
 
     .form-actions ion-button {
       flex: 1;
-      --border-radius: var(--radius-md, 12px);
+      --border-radius: var(--radius-lg, 16px);
+      min-height: 52px;
+      font-weight: 600;
+      font-size: 0.9375rem;
     }
 
     .form-actions ion-button[fill="outline"] {
       --background: transparent;
+      --border-width: 1.5px;
     }
   `]
 })
@@ -629,7 +673,7 @@ export class ContactoFormPage implements OnInit {
   }
 
   async volver(): Promise<void> {
-    await this.router.navigate(['/forms/sociodemographic']);
+    await this.router.navigate(['/verification']);
   }
 
   async onSubmit(): Promise<void> {

@@ -1,0 +1,297 @@
+// =============================================================================
+// DATA AUTHORIZATION PAGE - Material Design 3 Styles
+// =============================================================================
+
+// Toolbar Title
+.auth-toolbar-title {
+  font-size: 1rem !important;
+  font-weight: 600;
+  white-space: normal;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  max-width: 100% !important;
+}
+.gradient-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 280px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--ion-color-primary-rgb), 0.06) 0%,
+    rgba(var(--ion-color-tertiary-rgb), 0.03) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+// Main container
+.auth-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  padding-bottom: var(--space-lg);
+}
+
+// Hero Section (matches home page hero pattern)
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-md) 0 var(--space-md);
+  margin-bottom: var(--space-lg);
+
+  .hero-icon {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--ion-color-primary-rgb), 0.15) 0%,
+      rgba(var(--ion-color-tertiary-rgb), 0.1) 100%
+    );
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-md);
+    box-shadow: var(--elevation-2);
+
+    ion-icon {
+      font-size: 64px;
+      color: var(--ion-color-primary);
+    }
+  }
+
+  h1 {
+    margin: 0 0 var(--space-xs);
+    color: var(--ion-text-color);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 1.75rem;
+  }
+
+  p {
+    margin: 0;
+    max-width: 280px;
+    line-height: 1.6;
+    color: var(--ion-color-medium-shade);
+    font-size: 0.95rem;
+  }
+}
+
+// Legal Card (text only, no card styling)
+.legal-card {
+  margin-bottom: var(--space-md);
+  padding: 0;
+
+  .legal-badge {
+    display: none;
+  }
+
+  .legal-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--ion-color-medium-shade);
+    margin: 0 0 var(--space-xs);
+
+    strong {
+      color: var(--ion-color-primary);
+      font-weight: 600;
+    }
+
+    &.legal-secondary {
+      font-size: 13px;
+      color: var(--ion-color-medium-shade);
+      margin-bottom: 0;
+    }
+  }
+}
+
+// Consent Section
+.consent-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.checkbox-card {
+  background: var(--surface-container, #fff);
+  border: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  margin: 0 var(--space-xs);
+
+  &:hover {
+    border-color: rgba(var(--ion-color-primary-rgb), 0.4);
+    box-shadow: var(--elevation-1);
+  }
+
+  &.checked {
+    border-color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.04);
+    box-shadow: var(--elevation-1);
+  }
+
+  ion-checkbox {
+    --padding-start: var(--space-md);
+    --padding-end: var(--space-md);
+    --padding-top: var(--space-md);
+    --padding-bottom: var(--space-md);
+    --size: 24px;
+    --checkbox-background-checked: var(--ion-color-primary);
+    --border-radius: var(--radius-sm);
+    width: 100%;
+
+    .checkbox-label {
+      padding-left: var(--space-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      white-space: normal;
+
+      .label-title {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--ion-text-color);
+        letter-spacing: -0.01em;
+      }
+
+      .label-description {
+        font-size: 13px;
+        color: var(--ion-color-medium-shade);
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+// Actions Container
+.actions-container {
+  margin-top: auto;
+  padding-top: var(--space-sm);
+
+  .primary-action {
+    --background: linear-gradient(
+      135deg,
+      var(--ion-color-primary) 0%,
+      var(--ion-color-tertiary) 100%
+    );
+    --box-shadow: 0 6px 24px rgba(var(--ion-color-primary-rgb), 0.28);
+    --border-radius: var(--radius-lg);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    height: 48px;
+    font-size: 0.95rem;
+    margin-bottom: var(--space-xs);
+    transition: all var(--transition-normal);
+
+    &:not([disabled]):hover,
+    &:not([disabled]):active {
+      --box-shadow: 0 8px 28px rgba(var(--ion-color-primary-rgb), 0.36);
+      transform: translateY(-2px);
+    }
+
+    &[disabled] {
+      --background: var(--ion-color-medium);
+      --box-shadow: none;
+      opacity: 0.5;
+    }
+  }
+
+  .secondary-action {
+    --color: var(--ion-color-medium-shade);
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+  }
+}
+
+// Animations (same as home page)
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+
+  &:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Dark Mode
+@media (prefers-color-scheme: dark) {
+  .gradient-header {
+    background: linear-gradient(
+      180deg,
+      rgba(var(--ion-color-primary-rgb), 0.1) 0%,
+      rgba(var(--ion-color-tertiary-rgb), 0.05) 50%,
+      transparent 100%
+    );
+  }
+
+  .legal-card {
+    background: linear-gradient(
+      145deg,
+      rgba(var(--ion-color-primary-rgb), 0.08) 0%,
+      var(--ion-background-color) 100%
+    );
+    border-color: rgba(var(--ion-color-primary-rgb), 0.15);
+  }
+
+  .checkbox-card {
+    background: var(--ion-color-step-50);
+    border-color: var(--ion-color-step-100);
+
+    &.checked {
+      background: rgba(var(--ion-color-primary-rgb), 0.1);
+    }
+  }
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up {
+    animation: none;
+  }
+
+  .checkbox-card,
+  .primary-action {
+    transition: none;
+  }
+}

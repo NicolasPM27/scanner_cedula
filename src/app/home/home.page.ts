@@ -34,6 +34,7 @@ import {
   documentTextOutline,
 } from 'ionicons/icons';
 import { ScannerService } from '../services/scanner.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -69,6 +70,7 @@ export class HomePage implements OnInit {
     hasTorch: boolean;
     hasPermissions: boolean;
   } | null = null;
+  isDev = !environment.production || this.isLocalhost();
 
   constructor(
     private router: Router,
@@ -96,8 +98,19 @@ export class HomePage implements OnInit {
   }
 
   goToScanner(mode: 'auto' | 'pdf417' | 'mrz' | 'test' = 'auto'): void {
-    this.router.navigate(['/scanner'], {
+    // Navigate to authorization page instead of opening modal
+    this.router.navigate(['/data-authorization'], {
       queryParams: { mode }
     });
+  }
+
+  goToVerification(): void {
+    this.router.navigate(['/verification']);
+  }
+
+  private isLocalhost(): boolean {
+    if (typeof window === 'undefined') return false;
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
   }
 }

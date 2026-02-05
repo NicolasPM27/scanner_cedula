@@ -37,6 +37,7 @@ import {
 } from 'ionicons/icons';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
 import { DatosAfiliado, Beneficiario } from '../../models/afiliado.model';
+import { environment } from '../../../environments/environment';
 
 type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'error';
 
@@ -222,6 +223,25 @@ type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'erro
               <ion-icon slot="start" name="refresh"></ion-icon>
               Reintentar
             </ion-button>
+          </div>
+        }
+
+        @if (isDev) {
+          <div class="dev-bypass">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>Acceso rápido (UI Dev)</ion-card-title>
+              </ion-card-header>
+              <ion-card-content>
+                <p class="body-medium text-muted">
+                  Ingrese directamente a los formularios con un usuario de prueba.
+                </p>
+                <ion-button expand="block" fill="outline" (click)="ingresarConUsuarioPrueba()">
+                  <ion-icon slot="start" name="person-circle"></ion-icon>
+                  Entrar con usuario de prueba
+                </ion-button>
+              </ion-card-content>
+            </ion-card>
           </div>
         }
 
@@ -425,6 +445,14 @@ type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'erro
       --border-radius: var(--radius-md, 12px);
     }
 
+    .dev-bypass {
+      margin-top: var(--space-lg, 24px);
+    }
+
+    .dev-bypass ion-card {
+      border: 1px dashed var(--ion-color-medium);
+    }
+
     /* Animations */
     .animate-fade-in {
       animation: fadeIn 0.4s ease-out;
@@ -457,6 +485,7 @@ export class VerificacionPage implements OnInit {
   progreso = signal(0);
   afiliado = signal<DatosAfiliado | undefined>(undefined);
   beneficiarios = signal<Beneficiario[]>([]);
+  isDev = !environment.production || this.isLocalhost();
 
   constructor(
     private flujoService: FlujoActualizacionService,
@@ -552,6 +581,10 @@ export class VerificacionPage implements OnInit {
     await this.iniciarVerificacion();
   }
 
+  async ingresarConUsuarioPrueba(): Promise<void> {
+    await this.flujoService.iniciarBypassDemo();
+  }
+
   formatCedula(numero: string | undefined): string {
     if (!numero) return '';
     return numero.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -573,5 +606,11 @@ export class VerificacionPage implements OnInit {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private isLocalhost(): boolean {
+    if (typeof window === 'undefined') return false;
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
   }
 }

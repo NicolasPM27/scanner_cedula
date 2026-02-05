@@ -6,6 +6,10 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
   },
   {
+    path: 'data-authorization',
+    loadComponent: () => import('./pages/data-authorization/data-authorization.page').then(m => m.DataAuthorizationPage)
+  },
+  {
     path: 'scanner',
     loadComponent: () => import('./example/scan-cedula.component').then((m) => m.ScanCedulaComponent),
   },

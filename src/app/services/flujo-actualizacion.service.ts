@@ -74,8 +74,63 @@ export class FlujoActualizacionService {
   }
 
   /**
-   * Verifica si el afiliado existe en la base de datos
-   * Retorna los datos del afiliado si existe, o null si no se encuentra
+   * Inicia el flujo con datos de prueba (solo para desarrollo de UI)
+   */
+  async iniciarBypassDemo(): Promise<void> {
+    const afiliado: DatosAfiliado = {
+      numeroDocumento: '1002345678',
+      primerApellido: 'Gómez',
+      segundoApellido: 'Rojas',
+      primerNombre: 'Laura',
+      segundoNombre: 'Camila',
+      fechaNacimiento: '1989-03-12',
+      genero: 'F',
+      tipoAfiliado: 'docente_activo',
+      sociodemografica: {
+        estadoCivil: 'casado',
+        zona: 'urbano',
+        departamento: '11',
+        municipio: '11001',
+        localidad: '11',
+        barrio: '007',
+        direccion: 'Cra 7 # 72-20',
+        estrato: 4,
+      },
+      contacto: {
+        correoElectronico: 'laura.gomez@pruebas.com',
+        celular: '3009876543',
+        telefonoFijo: '6015551234',
+      },
+      laboral: {
+        tipoAfiliado: 'docente_activo',
+        secretariaEducacion: 'SED-BOG',
+        institucionEducativa: 'IE-001',
+        cargo: 'Docente de Matemáticas',
+        escalafon: '2A',
+        gradoEscalafon: 'Grado 2',
+      },
+      caracterizacion: {
+        tipoDiscapacidad: ['ninguna'],
+        grupoEtnico: 'ninguna',
+        poblacionLGBTIQ: 'ninguno',
+        observaciones: 'Registro de prueba para UI.',
+      },
+      actualizacionPrevia: true,
+      fechaUltimaActualizacion: '2025-12-01',
+    };
+
+    this._estado.set({
+      paso: 'contacto',
+      afiliado,
+      esCorreccion: true,
+    });
+
+    await this.router.navigate(['/forms/contact']);
+  }
+
+  /**
+   * Simula la verificación en base de datos
+   * Retorna los datos del afiliado si existe, o null si es nuevo
    */
   async verificarEnBaseDatos(): Promise<{
     existe: boolean;
@@ -176,28 +231,10 @@ export class FlujoActualizacionService {
   }
 
   /**
-   * Guarda información sociodemográfica y avanza
+   * Guarda información sociodemográfica y avanza a laboral
    */
   async guardarSociodemografico(datos: InformacionSociodemografica): Promise<void> {
     this.datosTemporales.sociodemografico = datos;
-    
-    this._estado.update(e => ({
-      ...e,
-      paso: 'contacto',
-      afiliado: e.afiliado ? {
-        ...e.afiliado,
-        sociodemografica: datos,
-      } : undefined,
-    }));
-
-    await this.router.navigate(['/forms/contact']);
-  }
-
-  /**
-   * Guarda información de contacto y avanza
-   */
-  async guardarContacto(datos: InformacionContacto): Promise<void> {
-    this.datosTemporales.contacto = datos;
     
     const afiliado = this._estado().afiliado;
     const requiereLaboral = afiliado?.tipoAfiliado === 'docente_activo';
@@ -207,7 +244,7 @@ export class FlujoActualizacionService {
       paso: requiereLaboral ? 'laboral' : 'caracterizacion',
       afiliado: e.afiliado ? {
         ...e.afiliado,
-        contacto: datos,
+        sociodemografica: datos,
       } : undefined,
     }));
 
@@ -216,6 +253,24 @@ export class FlujoActualizacionService {
     } else {
       await this.router.navigate(['/forms/characterization']);
     }
+  }
+
+  /**
+   * Guarda información de contacto y avanza a sociodemografico
+   */
+  async guardarContacto(datos: InformacionContacto): Promise<void> {
+    this.datosTemporales.contacto = datos;
+
+    this._estado.update(e => ({
+      ...e,
+      paso: 'sociodemografico',
+      afiliado: e.afiliado ? {
+        ...e.afiliado,
+        contacto: datos,
+      } : undefined,
+    }));
+
+    await this.router.navigate(['/forms/sociodemographic']);
   }
 
   /**

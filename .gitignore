@@ -86,3 +86,13 @@ android/app/build/
 
 # Test data files
 Poblacion\ prueba\ .csv
+
+# Copilot
+.copilot/
+.github/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+

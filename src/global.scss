@@ -1,7 +1,7 @@
 /*
  * App Global CSS
  * ----------------------------------------------------------------------------
- * Scanner Cédula - Material Design 3 Global Styles
+ * Actualización de datos - Material Design 3 Global Styles by FOMAG
  * Estilos globales modernos con tokens de diseño MD3
  * ----------------------------------------------------------------------------
  */
@@ -676,4 +676,38 @@ body.barcode-scanner-active .ion-page {
   --background: transparent !important;
   --ion-background-color: transparent !important;
   background: transparent !important;
+}
+// =============================================================================
+// DATA AUTHORIZATION MODAL STYLES
+// =============================================================================
+
+.authorization-modal {
+  --height: 90vh;
+  --border-radius: 16px;
+
+  ion-content {
+    --padding-bottom: 24px;
+  }
+
+  ion-header {
+    ion-toolbar {
+      --padding-top: 12px;
+      --padding-bottom: 12px;
+    }
+
+    ion-title {
+      font-weight: 600;
+      font-size: 18px;
+    }
+  }
+}
+
+/* Asegurar que los checkboxes sean accesibles */
+.authorization-modal ion-checkbox {
+  --size: 24px;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
 }

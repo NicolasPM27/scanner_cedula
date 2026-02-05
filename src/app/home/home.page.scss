@@ -2,43 +2,109 @@
 // HOME PAGE - Material Design 3 Styles
 // =============================================================================
 
+// FOMAG Branding Section
+.fomag-branding-section {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-xl) var(--space-md);
+  background: var(--ion-background-color);
+  min-height: 140px;
+
+  // Fondo sutil decorativo
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(
+      180deg,
+      rgba(var(--ion-color-primary-rgb), 0.03) 0%,
+      rgba(var(--ion-color-tertiary-rgb), 0.01) 100%
+    );
+    border-radius: 0 0 50% 50% / 20px;
+    z-index: 0;
+  }
+
+  .fomag-logo {
+    position: relative;
+    z-index: 1;
+    // Ajustado para mayor presencia
+    width: 65%;
+    max-width: 320px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.05));
+    transition:
+      transform var(--transition-normal),
+      filter var(--transition-normal);
+
+    // Animación sutil al cargar
+    animation: fadeInScale 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 // Hero Section
 .hero-section {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: var(--space-xl) var(--space-md);
-  margin-bottom: var(--space-md);
+  padding: 0 var(--space-md) var(--space-xl);
+  margin-top: var(--space-lg);
 
   .hero-icon {
-    width: 96px;
-    height: 96px;
+    width: 72px;
+    height: 72px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(
       135deg,
-      rgba(var(--ion-color-primary-rgb), 0.15) 0%,
-      rgba(var(--ion-color-tertiary-rgb), 0.1) 100%
+      rgba(var(--ion-color-primary-rgb), 0.12) 0%,
+      rgba(var(--ion-color-tertiary-rgb), 0.08) 100%
     );
     border-radius: var(--radius-xl);
     margin-bottom: var(--space-lg);
-    
+    box-shadow: var(--elevation-1);
+    transition: all var(--transition-normal);
+
     ion-icon {
-      font-size: 48px;
+      font-size: 40px;
       color: var(--ion-color-primary);
     }
   }
 
   h2 {
-    margin: 0 0 var(--space-xs);
+    margin: 0 0 var(--space-sm);
     color: var(--ion-text-color);
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 
   p {
     margin: 0;
-    max-width: 280px;
+    max-width: 320px;
+    line-height: 1.5;
+    color: var(--ion-color-medium-shade);
   }
 
   .status-row {
@@ -60,9 +126,12 @@
 .quick-actions {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
-  padding: 0 var(--space-md);
-  margin-bottom: var(--space-lg);
+  gap: var(--space-md);
+  padding: 0 var(--space-lg);
+  margin-bottom: var(--space-xl);
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 
   .scan-button {
     --background: linear-gradient(
@@ -70,78 +139,97 @@
       var(--ion-color-primary) 0%,
       var(--ion-color-tertiary) 100%
     );
-    --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
-    
-    &:hover {
-      --box-shadow: 0 6px 20px rgba(var(--ion-color-primary-rgb), 0.4);
+    --box-shadow: 0 6px 24px rgba(var(--ion-color-primary-rgb), 0.28);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    height: 60px;
+    font-size: 1.1rem;
+
+    &:hover,
+    &:active {
+      --box-shadow: 0 8px 28px rgba(var(--ion-color-primary-rgb), 0.36);
+      transform: translateY(-2px);
     }
+
+    transition: all var(--transition-normal);
   }
 
   ion-button {
-    --border-radius: var(--radius-md);
+    --border-radius: var(--radius-lg);
     margin: 0;
-    height: 56px;
-    font-size: 1rem;
-  }
-
-  .action-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-sm);
-
-    @media (min-width: 480px) {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    ion-button {
-      height: 52px;
-      font-size: 0.9rem;
-    }
   }
 }
 
 // Features Card
 .features-card {
   margin: var(--space-md);
-  
+  --background: linear-gradient(
+    145deg,
+    rgba(var(--ion-color-primary-rgb), 0.02) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  box-shadow: var(--elevation-2);
+  border: 1px solid rgba(var(--ion-color-primary-rgb), 0.06);
+
+  ion-card-header {
+    padding-bottom: var(--space-sm);
+  }
+
+  ion-card-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ion-text-color);
+  }
+
+  ion-card-subtitle {
+    margin-top: var(--space-xxs);
+    font-size: 0.875rem;
+    color: var(--ion-color-medium-shade);
+  }
+
   .features-list {
     padding: 0;
-    
+
     ion-item {
       --padding-start: 0;
       --inner-padding-end: 0;
       --background: transparent;
-      margin-bottom: var(--space-xs);
-      
+      margin-bottom: var(--space-md);
+
       &:last-child {
         margin-bottom: 0;
       }
-      
+
       ion-icon {
         font-size: 1.5rem;
         padding: var(--space-sm);
-        background: rgba(var(--ion-color-primary-rgb), 0.08);
-        border-radius: var(--radius-md);
+        background: rgba(var(--ion-color-primary-rgb), 0.1);
+        border-radius: var(--radius-sm);
         margin-right: var(--space-md);
-        
+        transition: all var(--transition-fast);
+
         &[color="success"] {
-          background: rgba(var(--ion-color-success-rgb), 0.08);
+          background: rgba(var(--ion-color-success-rgb), 0.1);
         }
-        
+
         &[color="tertiary"] {
-          background: rgba(var(--ion-color-tertiary-rgb), 0.08);
+          background: rgba(var(--ion-color-tertiary-rgb), 0.1);
         }
       }
-      
+
       h3 {
         font-size: 0.9375rem;
         font-weight: 600;
-        margin: 0;
+        margin: 0 0 var(--space-xxs);
+        color: var(--ion-text-color);
       }
-      
+
       p {
         font-size: 0.8125rem;
-        margin: var(--space-xxs) 0 0;
+        margin: 0;
+        color: var(--ion-color-medium);
+        line-height: 1.4;
       }
     }
   }
@@ -153,12 +241,12 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-md) var(--space-md) var(--space-sm);
-  
+
   h3 {
     margin: 0;
     color: var(--ion-text-color);
   }
-  
+
   ion-button {
     --padding-start: var(--space-sm);
     --padding-end: var(--space-sm);
@@ -175,17 +263,17 @@
   justify-content: center;
   padding: var(--space-xl) var(--space-md);
   text-align: center;
-  
+
   ion-icon {
     font-size: 64px;
     color: var(--ion-color-medium);
     opacity: 0.5;
     margin-bottom: var(--space-md);
   }
-  
+
   p {
     margin: 0;
-    
+
     &:first-of-type {
       margin-bottom: var(--space-xxs);
     }
@@ -196,12 +284,134 @@
 ion-fab {
   margin-bottom: var(--space-md);
   margin-right: var(--space-xs);
-  
+
   ion-fab-button {
     --background: linear-gradient(
       135deg,
       var(--ion-color-primary) 0%,
       var(--ion-color-tertiary) 100%
     );
+    --box-shadow: var(--elevation-3);
+
+    &:hover {
+      --box-shadow: var(--elevation-4);
+    }
   }
+}
+
+// =============================================================================
+// RESPONSIVE ENHANCEMENTS
+// =============================================================================
+
+// Tablet y Desktop
+@media (min-width: 768px) {
+  .fomag-branding-section {
+    padding: var(--space-xxl) var(--space-xl);
+
+    .fomag-logo {
+      max-width: min(70%, 450px);
+    }
+  }
+
+  .hero-section {
+    padding: var(--space-xl) var(--space-lg) var(--space-xxl);
+
+    h2 {
+      font-size: 2rem;
+    }
+
+    p {
+      max-width: 400px;
+      font-size: 1.125rem;
+    }
+  }
+
+  .quick-actions {
+    padding: 0 var(--space-xl);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .features-card {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+// Large Desktop
+@media (min-width: 1024px) {
+  .fomag-branding-section {
+    .fomag-logo {
+      max-width: 500px;
+    }
+  }
+}
+
+// Header Customization
+ion-header {
+  &::after {
+    display: none; // Quitar línea divisoria en iOS
+  }
+
+  ion-toolbar {
+    --background: var(--ion-background-color);
+    --border-width: 0;
+    --min-height: 64px; // Altura estándar para dar aire
+    
+    ion-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; // Extra bold para destacar
+      font-size: 1.125rem; // Tamaño aumentado
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: var(--ion-text-color);
+      text-align: center;
+      padding-top: 4px;
+      
+      // Fix para asegurar que se vea completo
+      white-space: normal;
+      text-overflow: clip;
+      line-height: 1.2;
+      padding-inline: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+  }
+}
+
+// Dark Mode Adjustments
+@media (prefers-color-scheme: dark) {
+  .fomag-branding-section {
+    background: linear-gradient(
+      180deg,
+      rgba(var(--ion-background-color-rgb), 1) 0%,
+      rgba(var(--ion-color-primary-rgb), 0.03) 100%
+    );
+
+    .fomag-logo {
+      filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.2)) brightness(0.98);
+    }
+  }
+
+  .features-card {
+    --background: rgba(var(--ion-color-primary-rgb), 0.03);
+    border-color: rgba(var(--ion-color-primary-rgb), 0.1);
+  }
+}
+
+// Dev bypass button separator
+.dev-bypass-separator {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--ion-color-medium);
+}
+
+* {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

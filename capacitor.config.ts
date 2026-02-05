@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.fomag.app.dev',  // Cambiado para versión de desarrollo
-  appName: 'FOMAG Dev',  // Nombre diferente para distinguirla
+  appId: 'com.fomag.app',
+  appName: 'Actualizacion de datos',
   webDir: 'www',
   // Servidor de desarrollo - descomentar y configurar IP para pruebas en dispositivo
   // server: {

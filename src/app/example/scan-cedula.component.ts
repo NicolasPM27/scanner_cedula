@@ -121,16 +121,6 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
 
         <!-- Botones de acción -->
         <div class="action-section">
-          <ion-button
-            expand="block"
-            size="large"
-            class="scan-button-primary"
-            (click)="scanCedula()"
-            [disabled]="isScanning()">
-            <ion-icon slot="start" [name]="isScanning() ? 'sync' : 'camera'"></ion-icon>
-            {{ isScanning() ? 'Escaneando...' : 'Escanear Cédula' }}
-          </ion-button>
-
           <div class="button-row">
             <ion-button
               expand="block"
@@ -434,37 +424,22 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
     .action-section {
       display: flex;
       flex-direction: column;
-      gap: var(--space-sm, 12px);
-      margin-bottom: var(--space-lg, 24px);
-    }
-
-    .scan-button-primary {
-      --background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-tertiary) 100%);
-      --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
-      --border-radius: var(--radius-md, 12px);
-      height: 56px;
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    .scan-button-primary:hover {
-      --box-shadow: 0 6px 20px rgba(var(--ion-color-primary-rgb), 0.4);
-    }
-
-    .scan-button-primary ion-icon {
-      font-size: 1.4rem;
+      gap: var(--space-md, 16px);
+      margin-bottom: var(--space-xl, 32px);
     }
 
     .button-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--space-sm, 12px);
+      gap: var(--space-md, 16px);
     }
 
     .button-row ion-button {
-      --border-radius: var(--radius-md, 12px);
-      height: 48px;
-      font-size: 0.9rem;
+      --border-radius: var(--radius-lg, 16px);
+      --border-width: 2px;
+      height: 56px;
+      font-size: 1rem;
+      font-weight: 600;
     }
 
     /* Error Card */
@@ -903,37 +878,8 @@ export class ScanCedulaComponent implements OnInit {
       const info = await this.scannerService.getCapabilities();
       console.log('✅ Capacidades obtenidas:', info);
       this.deviceInfo.set(info);
-      await this.handleRouteAction();
     } catch (error) {
       console.error('❌ Error obteniendo información del dispositivo:', error);
-    }
-  }
-
-  private async handleRouteAction(): Promise<void> {
-    const mode = this.route.snapshot.queryParamMap.get('mode');
-    if (!mode || this.isScanning()) {
-      return;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    if (mode === 'auto') {
-      await this.scanCedula();
-      return;
-    }
-
-    if (mode === 'pdf417') {
-      await this.scanPDF417Only();
-      return;
-    }
-
-    if (mode === 'mrz') {
-      await this.scanMRZOnly();
-      return;
-    }
-
-    if (mode === 'test') {
-      await this.testNativeScan();
     }
   }
 
