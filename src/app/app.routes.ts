@@ -46,6 +46,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/confirmation/confirmation.page').then((m) => m.ConfirmationPage),
   },
   {
+    path: 'dev/import-instituciones',
+    loadComponent: () => import('./pages/dev/import-instituciones.page').then((m) => m.ImportInstitucionesPage),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

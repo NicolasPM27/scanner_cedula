@@ -32,6 +32,8 @@ import {
   shieldCheckmarkOutline,
   sparklesOutline,
   documentTextOutline,
+  cloudUploadOutline,
+  schoolOutline,
 } from 'ionicons/icons';
 import { ScannerService } from '../services/scanner.service';
 import { environment } from '../../environments/environment';
@@ -86,6 +88,8 @@ export class HomePage implements OnInit {
       shieldCheckmarkOutline,
       sparklesOutline,
       documentTextOutline,
+      cloudUploadOutline,
+      schoolOutline,
     });
   }
 
@@ -106,6 +110,10 @@ export class HomePage implements OnInit {
 
   goToVerification(): void {
     this.router.navigate(['/verification']);
+  }
+
+  goToImportInstituciones(): void {
+    this.router.navigate(['/dev/import-instituciones']);
   }
 
   private isLocalhost(): boolean {

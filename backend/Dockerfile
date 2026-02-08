@@ -21,6 +21,9 @@ RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
 
+# Directorio para archivos temporales de importación
+RUN mkdir -p /app/uploads
+
 ENV NODE_ENV=production
 ENV PORT=3000
 

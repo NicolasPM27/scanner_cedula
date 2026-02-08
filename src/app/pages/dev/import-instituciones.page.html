@@ -1,0 +1,251 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Importar Instituciones</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="refreshAll()" [disabled]="state === 'uploading'">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Dev Badge -->
+  <div class="dev-banner">
+    <ion-chip color="warning">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <ion-label>Modo Desarrollo</ion-label>
+    </ion-chip>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- ESTADÍSTICAS ACTUALES                          -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <ion-card class="stats-card">
+    <ion-card-header>
+      <ion-card-subtitle>Base de datos actual</ion-card-subtitle>
+      <ion-card-title>
+        <ion-icon name="stats-chart-outline"></ion-icon>
+        Estadísticas
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div *ngIf="loadingStats" class="loading-center">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <div *ngIf="!loadingStats && stats" class="stats-grid">
+        <div class="stat-item">
+          <ion-icon name="map-outline" color="primary"></ion-icon>
+          <span class="stat-value">{{ stats.departamentos }}</span>
+          <span class="stat-label">Departamentos</span>
+        </div>
+        <div class="stat-item">
+          <ion-icon name="business-outline" color="tertiary"></ion-icon>
+          <span class="stat-value">{{ stats.municipios }}</span>
+          <span class="stat-label">Municipios</span>
+        </div>
+        <div class="stat-item">
+          <ion-icon name="layers-outline" color="secondary"></ion-icon>
+          <span class="stat-value">{{ stats.establecimientos }}</span>
+          <span class="stat-label">Establecimientos</span>
+        </div>
+        <div class="stat-item">
+          <ion-icon name="school-outline" color="success"></ion-icon>
+          <span class="stat-value">{{ stats.sedes }}</span>
+          <span class="stat-label">Sedes</span>
+        </div>
+      </div>
+      <div *ngIf="!loadingStats && !stats" class="empty-stats">
+        <ion-note>No se pudieron cargar las estadísticas</ion-note>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- ZONA DE UPLOAD                                 -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <ion-card class="upload-card">
+    <ion-card-header>
+      <ion-card-subtitle>Archivo Excel o CSV</ion-card-subtitle>
+      <ion-card-title>
+        <ion-icon name="cloud-upload-outline"></ion-icon>
+        Importar Datos
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+
+      <!-- Input oculto -->
+      <input
+        #fileInput
+        type="file"
+        [accept]="acceptedFormats"
+        (change)="onFileSelected($event)"
+        hidden
+      >
+
+      <!-- Drop zone / selector -->
+      <div
+        *ngIf="!selectedFile"
+        class="drop-zone"
+        (click)="triggerFileInput()"
+        role="button"
+        tabindex="0"
+        aria-label="Seleccionar archivo para importar"
+      >
+        <ion-icon name="cloud-upload-outline" class="drop-icon"></ion-icon>
+        <p class="drop-title">Selecciona un archivo</p>
+        <p class="drop-hint">Formatos: .xlsx, .csv, .tsv (máx. 20 MB)</p>
+      </div>
+
+      <!-- Archivo seleccionado -->
+      <div *ngIf="selectedFile" class="file-preview">
+        <div class="file-info">
+          <ion-icon name="document-outline" color="primary" class="file-icon"></ion-icon>
+          <div class="file-details">
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">{{ fileSizeFormatted }}</span>
+          </div>
+          <ion-button
+            fill="clear"
+            color="medium"
+            (click)="clearFile()"
+            [disabled]="state === 'uploading'"
+            aria-label="Eliminar archivo"
+          >
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+
+        <!-- Progress bar durante upload -->
+        <div *ngIf="state === 'uploading'" class="upload-progress">
+          <ion-progress-bar [value]="uploadPercent / 100" color="primary"></ion-progress-bar>
+          <div class="progress-label">
+            <ion-spinner name="dots" color="primary"></ion-spinner>
+            <span *ngIf="uploadPercent < 100">Subiendo… {{ uploadPercent }}%</span>
+            <span *ngIf="uploadPercent >= 100">Procesando importación…</span>
+          </div>
+        </div>
+
+        <!-- Botón de importar -->
+        <ion-button
+          *ngIf="state !== 'uploading'"
+          expand="block"
+          color="primary"
+          class="import-btn"
+          (click)="confirmUpload()"
+        >
+          <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+          Importar archivo
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- RESULTADO DE IMPORTACIÓN                       -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <ion-card *ngIf="state === 'success' && importResult" class="result-card success">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+        Importación Completada
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list lines="none" class="result-list">
+        <ion-item>
+          <ion-icon slot="start" name="document-outline" color="primary"></ion-icon>
+          <ion-label>
+            <h3>Archivo</h3>
+            <p>{{ importResult.archivo || 'N/A' }}</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="layers-outline" color="tertiary"></ion-icon>
+          <ion-label>
+            <h3>Filas procesadas</h3>
+            <p>{{ importResult.processed }} de {{ importResult.totalRows }}</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="time-outline" color="medium"></ion-icon>
+          <ion-label>
+            <h3>Duración</h3>
+            <p>{{ importResult.duration }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+
+      <!-- Stats de nuevos registros -->
+      <div class="new-records">
+        <h4>Registros nuevos creados</h4>
+        <div class="stats-grid compact">
+          <div class="stat-item" *ngIf="importResult.stats.departamentos">
+            <span class="stat-value">+{{ importResult.stats.departamentos }}</span>
+            <span class="stat-label">Dptos</span>
+          </div>
+          <div class="stat-item" *ngIf="importResult.stats.municipios">
+            <span class="stat-value">+{{ importResult.stats.municipios }}</span>
+            <span class="stat-label">Mpios</span>
+          </div>
+          <div class="stat-item" *ngIf="importResult.stats.secretarias">
+            <span class="stat-value">+{{ importResult.stats.secretarias }}</span>
+            <span class="stat-label">Secrs</span>
+          </div>
+          <div class="stat-item" *ngIf="importResult.stats.establecimientos">
+            <span class="stat-value">+{{ importResult.stats.establecimientos }}</span>
+            <span class="stat-label">Estab</span>
+          </div>
+          <div class="stat-item" *ngIf="importResult.stats.sedes">
+            <span class="stat-value">+{{ importResult.stats.sedes }}</span>
+            <span class="stat-label">Sedes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Errores (si hay) -->
+      <div *ngIf="importResult.errors.length > 0" class="error-section">
+        <h4>
+          <ion-icon name="alert-circle-outline" color="warning"></ion-icon>
+          {{ importResult.errors.length }} errores encontrados
+        </h4>
+        <ion-list lines="inset" class="error-list">
+          <ion-item *ngFor="let err of importResult.errors.slice(0, 10)">
+            <ion-badge slot="start" color="warning">Fila {{ err.row }}</ion-badge>
+            <ion-label class="ion-text-wrap">
+              <p>{{ err.message }}</p>
+            </ion-label>
+          </ion-item>
+          <ion-item *ngIf="importResult.errors.length > 10">
+            <ion-note>… y {{ importResult.errors.length - 10 }} errores más</ion-note>
+          </ion-item>
+        </ion-list>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- ERROR GLOBAL                                   -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <ion-card *ngIf="state === 'error'" class="result-card error">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="close-circle-outline" color="danger"></ion-icon>
+        Error en importación
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-text color="danger">
+        <p>{{ errorMessage }}</p>
+      </ion-text>
+      <ion-button expand="block" fill="outline" color="primary" (click)="clearFile()">
+        Intentar de nuevo
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

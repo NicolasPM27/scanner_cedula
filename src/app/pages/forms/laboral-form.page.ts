@@ -26,6 +26,7 @@ import {
   IonNote,
   IonChip,
   IonToggle,
+  IonSpinner,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -40,7 +41,14 @@ import {
 } from 'ionicons/icons';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
 import { InformacionLaboral, TipoAfiliado, TIPOS_AFILIADO } from '../../models/afiliado.model';
-import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/datos-geograficos';
+import {
+  InstitucionesApiService,
+  Departamento,
+  Municipio,
+  Secretaria,
+  Establecimiento,
+  Sede,
+} from '../../services/instituciones-api.service';
 
 @Component({
   selector: 'app-laboral-form',
@@ -67,6 +75,7 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
     IonButtons,
     IonBackButton,
     IonNote,
+    IonSpinner,
   ],
   template: `
     <ion-header [translucent]="true">
@@ -139,6 +148,71 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
               <ion-card-content>
                 <ion-list lines="none">
                   
+                  <!-- Departamento -->
+                  <ion-item>
+                    <ion-select
+                      formControlName="departamento"
+                      label="Departamento"
+                      labelPlacement="stacked"
+                      placeholder="Seleccione el departamento"
+                      interface="action-sheet"
+                      (ionChange)="onDepartamentoChange($event)"
+                      aria-label="Seleccione el departamento donde trabaja"
+                    >
+                      @for (dep of departamentos(); track dep.codigoDepartamento) {
+                        <ion-select-option [value]="dep.codigoDepartamento">
+                          {{ dep.nombre }}
+                        </ion-select-option>
+                      }
+                    </ion-select>
+                    @if (loadingDepartamentos()) {
+                      <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
+                    }
+                  </ion-item>
+                  @if (showError('departamento')) {
+                    <ion-note color="danger" class="error-note">
+                      Seleccione el departamento
+                    </ion-note>
+                  }
+
+                  <!-- Municipio -->
+                  <ion-item>
+                    <ion-select
+                      formControlName="municipio"
+                      label="Municipio"
+                      labelPlacement="stacked"
+                      placeholder="Seleccione el municipio"
+                      interface="action-sheet"
+                      [disabled]="!form.get('departamento')?.value"
+                      (ionChange)="onMunicipioChange($event)"
+                      aria-label="Seleccione el municipio donde trabaja"
+                    >
+                      @if (municipios().length === 0 && form.get('departamento')?.value) {
+                        <ion-select-option value="" disabled>
+                          No hay municipios disponibles
+                        </ion-select-option>
+                      }
+                      @for (mun of municipios(); track mun.codigoMunicipio) {
+                        <ion-select-option [value]="mun.codigoMunicipio">
+                          {{ mun.nombre }}
+                        </ion-select-option>
+                      }
+                    </ion-select>
+                    @if (loadingMunicipios()) {
+                      <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
+                    }
+                  </ion-item>
+                  @if (!form.get('departamento')?.value) {
+                    <ion-note color="medium" class="hint-note">
+                      Primero seleccione un departamento
+                    </ion-note>
+                  }
+                  @if (showError('municipio')) {
+                    <ion-note color="danger" class="error-note">
+                      Seleccione el municipio
+                    </ion-note>
+                  }
+
                   <!-- Secretaría de Educación -->
                   <ion-item>
                     <ion-select
@@ -148,13 +222,17 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
                       placeholder="Seleccione la secretaría"
                       interface="action-sheet"
                       (ionChange)="onSecretariaChange($event)"
+                      aria-label="Seleccione la secretaría de educación"
                     >
-                      @for (sec of secretarias; track sec.codigo) {
-                        <ion-select-option [value]="sec.codigo">
+                      @for (sec of secretarias(); track sec.id) {
+                        <ion-select-option [value]="sec.id">
                           {{ sec.nombre }}
                         </ion-select-option>
                       }
                     </ion-select>
+                    @if (loadingSecretarias()) {
+                      <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
+                    }
                   </ion-item>
                   @if (showError('secretariaEducacion')) {
                     <ion-note color="danger" class="error-note">
@@ -162,7 +240,7 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
                     </ion-note>
                   }
 
-                  <!-- Institución Educativa -->
+                  <!-- Institución Educativa (Establecimiento) -->
                   <ion-item>
                     <ion-select
                       formControlName="institucionEducativa"
@@ -170,21 +248,56 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
                       labelPlacement="stacked"
                       placeholder="Seleccione la institución"
                       interface="action-sheet"
-                      [disabled]="institucionesFiltradas().length === 0"
+                      [disabled]="!puedeCargarEstablecimientos()"
+                      (ionChange)="onEstablecimientoChange($event)"
+                      aria-label="Seleccione la institución educativa"
                     >
-                      @for (inst of institucionesFiltradas(); track inst.codigo) {
-                        <ion-select-option [value]="inst.codigo">
-                          {{ inst.nombre }}
+                      @if (establecimientos().length === 0 && puedeCargarEstablecimientos()) {
+                        <ion-select-option value="" disabled>
+                          No hay instituciones disponibles
+                        </ion-select-option>
+                      }
+                      @for (est of establecimientos(); track est.codigoEstablecimiento) {
+                        <ion-select-option [value]="est.codigoEstablecimiento">
+                          {{ est.nombre }}
                         </ion-select-option>
                       }
                     </ion-select>
+                    @if (loadingEstablecimientos()) {
+                      <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
+                    }
                   </ion-item>
-                  @if (showError('institucionEducativa')) {
-                    <ion-note color="danger" class="error-note">
-                      Seleccione la institución educativa
+                  <ion-item>
+                    <ion-select
+                      formControlName="sede"
+                      label="Sede (Opcional)"
+                      labelPlacement="stacked"
+                      placeholder="Seleccione la sede"
+                      interface="action-sheet"
+                      [disabled]="!form.get('institucionEducativa')?.value"
+                      aria-label="Seleccione la sede educativa (opcional)"
+                    >
+                      @if (sedes().length === 0 && form.get('institucionEducativa')?.value && !loadingSedes()) {
+                        <ion-select-option value="" disabled>
+                          Esta institución no tiene sedes registradas
+                        </ion-select-option>
+                      }
+                      @for (s of sedes(); track s.codigoSede) {
+                        <ion-select-option [value]="s.codigoSede">
+                          {{ s.nombre }} <span class="zone-badge">({{ s.zona }})</span>
+                        </ion-select-option>
+                      }
+                    </ion-select>
+                    @if (loadingSedes()) {
+                      <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
+                    }
+                  </ion-item>
+                  @if (!form.get('institucionEducativa')?.value) {
+                    <ion-note color="medium" class="hint-note">
+                      Primero seleccione una institución educativa
                     </ion-note>
                   }
-
+                
                   <!-- Cargo -->
                   <ion-item>
                     <ion-input
@@ -272,12 +385,15 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
                       placeholder="Seleccione la secretaría"
                       interface="action-sheet"
                     >
-                      @for (sec of secretarias; track sec.codigo) {
-                        <ion-select-option [value]="sec.codigo">
+                      @for (sec of secretarias(); track sec.id) {
+                        <ion-select-option [value]="sec.id">
                           {{ sec.nombre }}
                         </ion-select-option>
                       }
                     </ion-select>
+                    @if (loadingSecretarias()) {
+                      <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
+                    }
                   </ion-item>
 
                   <!-- Último cargo -->
@@ -481,11 +597,38 @@ import { SECRETARIAS_EDUCACION, INSTITUCIONES_EDUCATIVAS } from '../../data/dato
     ion-item {
       --background: var(--surface-container, #f1f5f9);
       --border-radius: var(--radius-md, 12px);
-      --min-height: 56px;
-      margin-bottom: var(--space-sm, 12px);
+      --border-width: 0;
       --padding-start: var(--space-md, 16px);
       --padding-end: var(--space-md, 16px);
-      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: var(--space-md, 16px);
+    }
+
+    /* Error & Hint Notes */
+    .error-note {
+      display: block;
+      padding: var(--space-xs, 8px) var(--space-md, 16px);
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-top: -4px;
+      margin-bottom: var(--space-sm, 12px);
+    }
+
+    .hint-note {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs, 8px);
+      padding: var(--space-xs, 8px) var(--space-md, 16px);
+      font-size: 0.75rem;
+      font-style: italic;
+      margin-top: -4px;
+      margin-bottom: var(--space-sm, 12px);
+      opacity: 0.8;
+    }
+
+    .hint-note::before {
+      content: "ⓘ";
+      font-style: normal;
+      font-size: 0.875rem;
     }
 
     ion-item:last-child {
@@ -555,10 +698,22 @@ export class LaboralFormPage implements OnInit {
   form!: FormGroup;
   
   tiposAfiliado = TIPOS_AFILIADO;
-  secretarias = SECRETARIAS_EDUCACION;
+  
+  // ── Datos de dropdowns (desde API) ──────────────
+  departamentos = signal<Departamento[]>([]);
+  municipios = signal<Municipio[]>([]);
+  secretarias = signal<Secretaria[]>([]);
+  establecimientos = signal<Establecimiento[]>([]);
+  sedes = signal<Sede[]>([]);
+  
+  // ── Loading states ──────────────────────────────
+  loadingDepartamentos = signal(false);
+  loadingMunicipios = signal(false);
+  loadingSecretarias = signal(false);
+  loadingEstablecimientos = signal(false);
+  loadingSedes = signal(false);
   
   tipoAfiliadoSeleccionado = signal<TipoAfiliado | ''>('');
-  institucionesFiltradas = signal<typeof INSTITUCIONES_EDUCATIVAS>([]);
   
   // Grados según el escalafón
   gradosEscalafon = signal<string[]>([]);
@@ -566,6 +721,7 @@ export class LaboralFormPage implements OnInit {
   constructor(
     private fb: FormBuilder,
     private flujoService: FlujoActualizacionService,
+    private institucionesService: InstitucionesApiService,
     private router: Router
   ) {
     addIcons({
@@ -583,14 +739,18 @@ export class LaboralFormPage implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.setupFormListeners();
+    this.cargarCatalogosIniciales();
     this.cargarDatosExistentes();
   }
 
   private initForm(): void {
     this.form = this.fb.group({
       tipoAfiliado: ['', Validators.required],
+      departamento: [''],
+      municipio: [''],
       secretariaEducacion: [''],
       institucionEducativa: [''],
+      sede: [''],
       cargo: [''],
       escalafon: [''],
       gradoEscalafon: [''],
@@ -602,6 +762,26 @@ export class LaboralFormPage implements OnInit {
     this.form.get('escalafon')?.valueChanges.subscribe(escalafon => {
       this.actualizarGrados(escalafon);
     });
+  }
+
+  /** Carga departamentos y secretarías iniciales desde la API */
+  private async cargarCatalogosIniciales(): Promise<void> {
+    this.loadingDepartamentos.set(true);
+    this.loadingSecretarias.set(true);
+
+    try {
+      const [deps, secs] = await Promise.all([
+        this.institucionesService.getDepartamentos(),
+        this.institucionesService.getSecretarias(),
+      ]);
+      this.departamentos.set(deps);
+      this.secretarias.set(secs);
+    } catch (err) {
+      console.error('Error cargando catálogos iniciales:', err);
+    } finally {
+      this.loadingDepartamentos.set(false);
+      this.loadingSecretarias.set(false);
+    }
   }
 
   private cargarDatosExistentes(): void {
@@ -620,9 +800,6 @@ export class LaboralFormPage implements OnInit {
       
       this.tipoAfiliadoSeleccionado.set(laboral.tipoAfiliado);
       
-      if (laboral.secretariaEducacion) {
-        this.actualizarInstituciones(laboral.secretariaEducacion);
-      }
       if (laboral.escalafon) {
         this.actualizarGrados(laboral.escalafon);
       }
@@ -638,13 +815,18 @@ export class LaboralFormPage implements OnInit {
     
     // Limpiar campos si cambia el tipo
     this.form.patchValue({
+      departamento: '',
+      municipio: '',
       secretariaEducacion: '',
       institucionEducativa: '',
+      sede: '',
       cargo: '',
       escalafon: '',
       gradoEscalafon: '',
     });
-    this.institucionesFiltradas.set([]);
+    this.municipios.set([]);
+    this.establecimientos.set([]);
+    this.sedes.set([]);
   }
 
   private actualizarValidadores(tipo: TipoAfiliado): void {
@@ -652,15 +834,21 @@ export class LaboralFormPage implements OnInit {
     const institucion = this.form.get('institucionEducativa');
     const cargo = this.form.get('cargo');
     const escalafon = this.form.get('escalafon');
+    const departamento = this.form.get('departamento');
+    const municipio = this.form.get('municipio');
 
     // Reset validators
     secretaria?.clearValidators();
     institucion?.clearValidators();
     cargo?.clearValidators();
     escalafon?.clearValidators();
+    departamento?.clearValidators();
+    municipio?.clearValidators();
 
     // Agregar validators según tipo
     if (tipo === 'docente_activo' || tipo === 'directivo_activo') {
+      departamento?.setValidators([Validators.required]);
+      municipio?.setValidators([Validators.required]);
       secretaria?.setValidators([Validators.required]);
       institucion?.setValidators([Validators.required]);
       cargo?.setValidators([Validators.required]);
@@ -668,25 +856,108 @@ export class LaboralFormPage implements OnInit {
     }
 
     // Actualizar estado
+    departamento?.updateValueAndValidity();
+    municipio?.updateValueAndValidity();
     secretaria?.updateValueAndValidity();
     institucion?.updateValueAndValidity();
     cargo?.updateValueAndValidity();
     escalafon?.updateValueAndValidity();
   }
 
-  onSecretariaChange(event: any): void {
-    const codigoSecretaria = event.detail.value;
-    this.actualizarInstituciones(codigoSecretaria);
+  // ── Eventos de cascada ─────────────────────────
+
+  async onDepartamentoChange(event: any): Promise<void> {
+    const codigoDept = event.detail.value;
     
-    // Limpiar institución
-    this.form.patchValue({ institucionEducativa: '' });
+    // Limpiar cascada inferior
+    this.form.patchValue({ municipio: '', institucionEducativa: '', sede: '' });
+    this.municipios.set([]);
+    this.establecimientos.set([]);
+    this.sedes.set([]);
+
+    if (!codigoDept) return;
+
+    this.loadingMunicipios.set(true);
+    try {
+      const munis = await this.institucionesService.getMunicipios(codigoDept);
+      this.municipios.set(munis);
+    } catch (err) {
+      console.error('Error cargando municipios:', err);
+    } finally {
+      this.loadingMunicipios.set(false);
+    }
   }
 
-  private actualizarInstituciones(codigoSecretaria: string): void {
-    const filtradas = INSTITUCIONES_EDUCATIVAS.filter(
-      i => i.codigoSecretaria === codigoSecretaria
-    );
-    this.institucionesFiltradas.set(filtradas);
+  async onMunicipioChange(event: any): Promise<void> {
+    const codigoMuni = event.detail.value;
+    
+    // Limpiar cascada inferior
+    this.form.patchValue({ institucionEducativa: '', sede: '' });
+    this.establecimientos.set([]);
+    this.sedes.set([]);
+
+    if (!codigoMuni) return;
+
+    // Cargar establecimientos solo si ya hay secretaría seleccionada
+    const secId = this.form.get('secretariaEducacion')?.value;
+    if (secId) {
+      await this.cargarEstablecimientos(codigoMuni, secId);
+    }
+  }
+
+  async onSecretariaChange(event: any): Promise<void> {
+    const secId = event.detail.value;
+    
+    // Limpiar cascada inferior
+    this.form.patchValue({ institucionEducativa: '', sede: '' });
+    this.establecimientos.set([]);
+    this.sedes.set([]);
+
+    if (!secId) return;
+
+    // Cargar establecimientos solo si ya hay municipio seleccionado
+    const codigoMuni = this.form.get('municipio')?.value;
+    if (codigoMuni) {
+      await this.cargarEstablecimientos(codigoMuni, secId);
+    }
+  }
+
+  async onEstablecimientoChange(event: any): Promise<void> {
+    const codigoEstab = event.detail.value;
+    
+    this.form.patchValue({ sede: '' });
+    this.sedes.set([]);
+
+    if (!codigoEstab) return;
+
+    this.loadingSedes.set(true);
+    try {
+      const sedes = await this.institucionesService.getSedes(codigoEstab);
+      this.sedes.set(sedes);
+    } catch (err) {
+      console.error('Error cargando sedes:', err);
+    } finally {
+      this.loadingSedes.set(false);
+    }
+  }
+
+  private async cargarEstablecimientos(codigoMunicipio: number, secretariaId: number): Promise<void> {
+    this.loadingEstablecimientos.set(true);
+    try {
+      const estabs = await this.institucionesService.getEstablecimientos(codigoMunicipio, secretariaId);
+      this.establecimientos.set(estabs);
+    } catch (err) {
+      console.error('Error cargando establecimientos:', err);
+      this.establecimientos.set([]);
+    } finally {
+      this.loadingEstablecimientos.set(false);
+    }
+  }
+
+  puedeCargarEstablecimientos(): boolean {
+    const municipio = this.form.get('municipio')?.value;
+    const secretaria = this.form.get('secretariaEducacion')?.value;
+    return !!(municipio && secretaria);
   }
 
   private actualizarGrados(escalafon: string): void {
@@ -745,28 +1016,32 @@ export class LaboralFormPage implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.puedeAvanzar()) {
-      const tipo = this.tipoAfiliadoSeleccionado();
-      
-      // Construir datos según tipo
-      const datos: InformacionLaboral = {
-        tipoAfiliado: tipo as TipoAfiliado,
-      };
-
-      if (tipo === 'docente_activo' || tipo === 'directivo_activo') {
-        datos.secretariaEducacion = this.form.value.secretariaEducacion;
-        datos.institucionEducativa = this.form.value.institucionEducativa;
-        datos.cargo = this.form.value.cargo;
-        datos.escalafon = this.form.value.escalafon;
-        datos.gradoEscalafon = this.form.value.gradoEscalafon;
-      }
-
-      if (tipo === 'pensionado') {
-        datos.secretariaEducacion = this.form.value.secretariaEducacion || undefined;
-        datos.cargo = this.form.value.cargo || undefined;
-      }
-
-      await this.flujoService.guardarLaboral(datos);
+    if (!this.puedeAvanzar()) {
+      return;
     }
+
+    const tipo = this.tipoAfiliadoSeleccionado();
+    if (!tipo) return;
+    
+    const datos: InformacionLaboral = {
+      tipoAfiliado: tipo as TipoAfiliado,
+    };
+
+    const formValue = this.form.getRawValue();
+
+    if (tipo === 'docente_activo' || tipo === 'directivo_activo') {
+      datos.secretariaEducacion = formValue.secretariaEducacion?.toString();
+      datos.institucionEducativa = formValue.institucionEducativa?.toString();
+      datos.cargo = formValue.cargo || '';
+      datos.escalafon = formValue.escalafon || '';
+      datos.gradoEscalafon = formValue.gradoEscalafon || '';
+    }
+
+    if (tipo === 'pensionado') {
+      datos.secretariaEducacion = formValue.secretariaEducacion?.toString();
+      datos.cargo = formValue.cargo;
+    }
+
+    await this.flujoService.guardarLaboral(datos);
   }
 }
