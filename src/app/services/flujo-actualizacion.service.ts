@@ -390,7 +390,7 @@ export class FlujoActualizacionService {
 
     // Actualizar afiliado en la BD
     console.log('💾 Enviando actualización de afiliado ID:', afiliado.id);
-    await this.apiService.actualizarAfiliado(afiliado.id, payload);
+    await this.apiService.actualizarAfiliado(String(afiliado.id), payload);
     console.log('✅ Afiliado actualizado exitosamente');
 
     // Actualizar beneficiarios modificados
@@ -403,7 +403,7 @@ export class FlujoActualizacionService {
             beneficiario.sociodemografica!,
             beneficiario.contacto
           );
-          await this.apiService.actualizarBeneficiario(beneficiario.id, benefPayload);
+          await this.apiService.actualizarBeneficiario(String(beneficiario.id), benefPayload);
           console.log('✅ Beneficiario actualizado:', beneficiario.id);
         }
       }

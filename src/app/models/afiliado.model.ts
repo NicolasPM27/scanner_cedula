@@ -96,8 +96,8 @@ export interface InformacionCaracterizacion {
  * Datos completos del afiliado (cotizante)
  */
 export interface DatosAfiliado {
-  // ID de la base de datos (id_hosvital - soporta números y UUIDs)
-  id?: string;
+  // ID de la base de datos (afiliado_id INT o numero_documento string)
+  id?: string | number;
   
   // Datos de la cédula escaneada
   numeroDocumento: string;
@@ -129,7 +129,7 @@ export interface DatosAfiliado {
  * Datos de un beneficiario
  */
 export interface Beneficiario {
-  id: string; // ID de la base de datos (id_hosvital - soporta números y UUIDs)
+  id: string | number; // ID de la base de datos (afiliado_id o numero_documento)
   numeroDocumento: string;
   tipoDocumento: 'CC' | 'TI' | 'RC' | 'CE';
   primerApellido: string;

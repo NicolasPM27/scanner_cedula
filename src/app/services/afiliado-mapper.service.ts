@@ -16,7 +16,10 @@ import {
 } from '../models/afiliado.model';
 
 /**
- * Servicio para mapear datos entre la BD y los modelos de Angular
+ * Servicio para mapear datos entre la BD normalizada (fomag.afiliado) y los modelos de Angular.
+ *
+ * The backend SELECT queries JOIN catalog tables and return both FK IDs and
+ * human-readable name/code columns (e.g. tipo_afiliado_nombre, departamento_codigo).
  */
 @Injectable({
   providedIn: 'root'
@@ -29,46 +32,45 @@ export class AfiliadoMapperService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dbRecordToAfiliado(row: any): DatosAfiliado {
     const afiliado: DatosAfiliado = {
-      // Usamos id_hosvital como PK (soporta números y UUIDs)
-      id: row['id_hosvital'],
+      id: row['numero_documento'] || row['afiliado_id'],
       numeroDocumento: row['numero_documento'] || '',
       primerApellido: row['primer_apellido'] || '',
       segundoApellido: row['segundo_apellido'] || undefined,
       primerNombre: row['primer_nombre'] || '',
       segundoNombre: row['segundo_nombre'] || undefined,
       fechaNacimiento: this.formatDate(row['fecha_nacimiento']),
-      genero: row['sexo'] === 'M' || row['sexo'] === 'MASCULINO' ? 'M' : 'F',
-      tipoAfiliado: this.mapTipoAfiliado(row['tipo_afiliado']),
+      genero: this.mapSexoId(row['sexo_id']),
+      tipoAfiliado: this.mapTipoAfiliadoFromId(row['tipo_afiliado_id'], row['tipo_afiliado_nombre']),
       actualizacionPrevia: !!row['fecha_ultima_actualizacion'],
-      fechaUltimaActualizacion: row['fecha_ultima_actualizacion'] 
-        ? this.formatDate(row['fecha_ultima_actualizacion']) 
+      fechaUltimaActualizacion: row['fecha_ultima_actualizacion']
+        ? this.formatDate(row['fecha_ultima_actualizacion'])
         : undefined,
     };
 
-    // Información sociodemográfica
-    if (row['estado_civil'] || row['direccion_Residencia_cargue'] || row['departamento_residencia']) {
+    // Sociodemographic
+    if (row['estado_civil_id'] || row['direccion'] || row['departamento_residencia_id']) {
       afiliado.sociodemografica = {
-        estadoCivil: row['estado_civil'] as EstadoCivil | undefined,
-        direccion: row['direccion_Residencia_cargue'] || '',
+        estadoCivil: this.mapEstadoCivilFromId(row['estado_civil_id']) as EstadoCivil | undefined,
+        direccion: row['direccion'] || '',
         zona: (row['zona']?.toLowerCase() as Zona) || 'urbano',
         barrio: row['barrio'] || undefined,
         localidad: row['localidad'] || undefined,
-        departamento: row['departamento_residencia'] || row['departamento_atencion'] || '',
-        municipio: row['municipio_residencia'] || row['municipio_atencion'] || '',
+        departamento: row['departamento_codigo'] || '',
+        municipio: row['municipio_codigo'] || '',
         estrato: row['estrato'] as Estrato || 1,
       };
     }
 
-    // Información de contacto
-    if (row['correo_principal'] || row['celular_principal'] || row['telefono']) {
+    // Contact
+    if (row['email'] || row['celular'] || row['telefono']) {
       afiliado.contacto = {
-        correoElectronico: row['correo_principal'] || '',
-        celular: row['celular_principal'] || '',
+        correoElectronico: row['email'] || '',
+        celular: row['celular'] || '',
         telefonoFijo: row['telefono'] || undefined,
       };
     }
 
-    // Información laboral
+    // Labor
     if (row['secretaria_educacion'] || row['institucion_educativa'] || row['cargo']) {
       afiliado.laboral = {
         tipoAfiliado: afiliado.tipoAfiliado,
@@ -81,10 +83,10 @@ export class AfiliadoMapperService {
       };
     }
 
-    // Información de caracterización
-    if (row['tiene_discapacidad'] !== null || row['pertenece_grupo_etnico'] !== null || row['pertenece_lgbtiq'] !== null) {
+    // Characterization
+    if (row['discapacidad_id'] != null || row['pertenece_grupo_etnico'] != null || row['pertenece_lgbtiq'] != null) {
       afiliado.caracterizacion = {
-        tipoDiscapacidad: row['tipo_discapacidad'] 
+        tipoDiscapacidad: row['tipo_discapacidad']
           ? this.parseCommaSeparated<TipoDiscapacidad>(row['tipo_discapacidad'])
           : undefined,
         detalleDiscapacidad: row['detalle_discapacidad'] || undefined,
@@ -102,43 +104,42 @@ export class AfiliadoMapperService {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dbRecordToBeneficiario(row: any): Beneficiario {
-    const edad = row['edad_cumplida'] || this.calcularEdad(row['fecha_nacimiento']);
-    
+    const edad = this.calcularEdad(row['fecha_nacimiento']);
+
     const beneficiario: Beneficiario = {
-      // Usamos id_hosvital como PK (soporta números y UUIDs)
-      id: row['id_hosvital'],
+      id: row['numero_documento'] || row['afiliado_id'],
       numeroDocumento: row['numero_documento'] || '',
-      tipoDocumento: this.mapTipoDocumento(row['tipo_documento']),
+      tipoDocumento: this.mapTipoDocumentoCodigo(row['tipo_documento_codigo']),
       primerApellido: row['primer_apellido'] || '',
       segundoApellido: row['segundo_apellido'] || undefined,
       primerNombre: row['primer_nombre'] || '',
       segundoNombre: row['segundo_nombre'] || undefined,
       fechaNacimiento: this.formatDate(row['fecha_nacimiento']),
       edad: edad,
-      parentesco: this.mapParentesco(row['parentesco']),
+      parentesco: this.mapParentescoFromNombre(row['parentesco_nombre'], row['parentesco_id']),
       seleccionado: false,
       actualizado: false,
     };
 
-    // Información sociodemográfica del beneficiario
-    if (row['estado_civil'] || row['direccion_Residencia_cargue'] || row['departamento_residencia']) {
+    // Sociodemographic
+    if (row['estado_civil_id'] || row['direccion'] || row['departamento_residencia_id']) {
       beneficiario.sociodemografica = {
-        estadoCivil: row['estado_civil'] as EstadoCivil | undefined,
-        direccion: row['direccion_Residencia_cargue'] || '',
+        estadoCivil: this.mapEstadoCivilFromId(row['estado_civil_id']) as EstadoCivil | undefined,
+        direccion: row['direccion'] || '',
         zona: (row['zona']?.toLowerCase() as Zona) || 'urbano',
         barrio: row['barrio'] || undefined,
         localidad: row['localidad'] || undefined,
-        departamento: row['departamento_residencia'] || row['departamento_atencion'] || '',
-        municipio: row['municipio_residencia'] || row['municipio_atencion'] || '',
+        departamento: row['departamento_codigo'] || '',
+        municipio: row['municipio_codigo'] || '',
         estrato: row['estrato'] as Estrato || 1,
       };
     }
 
-    // Información de contacto (solo para mayores de edad)
-    if (edad >= 18 && (row['correo_principal'] || row['celular_principal'])) {
+    // Contact (only for adults)
+    if (edad >= 18 && (row['email'] || row['celular'])) {
       beneficiario.contacto = {
-        correoElectronico: row['correo_principal'] || '',
-        celular: row['celular_principal'] || '',
+        correoElectronico: row['email'] || '',
+        celular: row['celular'] || '',
         telefonoFijo: row['telefono'] || undefined,
       };
     }
@@ -153,7 +154,7 @@ export class AfiliadoMapperService {
   afiliadoFormToDbPayload(afiliado: DatosAfiliado): any {
     const payload: any = {};
 
-    // Sociodemográfico
+    // Sociodemographic
     if (afiliado.sociodemografica) {
       const s = afiliado.sociodemografica;
       if (s.estadoCivil) payload['estadoCivil'] = s.estadoCivil;
@@ -166,7 +167,7 @@ export class AfiliadoMapperService {
       if (s.estrato) payload['estrato'] = s.estrato;
     }
 
-    // Contacto
+    // Contact
     if (afiliado.contacto) {
       const c = afiliado.contacto;
       if (c.correoElectronico) payload['correoElectronico'] = c.correoElectronico;
@@ -174,7 +175,7 @@ export class AfiliadoMapperService {
       if (c.telefonoFijo) payload['telefonoFijo'] = c.telefonoFijo;
     }
 
-    // Laboral
+    // Labor
     if (afiliado.laboral) {
       const l = afiliado.laboral;
       if (l.secretariaEducacion) payload['secretariaEducacion'] = l.secretariaEducacion;
@@ -185,7 +186,7 @@ export class AfiliadoMapperService {
       if (l.fechaPension) payload['fechaPension'] = l.fechaPension;
     }
 
-    // Caracterización
+    // Characterization
     if (afiliado.caracterizacion) {
       const car = afiliado.caracterizacion;
       if (car.tipoDiscapacidad && car.tipoDiscapacidad.length > 0) {
@@ -226,7 +227,7 @@ export class AfiliadoMapperService {
   ): any {
     const payload: any = {};
 
-    // Sociodemográfico
+    // Sociodemographic
     if (sociodemografica.estadoCivil) payload['estadoCivil'] = sociodemografica.estadoCivil;
     if (sociodemografica.direccion) payload['direccion'] = sociodemografica.direccion;
     if (sociodemografica.zona) payload['zona'] = sociodemografica.zona;
@@ -236,7 +237,7 @@ export class AfiliadoMapperService {
     if (sociodemografica.municipio) payload['municipio'] = sociodemografica.municipio;
     if (sociodemografica.estrato) payload['estrato'] = sociodemografica.estrato;
 
-    // Contacto (solo si se proporciona)
+    // Contact
     if (contacto) {
       if (contacto.correoElectronico) payload['correoElectronico'] = contacto.correoElectronico;
       if (contacto.celular) payload['celular'] = contacto.celular;
@@ -247,37 +248,75 @@ export class AfiliadoMapperService {
   }
 
   // =========================================================================
-  // Helpers privados
+  // Private helpers
   // =========================================================================
 
-  private mapTipoAfiliado(tipo: string | null | undefined): TipoAfiliado {
-    if (!tipo) return 'docente_activo';
-    
-    const tipoUpper = tipo.toUpperCase();
-    if (tipoUpper.includes('PENSIONADO')) return 'pensionado';
-    if (tipoUpper.includes('DIRECTIVO')) return 'directivo_activo';
-    if (tipoUpper.includes('BENEFICIARIO')) return 'beneficiario';
+  /**
+   * Maps sexo_id (1=M, 2=F) to gender char
+   */
+  private mapSexoId(sexoId: number | null | undefined): 'M' | 'F' {
+    if (sexoId === 1) return 'M';
+    if (sexoId === 2) return 'F';
+    return 'M'; // default
+  }
+
+  /**
+   * Maps tipo_afiliado_id → TipoAfiliado string
+   * 1=directivo_activo, 2=docente_activo, 3=beneficiario, 4=pensionado
+   */
+  private mapTipoAfiliadoFromId(id: number | null | undefined, nombre?: string): TipoAfiliado {
+    if (id === 1) return 'directivo_activo';
+    if (id === 2) return 'docente_activo';
+    if (id === 3) return 'beneficiario';
+    if (id === 4) return 'pensionado';
+    // Fallback to name if available
+    if (nombre) {
+      const n = nombre.toUpperCase();
+      if (n.includes('PENSIONADO')) return 'pensionado';
+      if (n.includes('DIRECTIVO')) return 'directivo_activo';
+      if (n.includes('BENEFICIARIO')) return 'beneficiario';
+    }
     return 'docente_activo';
   }
 
-  private mapTipoDocumento(tipo: string | null | undefined): 'CC' | 'TI' | 'RC' | 'CE' {
-    if (!tipo) return 'CC';
-    
-    const tipoUpper = tipo.toUpperCase();
-    if (tipoUpper.includes('TI') || tipoUpper.includes('TARJETA')) return 'TI';
-    if (tipoUpper.includes('RC') || tipoUpper.includes('REGISTRO')) return 'RC';
-    if (tipoUpper.includes('CE') || tipoUpper.includes('EXTRANJER')) return 'CE';
+  /**
+   * Maps estado_civil_id → EstadoCivil string
+   * 1=soltero, 2=casado, 3=union_libre, 5=viudo
+   */
+  private mapEstadoCivilFromId(id: number | null | undefined): string | undefined {
+    if (id === 1) return 'soltero';
+    if (id === 2) return 'casado';
+    if (id === 3) return 'union_libre';
+    if (id === 5) return 'viudo';
+    return undefined;
+  }
+
+  /**
+   * Maps tipo_documento_codigo → document type
+   */
+  private mapTipoDocumentoCodigo(codigo: string | null | undefined): 'CC' | 'TI' | 'RC' | 'CE' {
+    if (!codigo) return 'CC';
+    const c = codigo.toUpperCase();
+    if (c === 'TI' || c.includes('TARJETA')) return 'TI';
+    if (c === 'RC' || c.includes('REGISTRO')) return 'RC';
+    if (c === 'CE' || c.includes('EXTRANJER')) return 'CE';
     return 'CC';
   }
 
-  private mapParentesco(parentesco: string | null | undefined): Beneficiario['parentesco'] {
-    if (!parentesco) return 'otro';
-    
-    const p = parentesco.toLowerCase();
-    if (p.includes('conyuge') || p.includes('esposo') || p.includes('esposa')) return 'conyuge';
-    if (p.includes('hijo') || p.includes('hija')) return 'hijo';
-    if (p.includes('padre')) return 'padre';
-    if (p.includes('madre')) return 'madre';
+  /**
+   * Maps parentesco from JOINed nombre or parentesco_id
+   */
+  private mapParentescoFromNombre(
+    nombre: string | null | undefined,
+    id?: number | null
+  ): Beneficiario['parentesco'] {
+    if (nombre) {
+      const p = nombre.toLowerCase();
+      if (p.includes('conyuge') || p.includes('esposo') || p.includes('esposa')) return 'conyuge';
+      if (p.includes('hijo') || p.includes('hija')) return 'hijo';
+      if (p.includes('padre')) return 'padre';
+      if (p.includes('madre')) return 'madre';
+    }
     return 'otro';
   }
 
@@ -287,11 +326,9 @@ export class AfiliadoMapperService {
       return date.toISOString().split('T')[0];
     }
     if (typeof date === 'string') {
-      // Si ya está en formato YYYY-MM-DD
       if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
         return date.split('T')[0];
       }
-      // Intentar parsear
       const parsed = new Date(date);
       if (!isNaN(parsed.getTime())) {
         return parsed.toISOString().split('T')[0];
@@ -302,18 +339,18 @@ export class AfiliadoMapperService {
 
   private calcularEdad(fechaNacimiento: any): number {
     if (!fechaNacimiento) return 0;
-    
+
     const nacimiento = new Date(fechaNacimiento);
     if (isNaN(nacimiento.getTime())) return 0;
-    
+
     const hoy = new Date();
     let edad = hoy.getFullYear() - nacimiento.getFullYear();
     const mes = hoy.getMonth() - nacimiento.getMonth();
-    
+
     if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
       edad--;
     }
-    
+
     return edad;
   }
 

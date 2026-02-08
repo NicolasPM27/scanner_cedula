@@ -4,8 +4,8 @@ const config: sql.config = {
   server: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '1433'),
   user: process.env.DB_USER || 'sa',
-  password: process.env.DB_PASSWORD || process.env.SA_PASSWORD || '',
-  database: process.env.DB_NAME || 'fomag_poblacion',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'fomag_db',
   options: {
     encrypt: process.env.DB_ENCRYPT === 'true',
     trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE !== 'false',

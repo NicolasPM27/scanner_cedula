@@ -3,8 +3,8 @@ import { getPool, sql } from '../config/database';
 import { mapFormToDbColumns, buildUpdateQuery } from '../utils/field-mapper';
 
 /**
- * Busca un afiliado por número de documento
- * Solo busca cotizantes (no beneficiarios)
+ * Busca un afiliado por numero de documento (cotizantes, no beneficiarios)
+ * Joins catalog tables to return human-readable names alongside FK IDs.
  */
 export async function buscarAfiliado(
   req: Request,
@@ -13,13 +13,13 @@ export async function buscarAfiliado(
 ): Promise<void> {
   try {
     const { numeroDocumento } = req.params;
-    
-    console.log('🔍 Buscando afiliado con documento:', numeroDocumento);
+
+    console.log('Buscando afiliado con documento:', numeroDocumento);
 
     if (!numeroDocumento) {
       res.status(400).json({
         existe: false,
-        error: 'Número de documento requerido',
+        error: 'Numero de documento requerido',
       });
       return;
     }
@@ -29,32 +29,50 @@ export async function buscarAfiliado(
       .request()
       .input('doc', sql.NVarChar(64), numeroDocumento)
       .query(`
-        SELECT * FROM poblacion 
-        WHERE numero_documento = @doc 
-        AND (tipo_afiliado IS NULL OR tipo_afiliado <> 'BENEFICIARIO')
+        SELECT
+          a.*,
+          td.codigo   AS tipo_documento_codigo,
+          ec.nombre   AS estado_civil_nombre,
+          ta.nombre   AS tipo_afiliado_nombre,
+          d.nombre    AS departamento_nombre,
+          d.codigo_dane AS departamento_codigo,
+          m.nombre    AS municipio_nombre,
+          m.codigo_dane AS municipio_codigo,
+          disc.nombre AS discapacidad_nombre,
+          gd.nombre   AS grado_discapacidad_nombre
+        FROM fomag.afiliado a
+          LEFT JOIN fomag.cat_tipo_documento td ON td.tipo_documento_id = a.tipo_documento_id
+          LEFT JOIN fomag.cat_estado_civil   ec ON ec.estado_civil_id   = a.estado_civil_id
+          LEFT JOIN fomag.cat_tipo_afiliado  ta ON ta.tipo_afiliado_id  = a.tipo_afiliado_id
+          LEFT JOIN fomag.cat_departamento    d ON d.departamento_id    = a.departamento_residencia_id
+          LEFT JOIN fomag.cat_municipio       m ON m.municipio_id       = a.municipio_residencia_id
+          LEFT JOIN fomag.cat_discapacidad disc ON disc.discapacidad_id = a.discapacidad_id
+          LEFT JOIN fomag.cat_grado_discapacidad gd ON gd.grado_discapacidad_id = a.grado_discapacidad_id
+        WHERE a.numero_documento = @doc
+          AND (a.tipo_afiliado_id IS NULL OR a.tipo_afiliado_id <> 3)
       `);
-    
-    console.log('📊 Resultados encontrados:', result.recordset.length);
+
+    console.log('Resultados encontrados:', result.recordset.length);
 
     if (result.recordset.length === 0) {
-      console.log('❌ No se encontró afiliado');
+      console.log('No se encontro afiliado');
       res.json({ existe: false });
       return;
     }
 
-    console.log('✅ Afiliado encontrado:', result.recordset[0].numero_documento);
+    console.log('Afiliado encontrado:', result.recordset[0].numero_documento);
     res.json({
       existe: true,
       afiliado: result.recordset[0],
     });
   } catch (error) {
-    console.error('💥 Error en buscarAfiliado:', error);
+    console.error('Error en buscarAfiliado:', error);
     next(error);
   }
 }
 
 /**
- * Actualiza los datos de un afiliado
+ * Actualiza los datos de un afiliado usando numero_documento como PK
  */
 export async function actualizarAfiliado(
   req: Request,
@@ -62,27 +80,26 @@ export async function actualizarAfiliado(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // This is now numero_documento
     const datos = req.body;
 
-    console.log('📝 Actualizando afiliado ID:', id);
-    console.log('📝 Datos recibidos:', JSON.stringify(datos, null, 2));
+    console.log('Actualizando afiliado documento:', id);
 
     if (!id) {
       res.status(400).json({
         success: false,
-        mensaje: 'ID de afiliado requerido',
+        mensaje: 'Numero de documento requerido',
       });
       return;
     }
 
     const pool = await getPool();
 
-    // Verificar que el afiliado existe (usamos id_hosvital como PK - soporta números y UUIDs)
+    // Verify the affiliate exists
     const checkResult = await pool
       .request()
-      .input('id_hosvital', sql.NVarChar(128), id)
-      .query('SELECT id_hosvital FROM poblacion WHERE id_hosvital = @id_hosvital');
+      .input('doc', sql.NVarChar(100), id)
+      .query('SELECT afiliado_id FROM fomag.afiliado WHERE numero_documento = @doc');
 
     if (checkResult.recordset.length === 0) {
       res.status(404).json({
@@ -92,23 +109,22 @@ export async function actualizarAfiliado(
       return;
     }
 
-    // Mapear campos del formulario a columnas de BD
-    const dbColumns = mapFormToDbColumns(datos);
+    // Map form fields to DB columns (async: resolves FK lookups)
+    const dbColumns = await mapFormToDbColumns(datos);
 
-    // Agregar campos de auditoría
+    // Audit fields
     dbColumns.fecha_ultima_actualizacion = new Date();
     if (datos.aceptoHabeasData) {
       dbColumns.acepto_habeas_data = true;
       dbColumns.fecha_acepto_habeas_data = new Date();
     }
 
-    // Construir y ejecutar UPDATE (usamos id_hosvital como PK - string)
-    const { query, inputs } = buildUpdateQuery('poblacion', dbColumns, 'id_hosvital', id);
-    
+    // Build and execute UPDATE
+    const { query, inputs } = buildUpdateQuery(dbColumns, id);
+
     const request = pool.request();
-    request.input('id_hosvital', sql.NVarChar(128), id);
-    
-    // Agregar inputs dinámicos
+    request.input('numero_documento', sql.NVarChar(100), id);
+
     for (const [key, value] of Object.entries(inputs)) {
       if (value instanceof Date) {
         request.input(key, sql.DateTime2, value);
@@ -116,6 +132,8 @@ export async function actualizarAfiliado(
         request.input(key, sql.Bit, value);
       } else if (typeof value === 'number') {
         request.input(key, sql.Int, value);
+      } else if (value === null) {
+        request.input(key, sql.NVarChar(sql.MAX), null);
       } else {
         request.input(key, sql.NVarChar(sql.MAX), value);
       }
@@ -123,14 +141,14 @@ export async function actualizarAfiliado(
 
     await request.query(query);
 
-    console.log('✅ Afiliado actualizado exitosamente, ID:', id);
+    console.log('Afiliado actualizado exitosamente, documento:', id);
 
     res.json({
       success: true,
       mensaje: 'Datos actualizados correctamente',
     });
   } catch (error) {
-    console.error('💥 Error en actualizarAfiliado:', error);
+    console.error('Error en actualizarAfiliado:', error);
     next(error);
   }
 }

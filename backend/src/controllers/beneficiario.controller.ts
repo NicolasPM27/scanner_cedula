@@ -4,6 +4,7 @@ import { mapFormToDbColumns, buildUpdateQuery } from '../utils/field-mapper';
 
 /**
  * Obtiene todos los beneficiarios de un cotizante
+ * tipo_afiliado_id = 3 means "Beneficiario"
  */
 export async function obtenerBeneficiarios(
   req: Request,
@@ -16,7 +17,7 @@ export async function obtenerBeneficiarios(
     if (!numeroDocumento) {
       res.status(400).json({
         beneficiarios: [],
-        error: 'Número de documento del cotizante requerido',
+        error: 'Numero de documento del cotizante requerido',
       });
       return;
     }
@@ -26,10 +27,28 @@ export async function obtenerBeneficiarios(
       .request()
       .input('doc', sql.NVarChar(64), numeroDocumento)
       .query(`
-        SELECT * FROM poblacion 
-        WHERE numero_documento_cotizante = @doc 
-        AND tipo_afiliado = 'BENEFICIARIO'
-        ORDER BY primer_apellido, primer_nombre
+        SELECT
+          a.*,
+          td.codigo   AS tipo_documento_codigo,
+          ec.nombre   AS estado_civil_nombre,
+          ta.nombre   AS tipo_afiliado_nombre,
+          d.nombre    AS departamento_nombre,
+          d.codigo_dane AS departamento_codigo,
+          m.nombre    AS municipio_nombre,
+          m.codigo_dane AS municipio_codigo,
+          disc.nombre AS discapacidad_nombre,
+          p.nombre    AS parentesco_nombre
+        FROM fomag.afiliado a
+          LEFT JOIN fomag.cat_tipo_documento td ON td.tipo_documento_id = a.tipo_documento_id
+          LEFT JOIN fomag.cat_estado_civil   ec ON ec.estado_civil_id   = a.estado_civil_id
+          LEFT JOIN fomag.cat_tipo_afiliado  ta ON ta.tipo_afiliado_id  = a.tipo_afiliado_id
+          LEFT JOIN fomag.cat_departamento    d ON d.departamento_id    = a.departamento_residencia_id
+          LEFT JOIN fomag.cat_municipio       m ON m.municipio_id       = a.municipio_residencia_id
+          LEFT JOIN fomag.cat_discapacidad disc ON disc.discapacidad_id = a.discapacidad_id
+          LEFT JOIN fomag.cat_parentesco      p ON p.parentesco_id      = a.parentesco_id
+        WHERE a.numero_documento_cotizante = @doc
+          AND a.tipo_afiliado_id = 3
+        ORDER BY a.primer_apellido, a.primer_nombre
       `);
 
     res.json({
@@ -41,7 +60,7 @@ export async function obtenerBeneficiarios(
 }
 
 /**
- * Actualiza los datos de un beneficiario
+ * Actualiza los datos de un beneficiario usando numero_documento como PK
  */
 export async function actualizarBeneficiario(
   req: Request,
@@ -49,29 +68,28 @@ export async function actualizarBeneficiario(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // This is now numero_documento
     const datos = req.body;
 
-    console.log('📝 Actualizando beneficiario ID:', id);
-    console.log('📝 Datos recibidos:', JSON.stringify(datos, null, 2));
+    console.log('Actualizando beneficiario documento:', id);
 
     if (!id) {
       res.status(400).json({
         success: false,
-        mensaje: 'ID de beneficiario requerido',
+        mensaje: 'Numero de documento del beneficiario requerido',
       });
       return;
     }
 
     const pool = await getPool();
 
-    // Verificar que el beneficiario existe (usamos id_hosvital como PK - soporta números y UUIDs)
+    // Verify the beneficiary exists
     const checkResult = await pool
       .request()
-      .input('id_hosvital', sql.NVarChar(128), id)
+      .input('doc', sql.NVarChar(100), id)
       .query(`
-        SELECT id_hosvital FROM poblacion 
-        WHERE id_hosvital = @id_hosvital AND tipo_afiliado = 'BENEFICIARIO'
+        SELECT afiliado_id FROM fomag.afiliado
+        WHERE numero_documento = @doc AND tipo_afiliado_id = 3
       `);
 
     if (checkResult.recordset.length === 0) {
@@ -82,19 +100,18 @@ export async function actualizarBeneficiario(
       return;
     }
 
-    // Mapear campos del formulario a columnas de BD
-    const dbColumns = mapFormToDbColumns(datos);
+    // Map form fields to DB columns (async: resolves FK lookups)
+    const dbColumns = await mapFormToDbColumns(datos);
 
-    // Agregar campos de auditoría
+    // Audit fields
     dbColumns.fecha_ultima_actualizacion = new Date();
 
-    // Construir y ejecutar UPDATE (usamos id_hosvital como PK - string)
-    const { query, inputs } = buildUpdateQuery('poblacion', dbColumns, 'id_hosvital', id);
-    
+    // Build and execute UPDATE
+    const { query, inputs } = buildUpdateQuery(dbColumns, id);
+
     const request = pool.request();
-    request.input('id_hosvital', sql.NVarChar(128), id);
-    
-    // Agregar inputs dinámicos
+    request.input('numero_documento', sql.NVarChar(100), id);
+
     for (const [key, value] of Object.entries(inputs)) {
       if (value instanceof Date) {
         request.input(key, sql.DateTime2, value);
@@ -102,6 +119,8 @@ export async function actualizarBeneficiario(
         request.input(key, sql.Bit, value);
       } else if (typeof value === 'number') {
         request.input(key, sql.Int, value);
+      } else if (value === null) {
+        request.input(key, sql.NVarChar(sql.MAX), null);
       } else {
         request.input(key, sql.NVarChar(sql.MAX), value);
       }
@@ -109,14 +128,14 @@ export async function actualizarBeneficiario(
 
     await request.query(query);
 
-    console.log('✅ Beneficiario actualizado exitosamente, ID:', id);
+    console.log('Beneficiario actualizado exitosamente, documento:', id);
 
     res.json({
       success: true,
       mensaje: 'Datos del beneficiario actualizados correctamente',
     });
   } catch (error) {
-    console.error('💥 Error en actualizarBeneficiario:', error);
+    console.error('Error en actualizarBeneficiario:', error);
     next(error);
   }
 }

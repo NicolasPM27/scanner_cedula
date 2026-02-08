@@ -721,7 +721,7 @@ export class BeneficiaryDetailPage implements OnInit {
       }
 
       await this.flujoService.guardarDatosBeneficiario(
-        this.beneficiario()!.id,
+        String(this.beneficiario()!.id),
         sociodemografico,
         contacto
       );
