@@ -6,7 +6,6 @@ import * as path from 'path';
 // TIPOS
 // ════════════════════════════════════════════════════════════
 
-/** Fila normalizada extraída del Excel/CSV */
 interface FilaNormalizada {
   secretaria: string;
   codigoDepartamento: number;
@@ -26,7 +25,6 @@ interface FilaNormalizada {
   grados: string[];
 }
 
-/** Resultado de la importación */
 export interface ImportResult {
   totalRows: number;
   processed: number;
@@ -44,13 +42,9 @@ export interface ImportResult {
 }
 
 // ════════════════════════════════════════════════════════════
-// PARSEO MULTI-FORMATO (CSV / TSV / XLSX)
+// PARSEO MULTI-FORMATO
 // ════════════════════════════════════════════════════════════
 
-/**
- * Header aliases: mapea variantes de encabezados a campo canónico.
- * Soporta columnas con/sin tildes, mayúsculas, espacios extra.
- */
 const HEADER_MAP: Record<string, keyof FilaNormalizada> = {
   'secretaria':              'secretaria',
   'codigo departamento':     'codigoDepartamento',
@@ -81,10 +75,6 @@ function normalizeHeader(raw: string): keyof FilaNormalizada | null {
   return HEADER_MAP[clean] ?? null;
 }
 
-/**
- * Lee un Excel (.xlsx) usando ExcelJS.
- * Requiere: npm install exceljs
- */
 async function parseExcel(filePath: string): Promise<FilaNormalizada[]> {
   const ExcelJS = await import('exceljs');
   const workbook = new ExcelJS.default.Workbook();
@@ -95,7 +85,6 @@ async function parseExcel(filePath: string): Promise<FilaNormalizada[]> {
     throw new Error('La hoja de Excel debe tener al menos un encabezado y una fila de datos');
   }
 
-  // Mapear encabezados
   const headerRow = sheet.getRow(1);
   const columnMap: Array<{ col: number; field: keyof FilaNormalizada }> = [];
   headerRow.eachCell((cell, colNumber) => {
@@ -116,10 +105,6 @@ async function parseExcel(filePath: string): Promise<FilaNormalizada[]> {
   return rows;
 }
 
-/**
- * Lee CSV/TSV con soporte de campos entre comillas.
- * Auto-detecta delimitador (tab / coma).
- */
 function parseDelimited(filePath: string): FilaNormalizada[] {
   const content = fs.readFileSync(filePath, 'utf-8');
   const lines = content.split(/\r?\n/).filter(l => l.trim());
@@ -192,7 +177,6 @@ function buildRow(raw: Record<string, string>): FilaNormalizada {
   };
 }
 
-/** Auto-detecta formato según extensión */
 async function parseFile(filePath: string): Promise<FilaNormalizada[]> {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.xlsx' || ext === '.xls') {
@@ -202,26 +186,29 @@ async function parseFile(filePath: string): Promise<FilaNormalizada[]> {
 }
 
 // ════════════════════════════════════════════════════════════
-// IMPORTACIÓN CON TRANSACCIONES POR BATCH
+// IMPORTACION POR DIMENSIONES (sin transacciones)
+//
+// Estrategia:
+// 1. Parsear Excel completo en memoria
+// 2. Deduplicar entidades por dimension (dept, muni, sec, etc.)
+// 3. Insertar cada dimension en bulk (una query por entidad unica)
+// 4. Insertar sedes y relaciones many-to-many
+//
+// Todas las queries usan IF NOT EXISTS = idempotentes.
+// No se usan transacciones: si algo falla, se puede re-ejecutar.
 // ════════════════════════════════════════════════════════════
 
-const BATCH_SIZE = 500;
+const LOG_EVERY = 5000;
 
-/**
- * Importa instituciones educativas desde Excel (.xlsx) o CSV al schema 3NF.
- *
- * Estrategia de rendimiento:
- * - Pre-carga caches completos en paralelo
- * - Procesa filas en batches de 500 con transacción por batch
- * - Caches locales Set/Map evitan queries repetidos
- * - Auditoría en ie.importaciones con detalle de errores en JSON
- */
 export async function importarInstituciones(
   filePath: string
 ): Promise<ImportResult> {
   const startTime = Date.now();
   const pool = await getPool();
+
+  console.log('  Parseando archivo...');
   const rows = await parseFile(filePath);
+  console.log(`  ${rows.length} filas parseadas en ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
 
   const result: ImportResult = {
     totalRows: rows.length,
@@ -231,7 +218,7 @@ export async function importarInstituciones(
     stats: { departamentos: 0, municipios: 0, secretarias: 0, establecimientos: 0, sedes: 0, niveles: 0, modelos: 0 },
   };
 
-  // Registrar importación
+  // Registrar importacion
   const importRec = await pool.request()
     .input('archivo', sql.NVarChar(256), path.basename(filePath))
     .input('total', sql.Int, rows.length)
@@ -242,7 +229,69 @@ export async function importarInstituciones(
     `);
   const importId: number = importRec.recordset[0].id;
 
-  // Pre-cargar caches en paralelo
+  // ── 1. Deduplicar dimensiones en memoria ──
+  console.log('  Deduplicando dimensiones en memoria...');
+
+  const deptsMap = new Map<number, string>();       // codigo → nombre
+  const munisMap = new Map<number, { nombre: string; dep: number }>();
+  const secsSet = new Set<string>();
+  const estabsMap = new Map<number, { nombre: string; mun: number; sec: string }>();
+  const sedesMap = new Map<number, {
+    nombre: string; est: number; zona: string;
+    direccion: string; telefono: string; estado: string;
+  }>();
+  const nivelesSet = new Set<string>();
+  const modelosSet = new Set<string>();
+
+  // sede → relaciones many-to-many
+  const sedeNiveles = new Map<number, Set<string>>();
+  const sedeModelos = new Map<number, Set<string>>();
+  const sedeGrados = new Map<number, Set<string>>();
+
+  for (const row of rows) {
+    if (!row.codigoDepartamento || !row.codigoMunicipio || !row.codigoSede) continue;
+
+    if (!deptsMap.has(row.codigoDepartamento)) {
+      deptsMap.set(row.codigoDepartamento, row.nombreDepartamento);
+    }
+    if (!munisMap.has(row.codigoMunicipio)) {
+      munisMap.set(row.codigoMunicipio, { nombre: row.nombreMunicipio, dep: row.codigoDepartamento });
+    }
+    if (row.secretaria) secsSet.add(row.secretaria);
+    if (!estabsMap.has(row.codigoEstablecimiento)) {
+      estabsMap.set(row.codigoEstablecimiento, {
+        nombre: row.nombreEstablecimiento, mun: row.codigoMunicipio, sec: row.secretaria,
+      });
+    }
+    if (!sedesMap.has(row.codigoSede)) {
+      sedesMap.set(row.codigoSede, {
+        nombre: row.nombreSede,
+        est: row.codigoEstablecimiento,
+        zona: row.zona === 'URBANA' ? 'URBANA' : 'RURAL',
+        direccion: row.direccion,
+        telefono: (row.telefono || '').substring(0, 30),
+        estado: row.estadoSede || 'ACTIVO',
+      });
+    }
+
+    for (const n of row.niveles) { const norm = n.toUpperCase(); nivelesSet.add(norm); }
+    for (const m of row.modelos) { const norm = m.toUpperCase(); modelosSet.add(norm); }
+
+    // Many-to-many
+    if (!sedeNiveles.has(row.codigoSede)) sedeNiveles.set(row.codigoSede, new Set());
+    for (const n of row.niveles) sedeNiveles.get(row.codigoSede)!.add(n.toUpperCase());
+
+    if (!sedeModelos.has(row.codigoSede)) sedeModelos.set(row.codigoSede, new Set());
+    for (const m of row.modelos) sedeModelos.get(row.codigoSede)!.add(m.toUpperCase());
+
+    if (!sedeGrados.has(row.codigoSede)) sedeGrados.set(row.codigoSede, new Set());
+    for (const g of row.grados) sedeGrados.get(row.codigoSede)!.add(g);
+  }
+
+  console.log(`  Unicos: ${deptsMap.size} deptos, ${munisMap.size} munis, ${secsSet.size} secs, ${estabsMap.size} estabs, ${sedesMap.size} sedes, ${nivelesSet.size} niveles, ${modelosSet.size} modelos`);
+
+  // ── 2. Pre-cargar caches existentes ──
+  console.log('  Cargando caches existentes...');
   const deptCache = new Set<number>();
   const muniCache = new Set<number>();
   const secCache = new Map<string, number>();
@@ -261,253 +310,241 @@ export async function importarInstituciones(
     pool.request().query('SELECT id, nombre FROM ie.modelos'),
   ]);
 
-  depR.recordset.forEach((r: { codigo_departamento: number }) => deptCache.add(r.codigo_departamento));
-  munR.recordset.forEach((r: { codigo_municipio: number }) => muniCache.add(r.codigo_municipio));
-  secR.recordset.forEach((r: { id: number; nombre: string }) => secCache.set(r.nombre, r.id));
-  estR.recordset.forEach((r: { codigo_establecimiento: number }) => estabCache.add(Number(r.codigo_establecimiento)));
-  sedR.recordset.forEach((r: { codigo_sede: number }) => sedeCache.add(Number(r.codigo_sede)));
-  nivR.recordset.forEach((r: { id: number; nombre: string }) => nivelCache.set(r.nombre, r.id));
-  modR.recordset.forEach((r: { id: number; nombre: string }) => modeloCache.set(r.nombre, r.id));
+  depR.recordset.forEach((r: any) => deptCache.add(r.codigo_departamento));
+  munR.recordset.forEach((r: any) => muniCache.add(r.codigo_municipio));
+  secR.recordset.forEach((r: any) => secCache.set(r.nombre, r.id));
+  estR.recordset.forEach((r: any) => estabCache.add(Number(r.codigo_establecimiento)));
+  sedR.recordset.forEach((r: any) => sedeCache.add(Number(r.codigo_sede)));
+  nivR.recordset.forEach((r: any) => nivelCache.set(r.nombre, r.id));
+  modR.recordset.forEach((r: any) => modeloCache.set(r.nombre, r.id));
 
-  // ────────────────────────────────────────────────────────
-  // Helper: procesa una fila individual contra pool (sin transacción).
-  // Se usa como fallback cuando un batch falla.
-  // Todas las queries son idempotentes (IF NOT EXISTS), por lo
-  // que es seguro re-ejecutar filas que ya se insertaron parcialmente.
-  // ────────────────────────────────────────────────────────
-  async function processRow(
-    ctx: sql.ConnectionPool | sql.Transaction,
-    row: FilaNormalizada,
-    rowIdx: number,
-  ): Promise<void> {
-    if (!row.codigoDepartamento || !row.codigoMunicipio || !row.codigoSede) {
-      result.errors.push({ row: rowIdx, message: 'Códigos obligatorios faltantes' });
-      return;
-    }
-
-    // 1. Departamento
-    if (!deptCache.has(row.codigoDepartamento)) {
-      await ctx.request()
-        .input('cod', sql.Int, row.codigoDepartamento)
-        .input('nom', sql.NVarChar(100), row.nombreDepartamento)
+  // ── 3. Insertar departamentos ──
+  console.log('  Insertando departamentos...');
+  for (const [cod, nombre] of deptsMap) {
+    if (deptCache.has(cod)) continue;
+    try {
+      await pool.request()
+        .input('cod', sql.Int, cod)
+        .input('nom', sql.NVarChar(100), nombre)
         .query(`IF NOT EXISTS (SELECT 1 FROM geo.departamentos WHERE codigo_departamento = @cod)
           INSERT INTO geo.departamentos (codigo_departamento, nombre) VALUES (@cod, @nom)`);
-      deptCache.add(row.codigoDepartamento);
+      deptCache.add(cod);
       result.stats.departamentos++;
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Depto ${cod}: ${e.message}` });
     }
+  }
+  console.log(`  ${result.stats.departamentos} departamentos insertados`);
 
-    // 2. Municipio
-    if (!muniCache.has(row.codigoMunicipio)) {
-      await ctx.request()
-        .input('cod', sql.Int, row.codigoMunicipio)
-        .input('nom', sql.NVarChar(120), row.nombreMunicipio)
-        .input('dep', sql.Int, row.codigoDepartamento)
+  // ── 4. Insertar municipios ──
+  console.log('  Insertando municipios...');
+  for (const [cod, { nombre, dep }] of munisMap) {
+    if (muniCache.has(cod)) continue;
+    try {
+      await pool.request()
+        .input('cod', sql.Int, cod)
+        .input('nom', sql.NVarChar(120), nombre)
+        .input('dep', sql.Int, dep)
         .query(`IF NOT EXISTS (SELECT 1 FROM geo.municipios WHERE codigo_municipio = @cod)
           INSERT INTO geo.municipios (codigo_municipio, nombre, codigo_departamento) VALUES (@cod, @nom, @dep)`);
-      muniCache.add(row.codigoMunicipio);
+      muniCache.add(cod);
       result.stats.municipios++;
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Muni ${cod}: ${e.message}` });
     }
+  }
+  console.log(`  ${result.stats.municipios} municipios insertados`);
 
-    // 3. Secretaría
-    let secId = secCache.get(row.secretaria);
-    if (secId === undefined) {
-      const r = await ctx.request()
-        .input('nom', sql.NVarChar(150), row.secretaria)
+  // ── 5. Insertar secretarias ──
+  console.log('  Insertando secretarias...');
+  for (const nombre of secsSet) {
+    if (secCache.has(nombre)) continue;
+    try {
+      const r = await pool.request()
+        .input('nom', sql.NVarChar(150), nombre)
         .query(`IF NOT EXISTS (SELECT 1 FROM ie.secretarias WHERE nombre = @nom)
           INSERT INTO ie.secretarias (nombre) VALUES (@nom);
           SELECT id FROM ie.secretarias WHERE nombre = @nom;`);
-      secId = r.recordset[0]?.id as number;
-      if (secId === undefined) {
-        throw new Error(`No se pudo obtener id de secretaría "${row.secretaria}"`);
+      const id = r.recordset[0]?.id;
+      if (id !== undefined) {
+        secCache.set(nombre, id);
+        result.stats.secretarias++;
       }
-      secCache.set(row.secretaria, secId);
-      result.stats.secretarias++;
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Sec ${nombre}: ${e.message}` });
     }
+  }
+  console.log(`  ${result.stats.secretarias} secretarias insertadas`);
 
-    // 4. Establecimiento
-    if (!estabCache.has(row.codigoEstablecimiento)) {
-      await ctx.request()
-        .input('cod', sql.BigInt, row.codigoEstablecimiento)
-        .input('nom', sql.NVarChar(300), row.nombreEstablecimiento)
-        .input('mun', sql.Int, row.codigoMunicipio)
+  // ── 6. Insertar niveles ──
+  console.log('  Insertando niveles...');
+  for (const nombre of nivelesSet) {
+    if (nivelCache.has(nombre)) continue;
+    try {
+      const r = await pool.request()
+        .input('nom', sql.NVarChar(100), nombre)
+        .query(`IF NOT EXISTS (SELECT 1 FROM ie.niveles WHERE nombre = @nom)
+          INSERT INTO ie.niveles (nombre) VALUES (@nom);
+          SELECT id FROM ie.niveles WHERE nombre = @nom;`);
+      const id = r.recordset[0]?.id;
+      if (id !== undefined) {
+        nivelCache.set(nombre, id);
+        result.stats.niveles++;
+      }
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Nivel ${nombre}: ${e.message}` });
+    }
+  }
+  console.log(`  ${result.stats.niveles} niveles insertados`);
+
+  // ── 7. Insertar modelos ──
+  console.log('  Insertando modelos...');
+  for (const nombre of modelosSet) {
+    if (modeloCache.has(nombre)) continue;
+    try {
+      const r = await pool.request()
+        .input('nom', sql.NVarChar(150), nombre)
+        .query(`IF NOT EXISTS (SELECT 1 FROM ie.modelos WHERE nombre = @nom)
+          INSERT INTO ie.modelos (nombre) VALUES (@nom);
+          SELECT id FROM ie.modelos WHERE nombre = @nom;`);
+      const id = r.recordset[0]?.id;
+      if (id !== undefined) {
+        modeloCache.set(nombre, id);
+        result.stats.modelos++;
+      }
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Modelo ${nombre}: ${e.message}` });
+    }
+  }
+  console.log(`  ${result.stats.modelos} modelos insertados`);
+
+  // ── 8. Cargar cache de grados (ya seeded) ──
+  const gradoCache = new Map<string, number>();
+  const gradoR = await pool.request().query('SELECT id, codigo FROM ie.grados');
+  gradoR.recordset.forEach((r: any) => gradoCache.set(r.codigo, r.id));
+
+  // ── 9. Insertar establecimientos ──
+  console.log('  Insertando establecimientos...');
+  let estCount = 0;
+  for (const [cod, { nombre, mun, sec }] of estabsMap) {
+    if (estabCache.has(cod)) { estCount++; continue; }
+    const secId = secCache.get(sec);
+    if (secId === undefined) {
+      result.errors.push({ row: 0, message: `Estab ${cod}: secretaria "${sec}" no encontrada` });
+      continue;
+    }
+    try {
+      await pool.request()
+        .input('cod', sql.BigInt, cod)
+        .input('nom', sql.NVarChar(300), nombre)
+        .input('mun', sql.Int, mun)
         .input('sec', sql.Int, secId)
         .query(`IF NOT EXISTS (SELECT 1 FROM ie.establecimientos WHERE codigo_establecimiento = @cod)
           INSERT INTO ie.establecimientos (codigo_establecimiento, nombre, codigo_municipio, secretaria_id)
           VALUES (@cod, @nom, @mun, @sec)`);
-      estabCache.add(row.codigoEstablecimiento);
+      estabCache.add(cod);
       result.stats.establecimientos++;
+      estCount++;
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Estab ${cod}: ${e.message}` });
     }
+    if (estCount % LOG_EVERY === 0) {
+      console.log(`    ${estCount}/${estabsMap.size} establecimientos...`);
+    }
+  }
+  console.log(`  ${result.stats.establecimientos} establecimientos insertados`);
 
-    // 5. Sede
-    if (!sedeCache.has(row.codigoSede)) {
-      const zona = row.zona === 'URBANA' ? 'URBANA' : 'RURAL';
-      await ctx.request()
-        .input('cod', sql.BigInt, row.codigoSede)
-        .input('nom', sql.NVarChar(300), row.nombreSede)
-        .input('est', sql.BigInt, row.codigoEstablecimiento)
+  // ── 10. Insertar sedes ──
+  console.log('  Insertando sedes...');
+  let sedeCount = 0;
+  for (const [cod, { nombre, est, zona, direccion, telefono, estado }] of sedesMap) {
+    if (sedeCache.has(cod)) { sedeCount++; result.processed++; continue; }
+    try {
+      await pool.request()
+        .input('cod', sql.BigInt, cod)
+        .input('nom', sql.NVarChar(300), nombre)
+        .input('est', sql.BigInt, est)
         .input('zona', sql.NVarChar(10), zona)
-        .input('dir', sql.NVarChar(300), row.direccion || null)
-        .input('tel', sql.NVarChar(30), row.telefono || null)
-        .input('estado', sql.NVarChar(30), row.estadoSede || 'ACTIVO')
+        .input('dir', sql.NVarChar(300), direccion || null)
+        .input('tel', sql.NVarChar(30), telefono || null)
+        .input('estado', sql.NVarChar(30), estado)
         .query(`IF NOT EXISTS (SELECT 1 FROM ie.sedes WHERE codigo_sede = @cod)
           INSERT INTO ie.sedes (codigo_sede, nombre, codigo_establecimiento, zona, direccion, telefono, estado)
           VALUES (@cod, @nom, @est, @zona, @dir, @tel, @estado)`);
-      sedeCache.add(row.codigoSede);
+      sedeCache.add(cod);
       result.stats.sedes++;
+    } catch (e: any) {
+      result.errors.push({ row: 0, message: `Sede ${cod}: ${e.message}` });
     }
+    sedeCount++;
+    result.processed++;
+    if (sedeCount % LOG_EVERY === 0) {
+      const pct = Math.round((sedeCount / sedesMap.size) * 100);
+      console.log(`    ${sedeCount}/${sedesMap.size} sedes (${pct}%)...`);
+    }
+  }
+  console.log(`  ${result.stats.sedes} sedes insertadas`);
 
-    // 6. Niveles
-    for (const nivel of row.niveles) {
-      const norm = nivel.toUpperCase();
-      let nId = nivelCache.get(norm);
-      if (nId === undefined) {
-        const r = await ctx.request()
-          .input('nom', sql.NVarChar(100), norm)
-          .query(`IF NOT EXISTS (SELECT 1 FROM ie.niveles WHERE nombre = @nom)
-            INSERT INTO ie.niveles (nombre) VALUES (@nom);
-            SELECT id FROM ie.niveles WHERE nombre = @nom;`);
-        nId = r.recordset[0]?.id as number;
-        if (nId !== undefined) {
-          nivelCache.set(norm, nId);
-          result.stats.niveles++;
-        }
-      }
-      if (nId !== undefined) {
-        await ctx.request()
-          .input('sede', sql.BigInt, row.codigoSede)
+  // ── 11. Insertar relaciones many-to-many ──
+  console.log('  Insertando relaciones sede-niveles...');
+  let relCount = 0;
+  const totalRels = sedeNiveles.size + sedeModelos.size + sedeGrados.size;
+
+  for (const [codigoSede, niveles] of sedeNiveles) {
+    for (const nivel of niveles) {
+      const nId = nivelCache.get(nivel);
+      if (nId === undefined) continue;
+      try {
+        await pool.request()
+          .input('sede', sql.BigInt, codigoSede)
           .input('nid', sql.Int, nId)
           .query(`IF NOT EXISTS (SELECT 1 FROM ie.sede_niveles WHERE codigo_sede = @sede AND nivel_id = @nid)
             INSERT INTO ie.sede_niveles (codigo_sede, nivel_id) VALUES (@sede, @nid)`);
-      }
+      } catch { /* idempotent, skip */ }
     }
+    relCount++;
+    if (relCount % LOG_EVERY === 0) console.log(`    ${relCount}/${totalRels} relaciones...`);
+  }
 
-    // 7. Modelos
-    for (const modelo of row.modelos) {
-      const norm = modelo.toUpperCase();
-      let mId = modeloCache.get(norm);
-      if (mId === undefined) {
-        const r = await ctx.request()
-          .input('nom', sql.NVarChar(150), norm)
-          .query(`IF NOT EXISTS (SELECT 1 FROM ie.modelos WHERE nombre = @nom)
-            INSERT INTO ie.modelos (nombre) VALUES (@nom);
-            SELECT id FROM ie.modelos WHERE nombre = @nom;`);
-        mId = r.recordset[0]?.id as number;
-        if (mId !== undefined) {
-          modeloCache.set(norm, mId);
-          result.stats.modelos++;
-        }
-      }
-      if (mId !== undefined) {
-        await ctx.request()
-          .input('sede', sql.BigInt, row.codigoSede)
+  console.log('  Insertando relaciones sede-modelos...');
+  for (const [codigoSede, modelos] of sedeModelos) {
+    for (const modelo of modelos) {
+      const mId = modeloCache.get(modelo);
+      if (mId === undefined) continue;
+      try {
+        await pool.request()
+          .input('sede', sql.BigInt, codigoSede)
           .input('mid', sql.Int, mId)
           .query(`IF NOT EXISTS (SELECT 1 FROM ie.sede_modelos WHERE codigo_sede = @sede AND modelo_id = @mid)
             INSERT INTO ie.sede_modelos (codigo_sede, modelo_id) VALUES (@sede, @mid)`);
-      }
+      } catch { /* idempotent, skip */ }
     }
+    relCount++;
+    if (relCount % LOG_EVERY === 0) console.log(`    ${relCount}/${totalRels} relaciones...`);
+  }
 
-    // 8. Grados
-    for (const grado of row.grados) {
-      await ctx.request()
-        .input('sede', sql.BigInt, row.codigoSede)
-        .input('cod', sql.NVarChar(10), grado)
-        .query(`DECLARE @gid INT;
-          SELECT @gid = id FROM ie.grados WHERE codigo = @cod;
-          IF @gid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ie.sede_grados WHERE codigo_sede = @sede AND grado_id = @gid)
+  console.log('  Insertando relaciones sede-grados...');
+  for (const [codigoSede, grados] of sedeGrados) {
+    for (const gradoCod of grados) {
+      const gId = gradoCache.get(gradoCod);
+      if (gId === undefined) continue;
+      try {
+        await pool.request()
+          .input('sede', sql.BigInt, codigoSede)
+          .input('gid', sql.Int, gId)
+          .query(`IF NOT EXISTS (SELECT 1 FROM ie.sede_grados WHERE codigo_sede = @sede AND grado_id = @gid)
             INSERT INTO ie.sede_grados (codigo_sede, grado_id) VALUES (@sede, @gid)`);
+      } catch { /* idempotent, skip */ }
     }
-
-    result.processed++;
+    relCount++;
+    if (relCount % LOG_EVERY === 0) console.log(`    ${relCount}/${totalRels} relaciones...`);
   }
+  console.log(`  Relaciones completadas`);
 
-  // ────────────────────────────────────────────────────────
-  // Procesar en batches con transacción.
-  // Si un batch falla, se reintenta fila por fila sin transacción
-  // (las queries son idempotentes gracias a IF NOT EXISTS).
-  // ────────────────────────────────────────────────────────
-  for (let batchStart = 0; batchStart < rows.length; batchStart += BATCH_SIZE) {
-    const batch = rows.slice(batchStart, batchStart + BATCH_SIZE);
-    const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
+  // Set processed to total rows since we deduplicated
+  result.processed = rows.length - result.errors.length;
 
-    // ── Intento 1: batch transaccional (rápido) ──
-    const transaction = pool.transaction();
-    let batchOk = false;
-
-    try {
-      await transaction.begin();
-
-      for (let i = 0; i < batch.length; i++) {
-        const rowIdx = batchStart + i + 2;
-        const row = batch[i];
-        await processRow(transaction, row, rowIdx);
-      }
-
-      await transaction.commit();
-      batchOk = true;
-
-      const pct = Math.round(((batchStart + batch.length) / rows.length) * 100);
-      console.log(`  📦 Batch ${batchNum} completado (${pct}%)`);
-    } catch (batchErr: unknown) {
-      // Rollback seguro: si la transacción ya fue abortada por SQL Server
-      // el rollback lanzará EABORT; lo ignoramos.
-      try { await transaction.rollback(); } catch { /* ya abortada */ }
-
-      const msg = batchErr instanceof Error ? batchErr.message : String(batchErr);
-      console.warn(`  ⚠️  Batch ${batchNum} falló en modo transaccional: ${msg}`);
-      console.log(`  🔄 Reintentando batch ${batchNum} fila por fila...`);
-    }
-
-    // ── Intento 2: fila por fila sin transacción (resiliente) ──
-    if (!batchOk) {
-      // Refrescar caches desde BD antes del reintento para
-      // no perder las entradas insertadas antes del abort
-      const [depR2, munR2, secR2, estR2, sedR2, nivR2, modR2] = await Promise.all([
-        pool.request().query('SELECT codigo_departamento FROM geo.departamentos'),
-        pool.request().query('SELECT codigo_municipio FROM geo.municipios'),
-        pool.request().query('SELECT id, nombre FROM ie.secretarias'),
-        pool.request().query('SELECT codigo_establecimiento FROM ie.establecimientos'),
-        pool.request().query('SELECT codigo_sede FROM ie.sedes'),
-        pool.request().query('SELECT id, nombre FROM ie.niveles'),
-        pool.request().query('SELECT id, nombre FROM ie.modelos'),
-      ]);
-
-      deptCache.clear();
-      muniCache.clear();
-      secCache.clear();
-      estabCache.clear();
-      sedeCache.clear();
-      nivelCache.clear();
-      modeloCache.clear();
-
-      depR2.recordset.forEach((r: { codigo_departamento: number }) => deptCache.add(r.codigo_departamento));
-      munR2.recordset.forEach((r: { codigo_municipio: number }) => muniCache.add(r.codigo_municipio));
-      secR2.recordset.forEach((r: { id: number; nombre: string }) => secCache.set(r.nombre, r.id));
-      estR2.recordset.forEach((r: { codigo_establecimiento: number }) => estabCache.add(Number(r.codigo_establecimiento)));
-      sedR2.recordset.forEach((r: { codigo_sede: number }) => sedeCache.add(Number(r.codigo_sede)));
-      nivR2.recordset.forEach((r: { id: number; nombre: string }) => nivelCache.set(r.nombre, r.id));
-      modR2.recordset.forEach((r: { id: number; nombre: string }) => modeloCache.set(r.nombre, r.id));
-
-      let rowOk = 0;
-      let rowFail = 0;
-      for (let i = 0; i < batch.length; i++) {
-        const rowIdx = batchStart + i + 2;
-        const row = batch[i];
-        try {
-          await processRow(pool, row, rowIdx);
-          rowOk++;
-        } catch (rowErr: unknown) {
-          const msg = rowErr instanceof Error ? rowErr.message : String(rowErr);
-          result.errors.push({ row: rowIdx, message: msg });
-          rowFail++;
-        }
-      }
-
-      const pct = Math.round(((batchStart + batch.length) / rows.length) * 100);
-      console.log(`  📦 Batch ${batchNum} reintentado fila a fila: ${rowOk} OK, ${rowFail} errores (${pct}%)`);
-    }
-  }
-
-  // Actualizar auditoría
+  // Actualizar auditoria
   const estado = result.errors.length === 0 ? 'COMPLETADO' : (result.processed > 0 ? 'COMPLETADO' : 'ERROR');
   result.duration = `${((Date.now() - startTime) / 1000).toFixed(2)}s`;
 

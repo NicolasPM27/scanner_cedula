@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * CLI para importar instituciones educativas desde Excel (.xlsx) o CSV/TSV.
+ * CLI para ituciones educativas desde Excel (.xlsx)importar inst o CSV/TSV.
  *
  * Uso:
  *   npx ts-node src/scripts/import-ie.ts <ruta-al-archivo>
@@ -20,8 +20,8 @@ import * as fs from 'fs';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const dotenv = require('dotenv');
 
-// Cargar .env desde la raíz del proyecto (dos niveles arriba desde scripts/)
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Cargar .env desde backend/ (dos niveles arriba desde src/scripts/)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { connectToDatabase, closeDatabaseConnection } from '../config/database';
 import { importarInstituciones } from '../utils/import-instituciones';
