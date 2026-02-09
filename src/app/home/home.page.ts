@@ -35,6 +35,7 @@ import {
   cloudUploadOutline,
   schoolOutline,
 } from 'ionicons/icons';
+import { Capacitor } from '@capacitor/core';
 import { ScannerService } from '../services/scanner.service';
 import { environment } from '../../environments/environment';
 
@@ -102,10 +103,17 @@ export class HomePage implements OnInit {
   }
 
   goToScanner(mode: 'auto' | 'pdf417' | 'mrz' | 'test' = 'auto'): void {
-    // Navigate to authorization page instead of opening modal
-    this.router.navigate(['/data-authorization'], {
-      queryParams: { mode }
-    });
+    if (Capacitor.isNativePlatform()) {
+      // App nativa: flujo existente con autorizacion + scanner nativo
+      this.router.navigate(['/data-authorization'], {
+        queryParams: { mode }
+      });
+    } else {
+      // PWA/web: flujo con autorizacion + web scanner (getUserMedia + backend)
+      this.router.navigate(['/data-authorization'], {
+        queryParams: { mode, platform: 'web' }
+      });
+    }
   }
 
   goToVerification(): void {

@@ -10,8 +10,10 @@ import { afiliadoRoutes } from './routes/afiliado.routes';
 import { beneficiarioRoutes } from './routes/beneficiario.routes';
 import { institucionRoutes } from './routes/institucion.routes';
 import { healthRoutes } from './routes/health.routes';
+import { scanRoutes } from './routes/scan.routes';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
+import { terminateTesseract } from './services/image-processor.service';
 
 // ── 1. Cargar variables de entorno ──────────────────────
 loadEnvironment();
@@ -23,7 +25,7 @@ const app = express();
 // ── 3. Middleware de seguridad ───────────────────────────
 app.use(helmet(createHelmetConfig()));
 app.use(cors(createCorsConfig()));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '20mb' }));
 
 // ── 4. Logging ──────────────────────────────────────────
 app.use(requestLogger);
@@ -33,6 +35,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/afiliados', afiliadoRoutes);
 app.use('/api/beneficiarios', beneficiarioRoutes);
 app.use('/api/instituciones', institucionRoutes);
+app.use('/api/scan', scanRoutes);
 
 // ── 6. Manejo global de errores ─────────────────────────
 app.use(errorHandler);
@@ -63,6 +66,7 @@ async function startServer(): Promise<void> {
 // ── 8. Cierre graceful ──────────────────────────────────
 async function shutdown(signal: string): Promise<void> {
   console.log(`\n${signal} recibido. Cerrando servidor...`);
+  await terminateTesseract();
   await closeDatabaseConnection();
   process.exit(0);
 }

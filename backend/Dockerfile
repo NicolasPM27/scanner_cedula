@@ -21,6 +21,9 @@ RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
 
+# Tesseract OCRB trained data para lectura de MRZ
+COPY ocrb.traineddata ./
+
 # Directorio para archivos temporales de importación
 RUN mkdir -p /app/uploads
 

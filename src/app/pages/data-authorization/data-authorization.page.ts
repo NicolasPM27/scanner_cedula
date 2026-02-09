@@ -52,6 +52,7 @@ export class DataAuthorizationPage implements OnInit {
   };
 
   targetMode: string = 'auto';
+  targetPlatform: string = '';
 
   constructor(
     private router: Router,
@@ -68,6 +69,7 @@ export class DataAuthorizationPage implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.targetMode = params['mode'] || 'auto';
+      this.targetPlatform = params['platform'] || '';
     });
   }
 
@@ -80,8 +82,9 @@ export class DataAuthorizationPage implements OnInit {
 
   confirm(): void {
     if (this.isFormValid()) {
-      // Navigate to scanner with replaceUrl so back button skips this auth page
-      this.router.navigate(['/scanner'], {
+      // PWA/web: usar web-scanner; nativo: usar scanner existente
+      const route = this.targetPlatform === 'web' ? '/web-scanner' : '/scanner';
+      this.router.navigate([route], {
         queryParams: { mode: this.targetMode },
         replaceUrl: true
       });

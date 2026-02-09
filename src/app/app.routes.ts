@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./example/scan-cedula.component').then((m) => m.ScanCedulaComponent),
   },
   {
+    path: 'web-scanner',
+    loadComponent: () => import('./pages/web-scanner/web-scanner.page').then((m) => m.WebScannerPage),
+  },
+  {
     path: 'verification',
     loadComponent: () => import('./pages/verificacion/verificacion.page').then((m) => m.VerificacionPage),
   },
