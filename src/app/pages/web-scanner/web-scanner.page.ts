@@ -89,32 +89,34 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       </ion-toolbar>
     </ion-header>
 
-    <ion-content [fullscreen]="true">
+    <ion-content [fullscreen]="true" class="ion-padding">
       <div class="scanner-container">
 
         <!-- ESTADO: IDLE - Seleccionar tipo y abrir camara -->
         @if (state() === 'idle') {
-          <ion-card>
+          <ion-card class="scanner-card">
             <ion-card-header>
-              <ion-card-title>
-                <ion-icon name="videocam-outline"></ion-icon>
-                Escanear documento
-              </ion-card-title>
+              <div class="card-icon-container">
+                <ion-icon name="videocam-outline" color="primary"></ion-icon>
+              </div>
+              <ion-card-title>Escanear documento</ion-card-title>
             </ion-card-header>
             <ion-card-content>
               <p class="instruction-text">
-                Seleccione el tipo de documento y presione el boton para abrir la camara.
-                Debe tener el documento fisico en mano.
+                Seleccione el tipo de documento y presione el botón para abrir la cámara.
+                Debe tener el documento físico en mano.
               </p>
 
-              <ion-list>
-                <ion-item>
+              <ion-list class="document-type-list" lines="none">
+                <ion-item class="select-item">
                   <ion-select
                     label="Tipo de documento"
+                    labelPlacement="stacked"
                     [value]="tipoDocumento()"
-                    (ionChange)="tipoDocumento.set($any($event).detail.value)">
-                    <ion-select-option value="CC">Cedula de Ciudadania</ion-select-option>
-                    <ion-select-option value="CE">Cedula de Extranjeria</ion-select-option>
+                    (ionChange)="tipoDocumento.set($any($event).detail.value)"
+                    interface="action-sheet">
+                    <ion-select-option value="CC">Cédula de Ciudadanía</ion-select-option>
+                    <ion-select-option value="CE">Cédula de Extranjería</ion-select-option>
                     <ion-select-option value="PA">Pasaporte</ion-select-option>
                     <ion-select-option value="TI">Tarjeta de Identidad</ion-select-option>
                   </ion-select>
@@ -124,15 +126,16 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
               @if (!webScanner.isCameraSupported) {
                 <div class="error-banner">
                   <ion-icon name="alert-circle" color="danger"></ion-icon>
-                  <span>Su navegador no soporta acceso a la camara. Use Chrome o Safari.</span>
+                  <span>Su navegador no soporta acceso a la cámara. Use Chrome o Safari.</span>
                 </div>
               } @else {
                 <ion-button
                   expand="block"
+                  size="large"
                   (click)="openCamera()"
-                  class="open-camera-btn">
+                  class="primary-action-btn">
                   <ion-icon slot="start" name="camera"></ion-icon>
-                  Abrir camara
+                  Abrir cámara
                 </ion-button>
               }
             </ion-card-content>
@@ -153,23 +156,25 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
             <!-- Guia visual -->
             <div class="camera-overlay">
               <div class="guide-frame">
-                <div class="corner tl"></div>
-                <div class="corner tr"></div>
-                <div class="corner bl"></div>
-                <div class="corner br"></div>
+                <div class="corner corner-tl"></div>
+                <div class="corner corner-tr"></div>
+                <div class="corner corner-bl"></div>
+                <div class="corner corner-br"></div>
               </div>
-              <p class="guide-text">
-                @if (tipoDocumento() === 'CC') {
-                  Ubique la parte posterior de la cedula dentro del recuadro
-                } @else {
-                  Ubique el documento dentro del recuadro
-                }
-              </p>
+              <div class="guide-text-container">
+                <p class="guide-text">
+                  @if (tipoDocumento() === 'CC') {
+                    Ubique la parte posterior de la cédula dentro del recuadro
+                  } @else {
+                    Ubique el documento dentro del recuadro
+                  }
+                </p>
+              </div>
             </div>
 
             <!-- Botones sobre la camara -->
             <div class="camera-controls">
-              <ion-button fill="clear" color="light" (click)="closeCamera()">
+              <ion-button fill="clear" color="light" (click)="closeCamera()" class="control-btn">
                 <ion-icon slot="icon-only" name="close-circle"></ion-icon>
               </ion-button>
               <ion-button
@@ -180,7 +185,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                 class="capture-btn">
                 <ion-icon slot="icon-only" name="camera"></ion-icon>
               </ion-button>
-              <div style="width:48px"></div>
+              <div class="control-btn-spacer"></div>
             </div>
           </div>
         }
@@ -188,9 +193,11 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
         <!-- ESTADO: PROCESSING -->
         @if (state() === 'processing') {
           <div class="processing-container">
-            <ion-spinner name="crescent" color="primary"></ion-spinner>
-            <h3>Procesando documento...</h3>
-            <p>Leyendo datos del documento. Esto puede tomar unos segundos.</p>
+            <div class="processing-content">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+              <h3 class="processing-title">Procesando documento...</h3>
+              <p class="processing-text">Leyendo datos del documento. Esto puede tomar unos segundos.</p>
+            </div>
           </div>
         }
 
@@ -199,17 +206,21 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
           <ion-card class="error-card">
             <ion-card-content>
               <div class="error-content">
-                <ion-icon name="alert-circle" color="danger" size="large"></ion-icon>
-                <h3>No se pudo leer el documento</h3>
-                <p>{{ errorMsg() }}</p>
+                <div class="error-icon-container">
+                  <ion-icon name="alert-circle" color="danger"></ion-icon>
+                </div>
+                <h3 class="error-title">No se pudo leer el documento</h3>
+                <p class="error-message">{{ errorMsg() }}</p>
               </div>
-              <ion-button expand="block" (click)="retry()">
-                <ion-icon slot="start" name="refresh"></ion-icon>
-                Intentar de nuevo
-              </ion-button>
-              <ion-button expand="block" fill="outline" color="medium" (click)="backToIdle()">
-                Cambiar tipo de documento
-              </ion-button>
+              <div class="error-actions">
+                <ion-button expand="block" size="large" (click)="retry()" class="primary-action-btn">
+                  <ion-icon slot="start" name="refresh"></ion-icon>
+                  Intentar de nuevo
+                </ion-button>
+                <ion-button expand="block" fill="outline" color="medium" (click)="backToIdle()">
+                  Cambiar tipo de documento
+                </ion-button>
+              </div>
             </ion-card-content>
           </ion-card>
         }
@@ -218,59 +229,61 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
         @if (state() === 'result' && cedulaData()) {
           <ion-card class="result-card animate-slide-up">
             <div class="result-header">
-              <ion-icon name="checkmark-circle"></ion-icon>
-              <h3>Documento leido correctamente</h3>
+              <ion-icon name="checkmark-circle" color="light"></ion-icon>
+              <h3>Documento leído correctamente</h3>
             </div>
 
             <ion-card-content>
               <!-- Numero de documento -->
-              <div class="cedula-number">
-                <span class="label">Numero de Documento</span>
-                <span class="number">{{ formatCedula(cedulaData()!.numeroDocumento) }}</span>
+              <div class="cedula-number-card">
+                <span class="cedula-label">Número de Documento</span>
+                <span class="cedula-value">{{ formatCedula(cedulaData()!.numeroDocumento) }}</span>
               </div>
 
               <!-- Datos personales -->
-              <ion-list lines="none" class="data-list">
-                <ion-item>
-                  <ion-icon name="person" slot="start" color="primary"></ion-icon>
-                  <ion-label>
-                    <p>Nombre completo</p>
-                    <h3>{{ cedulaData()!.primerNombre }} {{ cedulaData()!.segundoNombre }}
-                        {{ cedulaData()!.primerApellido }} {{ cedulaData()!.segundoApellido }}</h3>
-                  </ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-icon name="calendar" slot="start" color="primary"></ion-icon>
-                  <ion-label>
-                    <p>Fecha de nacimiento</p>
-                    <h3>{{ formatDate(cedulaData()!.fechaNacimiento) }}</h3>
-                  </ion-label>
-                </ion-item>
-                <ion-item>
-                  <ion-icon name="male-female" slot="start" color="primary"></ion-icon>
-                  <ion-label>
-                    <p>Genero</p>
-                    <h3>{{ cedulaData()!.genero === 'M' ? 'Masculino' : cedulaData()!.genero === 'F' ? 'Femenino' : 'No especificado' }}</h3>
-                  </ion-label>
-                </ion-item>
-                @if (cedulaData()!.rh !== 'DESCONOCIDO') {
-                  <ion-item>
-                    <ion-icon name="water" slot="start" color="primary"></ion-icon>
+              <div class="data-section">
+                <ion-list lines="none" class="data-list">
+                  <ion-item class="data-item">
+                    <ion-icon name="person" slot="start" color="primary"></ion-icon>
                     <ion-label>
-                      <p>RH</p>
-                      <h3>{{ cedulaData()!.rh }}</h3>
+                      <p class="data-label">Nombre completo</p>
+                      <h3 class="data-value">{{ cedulaData()!.primerNombre }} {{ cedulaData()!.segundoNombre }}
+                          {{ cedulaData()!.primerApellido }} {{ cedulaData()!.segundoApellido }}</h3>
                     </ion-label>
                   </ion-item>
-                }
-              </ion-list>
+                  <ion-item class="data-item">
+                    <ion-icon name="calendar" slot="start" color="primary"></ion-icon>
+                    <ion-label>
+                      <p class="data-label">Fecha de nacimiento</p>
+                      <h3 class="data-value">{{ formatDate(cedulaData()!.fechaNacimiento) }}</h3>
+                    </ion-label>
+                  </ion-item>
+                  <ion-item class="data-item">
+                    <ion-icon name="male-female" slot="start" color="primary"></ion-icon>
+                    <ion-label>
+                      <p class="data-label">Género</p>
+                      <h3 class="data-value">{{ cedulaData()!.genero === 'M' ? 'Masculino' : cedulaData()!.genero === 'F' ? 'Femenino' : 'No especificado' }}</h3>
+                    </ion-label>
+                  </ion-item>
+                  @if (cedulaData()!.rh !== 'DESCONOCIDO') {
+                    <ion-item class="data-item">
+                      <ion-icon name="water" slot="start" color="primary"></ion-icon>
+                      <ion-label>
+                        <p class="data-label">RH</p>
+                        <h3 class="data-value">{{ cedulaData()!.rh }}</h3>
+                      </ion-label>
+                    </ion-item>
+                  }
+                </ion-list>
+              </div>
 
               <!-- Confianza -->
               @if (authenticityScore() > 0) {
-                <div class="confidence-bar-container">
-                  <div class="confidence-label">
-                    <ion-icon name="analytics"></ion-icon>
-                    <span>Confianza</span>
-                    <strong>{{ authenticityScore() }}%</strong>
+                <div class="confidence-container">
+                  <div class="confidence-header">
+                    <ion-icon name="analytics" color="primary"></ion-icon>
+                    <span class="confidence-text">Confianza</span>
+                    <strong class="confidence-value">{{ authenticityScore() }}%</strong>
                   </div>
                   <div class="confidence-track">
                     <div class="confidence-fill" [style.width.%]="authenticityScore()"></div>
@@ -278,18 +291,22 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                 </div>
               }
 
-              <ion-button
-                expand="block"
-                color="primary"
-                (click)="continuarActualizacion()">
-                <ion-icon slot="start" name="checkmark-circle"></ion-icon>
-                Continuar con la actualizacion
-              </ion-button>
+              <div class="result-actions">
+                <ion-button
+                  expand="block"
+                  size="large"
+                  color="primary"
+                  (click)="continuarActualizacion()"
+                  class="primary-action-btn">
+                  <ion-icon slot="start" name="checkmark-circle"></ion-icon>
+                  Continuar con la actualización
+                </ion-button>
 
-              <ion-button expand="block" fill="outline" color="medium" (click)="retry()">
-                <ion-icon slot="start" name="refresh"></ion-icon>
-                Escanear de nuevo
-              </ion-button>
+                <ion-button expand="block" fill="outline" color="medium" (click)="retry()">
+                  <ion-icon slot="start" name="refresh"></ion-icon>
+                  Escanear de nuevo
+                </ion-button>
+              </div>
             </ion-card-content>
           </ion-card>
         }
@@ -298,35 +315,128 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
     </ion-content>
   `,
   styles: [`
-    .scanner-container {
-      padding: 16px;
-      max-width: 600px;
-      margin: 0 auto;
+    :host {
+      --scanner-max-width: 600px;
+      --spacing-xs: 0.5rem;
+      --spacing-sm: 0.75rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 2.5rem;
+      --border-radius-sm: 0.75rem;
+      --border-radius-md: 1rem;
+      --border-radius-lg: 1.5rem;
+      --border-radius-xl: 2rem;
     }
 
+    /* Container principal */
+    .scanner-container {
+      max-width: var(--scanner-max-width);
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Cards generales */
+    .scanner-card,
+    .error-card,
+    .result-card {
+      border-radius: var(--border-radius-xl);
+      margin-bottom: var(--spacing-md);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .scanner-card ion-card-header,
+    .error-card ion-card-header,
+    .result-card ion-card-header {
+      padding: var(--spacing-lg);
+    }
+
+    .scanner-card ion-card-content,
+    .error-card ion-card-content,
+    .result-card ion-card-content {
+      padding: var(--spacing-lg);
+    }
+
+    /* Card icon container */
+    .card-icon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.5rem;
+      height: 3.5rem;
+      background: rgba(var(--ion-color-primary-rgb), 0.1);
+      border-radius: var(--border-radius-md);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .card-icon-container ion-icon {
+      font-size: 1.75rem;
+    }
+
+    ion-card-title {
+      font-size: 1.375rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ion-color-dark);
+    }
+
+    /* Instruction text */
     .instruction-text {
       color: var(--ion-color-medium);
-      margin-bottom: 16px;
-      line-height: 1.5;
+      margin: 0 0 var(--spacing-lg);
+      line-height: 1.6;
+      font-size: 0.9375rem;
     }
 
-    .open-camera-btn {
-      margin-top: 16px;
-      --border-radius: 16px;
-      height: 52px;
-      font-weight: 600;
+    /* Document type selector */
+    .document-type-list {
+      padding: 0;
+      margin-bottom: var(--spacing-lg);
     }
 
+    .select-item {
+      --background: var(--ion-color-light);
+      --padding-start: var(--spacing-md);
+      --padding-end: var(--spacing-md);
+      --min-height: 3.5rem;
+      border-radius: var(--border-radius-md);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .select-item ion-select {
+      width: 100%;
+      font-size: 1rem;
+    }
+
+    /* Error banner */
     .error-banner {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md);
       background: rgba(var(--ion-color-danger-rgb), 0.08);
-      border-radius: 12px;
-      margin-top: 16px;
+      border: 1px solid rgba(var(--ion-color-danger-rgb), 0.2);
+      border-radius: var(--border-radius-md);
+      margin-top: var(--spacing-lg);
       font-size: 0.875rem;
       color: var(--ion-color-danger);
+      line-height: 1.5;
+    }
+
+    .error-banner ion-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    /* Primary action button */
+    .primary-action-btn {
+      margin-top: var(--spacing-md);
+      --border-radius: var(--border-radius-md);
+      height: 3.25rem;
+      font-weight: 600;
+      font-size: 1rem;
+      --box-shadow: 0 2px 8px rgba(var(--ion-color-primary-rgb), 0.3);
     }
 
     /* Camera */
@@ -358,28 +468,62 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       width: min(90vw, calc(80vh * 1.586));
       aspect-ratio: 1.586;
       border: 2px solid rgba(255, 255, 255, 0.4);
-      border-radius: 12px;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+      border-radius: var(--border-radius-md);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     }
 
     .corner {
       position: absolute;
-      width: 30px;
-      height: 30px;
+      width: 2rem;
+      height: 2rem;
       border: 4px solid #00E676;
     }
-    .corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-top-left-radius: 12px; }
-    .corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-top-right-radius: 12px; }
-    .corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-bottom-left-radius: 12px; }
-    .corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-bottom-right-radius: 12px; }
+
+    .corner-tl {
+      top: -2px;
+      left: -2px;
+      border-right: none;
+      border-bottom: none;
+      border-top-left-radius: var(--border-radius-md);
+    }
+
+    .corner-tr {
+      top: -2px;
+      right: -2px;
+      border-left: none;
+      border-bottom: none;
+      border-top-right-radius: var(--border-radius-md);
+    }
+
+    .corner-bl {
+      bottom: -2px;
+      left: -2px;
+      border-right: none;
+      border-top: none;
+      border-bottom-left-radius: var(--border-radius-md);
+    }
+
+    .corner-br {
+      bottom: -2px;
+      right: -2px;
+      border-left: none;
+      border-top: none;
+      border-bottom-right-radius: var(--border-radius-md);
+    }
+
+    .guide-text-container {
+      margin-top: var(--spacing-lg);
+      padding: 0 var(--spacing-xl);
+    }
 
     .guide-text {
       color: #fff;
       text-align: center;
-      margin-top: 20px;
-      padding: 0 32px;
-      font-size: 0.9375rem;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.5;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+      font-weight: 500;
     }
 
     .camera-controls {
@@ -390,170 +534,235 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 24px 32px;
-      padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-      background: linear-gradient(transparent, rgba(0,0,0,0.6));
+      padding: var(--spacing-lg) var(--spacing-xl);
+      padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    }
+
+    .control-btn {
+      width: 3rem;
+      height: 3rem;
+      --padding-start: 0;
+      --padding-end: 0;
+    }
+
+    .control-btn ion-icon {
+      font-size: 2rem;
+    }
+
+    .control-btn-spacer {
+      width: 3rem;
     }
 
     .capture-btn {
-      --padding-start: 20px;
-      --padding-end: 20px;
-      width: 72px;
-      height: 72px;
-      --border-radius: 50%;
-      --box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      width: 4.5rem;
+      height: 4.5rem;
+      --padding-start: 0;
+      --padding-end: 0;
+      --box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
 
-    /* Processing */
+    .capture-btn ion-icon {
+      font-size: 2rem;
+    }
+
+    /* Processing state */
     .processing-container {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 80px 32px;
+      min-height: 50vh;
+      padding: var(--spacing-xl);
+    }
+
+    .processing-content {
       text-align: center;
+      max-width: 20rem;
     }
 
-    .processing-container ion-spinner {
-      width: 56px;
-      height: 56px;
-      margin-bottom: 24px;
+    .processing-content ion-spinner {
+      width: 3.5rem;
+      height: 3.5rem;
+      margin-bottom: var(--spacing-lg);
     }
 
-    .processing-container h3 {
-      margin: 0 0 8px;
+    .processing-title {
+      margin: 0 0 var(--spacing-sm);
       font-weight: 600;
+      font-size: 1.25rem;
+      color: var(--ion-color-dark);
     }
 
-    .processing-container p {
+    .processing-text {
       color: var(--ion-color-medium);
-      max-width: 300px;
+      margin: 0;
+      line-height: 1.6;
+      font-size: 0.9375rem;
     }
 
-    /* Error */
-    .error-card {
-      border-radius: 24px;
-    }
-
+    /* Error state */
     .error-content {
       text-align: center;
-      padding: 24px 0;
+      padding: var(--spacing-xl) 0;
     }
 
-    .error-content ion-icon {
-      font-size: 3rem;
-      margin-bottom: 16px;
+    .error-icon-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 4rem;
+      height: 4rem;
+      background: rgba(var(--ion-color-danger-rgb), 0.1);
+      border-radius: 50%;
+      margin-bottom: var(--spacing-lg);
     }
 
-    .error-content h3 {
-      margin: 0 0 8px;
+    .error-icon-container ion-icon {
+      font-size: 2.25rem;
+    }
+
+    .error-title {
+      margin: 0 0 var(--spacing-sm);
       font-weight: 600;
+      font-size: 1.25rem;
+      color: var(--ion-color-dark);
     }
 
-    .error-content p {
+    .error-message {
       color: var(--ion-color-medium);
-      margin-bottom: 24px;
-      line-height: 1.5;
+      margin: 0 0 var(--spacing-xl);
+      line-height: 1.6;
+      font-size: 0.9375rem;
     }
 
-    /* Result */
-    .result-card {
-      border-radius: 24px;
-      overflow: hidden;
+    .error-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
     }
 
+    /* Result state */
     .result-header {
       background: linear-gradient(135deg, var(--ion-color-success), var(--ion-color-success-shade));
-      padding: 20px 24px;
+      padding: var(--spacing-lg) var(--spacing-lg);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--spacing-md);
       color: #fff;
     }
 
     .result-header ion-icon {
       font-size: 2rem;
+      flex-shrink: 0;
     }
 
     .result-header h3 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.125rem;
       font-weight: 600;
+      line-height: 1.4;
     }
 
-    .cedula-number {
+    .cedula-number-card {
       text-align: center;
-      padding: 20px;
+      padding: var(--spacing-lg);
       background: var(--ion-color-light);
-      border-radius: 16px;
-      margin-bottom: 16px;
+      border-radius: var(--border-radius-md);
+      margin-bottom: var(--spacing-lg);
     }
 
-    .cedula-number .label {
+    .cedula-label {
       display: block;
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--ion-color-medium);
-      margin-bottom: 6px;
+      margin-bottom: var(--spacing-xs);
+      font-weight: 600;
     }
 
-    .cedula-number .number {
-      font-size: 1.75rem;
+    .cedula-value {
+      font-size: 1.875rem;
       font-weight: 700;
       font-family: 'SF Mono', Monaco, 'Courier New', monospace;
       color: var(--ion-color-primary);
+      line-height: 1;
+    }
+
+    /* Data section */
+    .data-section {
+      margin-bottom: var(--spacing-lg);
     }
 
     .data-list {
       padding: 0;
       background: transparent;
-      margin-bottom: 16px;
     }
 
-    .data-list ion-item {
+    .data-item {
       --background: var(--ion-color-light);
-      --padding-start: 16px;
-      --min-height: 56px;
-      border-radius: 12px;
-      margin-bottom: 8px;
+      --padding-start: var(--spacing-md);
+      --padding-end: var(--spacing-md);
+      --min-height: 4rem;
+      border-radius: var(--border-radius-md);
+      margin-bottom: var(--spacing-sm);
     }
 
-    .data-list ion-label p {
-      font-size: 0.75rem;
+    .data-item ion-icon {
+      font-size: 1.5rem;
+      margin-right: var(--spacing-sm);
+    }
+
+    .data-label {
+      font-size: 0.8125rem;
       color: var(--ion-color-medium);
+      margin: 0 0 0.25rem;
+      font-weight: 500;
     }
 
-    .data-list ion-label h3 {
+    .data-value {
       font-size: 1rem;
       font-weight: 600;
       margin: 0;
+      color: var(--ion-color-dark);
+      line-height: 1.4;
     }
 
-    .confidence-bar-container {
-      padding: 16px;
+    /* Confidence bar */
+    .confidence-container {
+      padding: var(--spacing-md);
       background: var(--ion-color-light);
-      border-radius: 12px;
-      margin-bottom: 16px;
+      border-radius: var(--border-radius-md);
+      margin-bottom: var(--spacing-lg);
     }
 
-    .confidence-label {
+    .confidence-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--spacing-sm);
       font-size: 0.875rem;
       color: var(--ion-color-medium);
-      margin-bottom: 10px;
+      margin-bottom: var(--spacing-sm);
+      font-weight: 500;
     }
 
-    .confidence-label strong {
-      margin-left: auto;
+    .confidence-header ion-icon {
+      font-size: 1.125rem;
+    }
+
+    .confidence-text {
+      flex: 1;
+    }
+
+    .confidence-value {
       color: var(--ion-color-primary);
+      font-weight: 700;
+      font-size: 1rem;
     }
 
     .confidence-track {
-      height: 8px;
-      background: var(--ion-color-medium-tint);
+      height: 0.5rem;
+      background: rgba(var(--ion-color-medium-rgb), 0.15);
       border-radius: 999px;
       overflow: hidden;
     }
@@ -562,16 +771,70 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       height: 100%;
       background: linear-gradient(90deg, var(--ion-color-primary), var(--ion-color-success));
       border-radius: 999px;
-      transition: width 0.4s ease;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+
+    /* Animations */
     .animate-slide-up {
-      animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(1.5rem);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+      .scanner-container {
+        padding: var(--spacing-lg);
+      }
+
+      .processing-title {
+        font-size: 1.5rem;
+      }
+
+      .error-title {
+        font-size: 1.5rem;
+      }
+
+      .cedula-value {
+        font-size: 2.25rem;
+      }
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+      .scanner-card,
+      .error-card,
+      .result-card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      ion-card-title {
+        color: var(--ion-color-light);
+      }
+
+      .error-title,
+      .processing-title {
+        color: var(--ion-color-light);
+      }
+
+      .data-value {
+        color: var(--ion-color-light);
+      }
     }
   `],
 })

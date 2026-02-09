@@ -413,8 +413,175 @@ ion-header {
   gap: 8px;
 }
 
-* {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
+// =============================================================================
+// MODO SIMPLE — HOME PAGE
+// =============================================================================
+// Layout simplificado: logo + 1 botón grande + 1 instrucción
+
+// Simple mode branding (logo más grande y centrado)
+.simple-branding {
+  min-height: 120px;
+  padding: var(--space-lg) var(--space-md) var(--space-sm);
+
+  .fomag-logo {
+    width: 70%;
+    max-width: 340px;
+  }
+}
+
+// Hero simplificado: TEXTO PROMINENTE, sin iconos decorativos
+.simple-hero {
+  text-align: left;
+  padding: var(--space-md) var(--space-lg) var(--space-md);
+
+  h1 {
+    margin: 0 0 var(--space-sm);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--ion-text-color);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  p {
+    margin: 0;
+    font-size: 1.1875rem;
+    line-height: 1.55;
+    color: var(--ion-color-medium-shade);
+  }
+}
+
+// Botón de acción principal simplificado
+.simple-actions {
+  padding: var(--space-md) var(--space-lg);
+  max-width: 420px;
+  margin: 0 auto;
+
+  .simple-scan-button {
+    --background: var(--ion-color-primary);
+    --color: var(--ion-color-primary-contrast);
+    --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb), 0.3);
+    --border-radius: var(--radius-lg);
+    height: 72px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+
+    ion-icon {
+      font-size: 28px;
+      margin-right: var(--space-sm);
+    }
+  }
+}
+
+// Instrucciones reducidas — TEXT ONLY, no icons
+.simple-instructions {
+  padding: var(--space-sm) var(--space-lg);
+  max-width: 420px;
+  margin: 0 auto;
+
+  .simple-instruction-text {
+    background: var(--surface-container);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--ion-color-primary);
+    padding: var(--space-md) var(--space-lg);
+
+    p {
+      margin: 0;
+      font-size: 1.0625rem;
+      line-height: 1.6;
+      color: var(--ion-text-color);
+
+      strong {
+        color: var(--ion-color-primary);
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// Link a configuración
+.simple-settings-link {
+  text-align: center;
+  padding: var(--space-xl) var(--space-md) var(--space-md);
+
+  ion-button {
+    --color: var(--ion-color-medium-shade);
+    font-size: 1rem;
+    font-weight: 500;
+    min-height: 48px;
+
+    ion-icon {
+      font-size: 1.25rem;
+      margin-right: var(--space-xs);
+    }
+  }
+}
+
+// ─── SIMPLE MODE OVERRIDES VIA :host-context ─────────────────────────
+:host-context(body.simple-mode) {
+  // Logo agrandado
+  .simple-branding {
+    min-height: 140px;
+    padding: var(--space-xl) var(--space-md) var(--space-md);
+
+    .fomag-logo {
+      width: 75%;
+      max-width: 380px;
+    }
+  }
+
+  .simple-hero {
+    padding: var(--space-lg) var(--space-lg) var(--space-md);
+
+    h1 {
+      font-size: 2.375rem;
+      font-weight: 800;
+    }
+
+    p {
+      font-size: 1.3125rem;
+      line-height: 1.6;
+    }
+  }
+
+  .simple-actions {
+    padding: var(--space-lg);
+
+    .simple-scan-button {
+      height: 80px;
+      font-size: 1.375rem;
+      font-weight: 800;
+    }
+  }
+
+  .simple-instructions {
+    .simple-instruction-text {
+      padding: var(--space-lg);
+
+      p {
+        font-size: 1.1875rem;
+
+        strong {
+          font-size: 1.25rem;
+        }
+      }
+    }
+  }
+
+  .simple-settings-link ion-button {
+    font-size: 1.1875rem;
+    font-weight: 600;
+    min-height: 56px;
+  }
+
+  // Header override
+  ion-toolbar ion-title {
+    font-size: 1.375rem !important;
+    font-weight: 700 !important;
+  }
+
+  ion-toolbar ion-button ion-icon {
+    font-size: 28px;
+  }
 }

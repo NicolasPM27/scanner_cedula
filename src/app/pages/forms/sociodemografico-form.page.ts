@@ -82,13 +82,13 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
         <ion-buttons slot="start">
           <ion-back-button defaultHref="/forms/contact"></ion-back-button>
         </ion-buttons>
-        <ion-title>Información Sociodemográfica</ion-title>
+        <ion-title>Residencia</ion-title>
       </ion-toolbar>
       <ion-toolbar>
         <div class="progress-container">
           <div class="progress-info">
-            <span class="step-label">Paso 2 de 4</span>
-            <span class="step-title">Datos de residencia</span>
+            <span class="step-label">PASO 2 DE 4</span>
+            <span class="step-title">Residencia</span>
           </div>
           <ion-progress-bar [value]="0.5" color="primary"></ion-progress-bar>
         </div>
@@ -113,9 +113,8 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 <ion-item>
                   <ion-select
                     formControlName="estadoCivil"
-                    label="Estado Civil"
+                    label="Estado civil"
                     labelPlacement="stacked"
-                    placeholder="Seleccione su estado civil"
                     interface="action-sheet"
                   >
                     @for (estado of estadosCiviles; track estado.value) {
@@ -127,7 +126,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 </ion-item>
                 @if (showError('estadoCivil')) {
                   <ion-note color="danger" class="error-note">
-                    Seleccione su estado civil
+                    Requerido
                   </ion-note>
                 }
               </ion-list>
@@ -139,7 +138,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="location-outline"></ion-icon>
-                Ubicación de Residencia
+                Ubicación
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -151,7 +150,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     formControlName="zona"
                     label="Zona"
                     labelPlacement="stacked"
-                    placeholder="Urbana o Rural"
                     interface="action-sheet"
                     (ionChange)="onZonaChange($event)"
                   >
@@ -164,7 +162,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 </ion-item>
                 @if (showError('zona')) {
                   <ion-note color="danger" class="error-note">
-                    Seleccione la zona
+                    Requerido
                   </ion-note>
                 }
 
@@ -177,7 +175,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     formControlName="departamento"
                     label="Departamento"
                     labelPlacement="stacked"
-                    placeholder="Seleccione el departamento"
                     interface="action-sheet"
                     [disabled]="loadingDepartamentos() || departamentos().length === 0"
                     (ionChange)="onDepartamentoChange($event)"
@@ -191,7 +188,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 </ion-item>
                 @if (showError('departamento')) {
                   <ion-note color="danger" class="error-note">
-                    Seleccione el departamento
+                    Requerido
                   </ion-note>
                 }
 
@@ -204,7 +201,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     formControlName="municipio"
                     label="Municipio"
                     labelPlacement="stacked"
-                    placeholder="Seleccione el municipio"
                     interface="action-sheet"
                     [disabled]="loadingMunicipios() || municipiosFiltrados().length === 0"
                     (ionChange)="onMunicipioChange($event)"
@@ -218,7 +214,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 </ion-item>
                 @if (showError('municipio')) {
                   <ion-note color="danger" class="error-note">
-                    Seleccione el municipio
+                    Requerido
                   </ion-note>
                 }
 
@@ -229,7 +225,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                       formControlName="localidad"
                       label="Localidad"
                       labelPlacement="stacked"
-                      placeholder="Seleccione la localidad"
                       interface="action-sheet"
                       (ionChange)="onLocalidadChange($event)"
                     >
@@ -249,7 +244,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                       formControlName="barrio"
                       label="Barrio"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el barrio"
                       interface="action-sheet"
                       [disabled]="barriosFiltrados().length === 0"
                     >
@@ -266,9 +260,9 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 <ion-item>
                   <ion-input
                     formControlName="direccion"
-                    label="Dirección de residencia"
+                    label="Dirección"
                     labelPlacement="stacked"
-                    placeholder="Ej: Calle 100 # 15-20 Apto 301"
+                    placeholder="Calle 100 # 15-20 Apto 301"
                     type="text"
                     [counter]="true"
                     maxlength="200"
@@ -276,7 +270,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 </ion-item>
                 @if (showError('direccion')) {
                   <ion-note color="danger" class="error-note">
-                    Ingrese su dirección de residencia
+                    Mínimo 10 caracteres
                   </ion-note>
                 }
               </ion-list>
@@ -288,7 +282,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="business-outline"></ion-icon>
-                Estrato Socioeconómico
+                Estrato
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -298,7 +292,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     formControlName="estrato"
                     label="Estrato"
                     labelPlacement="stacked"
-                    placeholder="Seleccione su estrato"
                     interface="action-sheet"
                   >
                     @for (estrato of estratos; track estrato.value) {
@@ -310,7 +303,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 </ion-item>
                 @if (showError('estrato')) {
                   <ion-note color="danger" class="error-note">
-                    Seleccione su estrato
+                    Requerido
                   </ion-note>
                 }
               </ion-list>
@@ -343,13 +336,20 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
     </ion-content>
   `,
   styles: [`
-    /* ==================================
-       SHARED FORM STYLES - MD3
-       ================================== */
+    /* ===========================================
+       FORM STYLES — Modern Responsive Design
+       =========================================== */
 
     :host {
       --form-max-width: 600px;
-      --form-padding: var(--space-md, 16px);
+      --sp-xs: 0.5rem;
+      --sp-sm: 0.75rem;
+      --sp-md: 1rem;
+      --sp-lg: 1.5rem;
+      --sp-xl: 2rem;
+      --radius-sm: 0.75rem;
+      --radius-md: 1rem;
+      --radius-lg: 1.5rem;
     }
 
     .form-content {
@@ -358,61 +358,61 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
 
     /* Progress Indicator */
     .progress-container {
-      padding: var(--space-sm, 12px) var(--space-md, 16px);
+      padding: var(--sp-sm) var(--sp-md);
     }
 
     .progress-info {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: var(--space-xs, 8px);
+      margin-bottom: var(--sp-xs);
     }
 
     .step-label {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--ion-color-primary);
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
     .step-title {
-      font-size: 0.8125rem;
-      color: var(--ion-color-medium-shade);
+      font-size: 0.875rem;
+      color: var(--ion-color-medium);
       font-weight: 500;
     }
 
     ion-progress-bar {
-      height: 6px;
-      border-radius: var(--radius-full, 9999px);
+      height: 0.375rem;
+      border-radius: 9999px;
       --buffer-background: rgba(var(--ion-color-primary-rgb), 0.08);
     }
 
     /* Form Container */
     .form-container {
-      padding: var(--form-padding);
+      padding: var(--sp-md);
       max-width: var(--form-max-width);
       margin: 0 auto;
-      padding-bottom: env(safe-area-inset-bottom, 0);
+      padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Cards */
     .form-card {
-      margin-bottom: var(--space-md, 16px);
-      border-radius: var(--radius-lg, 16px);
-      box-shadow: var(--elevation-1, 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1));
+      margin-bottom: var(--sp-md);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
     }
 
     .form-card ion-card-header {
-      padding-bottom: var(--space-xs, 8px);
+      padding-bottom: var(--sp-xs);
     }
 
     .form-card ion-card-title {
       display: flex;
       align-items: center;
-      gap: var(--space-sm, 12px);
-      font-size: 1rem;
-      font-weight: 600;
+      gap: var(--sp-sm);
+      font-size: 1.25rem;
+      font-weight: 700;
       line-height: 1.3;
     }
 
@@ -428,12 +428,12 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
     }
 
     ion-item {
-      --background: var(--surface-container, #f1f5f9);
-      --border-radius: var(--radius-md, 12px);
-      --min-height: 56px;
-      margin-bottom: var(--space-sm, 12px);
-      --padding-start: var(--space-md, 16px);
-      --padding-end: var(--space-md, 16px);
+      --background: var(--ion-color-light);
+      --border-radius: var(--radius-md);
+      --min-height: 3.5rem;
+      margin-bottom: var(--sp-sm);
+      --padding-start: var(--sp-md);
+      --padding-end: var(--sp-md);
       transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -442,38 +442,45 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
     }
 
     ion-item:focus-within {
-      --background: rgba(var(--ion-color-primary-rgb), 0.06);
-      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
+      --background: rgba(var(--ion-color-primary-rgb), 0.05);
+      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.15);
     }
 
     ion-select, ion-input {
-      --padding-top: var(--space-sm, 12px);
-      --padding-bottom: var(--space-sm, 12px);
+      --padding-top: var(--sp-sm);
+      --padding-bottom: var(--sp-sm);
+      font-size: 1rem;
+    }
+
+    ion-select::part(text) {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Error Notes */
     .error-note {
       display: block;
-      padding: var(--space-xs, 8px) var(--space-md, 16px);
-      font-size: 0.75rem;
+      padding: var(--sp-xs) var(--sp-md);
+      font-size: 0.8125rem;
       font-weight: 500;
-      margin-top: -4px;
-      margin-bottom: var(--space-sm, 12px);
+      margin-top: -0.25rem;
+      margin-bottom: var(--sp-sm);
     }
 
     /* Form Actions */
     .form-actions {
       display: flex;
       justify-content: space-between;
-      gap: var(--space-md, 16px);
-      margin-top: var(--space-xl, 32px);
-      padding-bottom: calc(var(--space-xl, 32px) + env(safe-area-inset-bottom, 0));
+      gap: var(--sp-md);
+      margin-top: var(--sp-xl);
+      padding-bottom: calc(var(--sp-lg) + env(safe-area-inset-bottom, 0px));
     }
 
     .form-actions ion-button {
       flex: 1;
-      --border-radius: var(--radius-lg, 16px);
-      min-height: 52px;
+      --border-radius: var(--radius-md);
+      min-height: 3rem;
       font-weight: 600;
       font-size: 0.9375rem;
     }
@@ -483,14 +490,61 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
       --border-width: 1.5px;
     }
 
+    /* Select Spinner */
     .select-spinner {
       position: absolute;
-      right: 16px;
+      right: 1rem;
       top: 50%;
       transform: translateY(-50%);
-      width: 20px;
-      height: 20px;
+      width: 1.25rem;
+      height: 1.25rem;
       z-index: 1;
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      .form-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    /* Responsive: small phones */
+    @media (max-width: 380px) {
+      .form-card ion-card-title {
+        font-size: 1.125rem;
+      }
+
+      .form-actions {
+        flex-direction: column;
+        gap: var(--sp-sm);
+      }
+
+      .form-actions ion-button {
+        min-height: 2.75rem;
+        font-size: 0.875rem;
+      }
+
+      ion-select, ion-input {
+        font-size: 0.9375rem;
+      }
+    }
+
+    /* Responsive: tablets+ */
+    @media (min-width: 768px) {
+      .form-container {
+        padding: var(--sp-lg);
+      }
+
+      .form-card ion-card-title {
+        font-size: 1.375rem;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      ion-item {
+        transition: none;
+      }
     }
   `]
 })

@@ -54,6 +54,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/dev/import-instituciones.page').then((m) => m.ImportInstitucionesPage),
   },
   {
+    path: 'settings',
+    loadComponent: () => import('./pages/settings/settings.page').then((m) => m.SettingsPage),
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full',

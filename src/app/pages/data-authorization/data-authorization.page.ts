@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AccessibilityService } from '../../services/accessibility.service';
 import {
   IonHeader,
   IonToolbar,
@@ -57,7 +58,8 @@ export class DataAuthorizationPage implements OnInit {
   constructor(
     private router: Router,
     private route: ActivatedRoute,
-    private navCtrl: NavController
+    private navCtrl: NavController,
+    public a11y: AccessibilityService
   ) {
     addIcons({
       shieldCheckmarkOutline,

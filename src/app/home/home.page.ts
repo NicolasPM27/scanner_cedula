@@ -34,9 +34,11 @@ import {
   documentTextOutline,
   cloudUploadOutline,
   schoolOutline,
+  accessibilityOutline,
 } from 'ionicons/icons';
 import { Capacitor } from '@capacitor/core';
 import { ScannerService } from '../services/scanner.service';
+import { AccessibilityService } from '../services/accessibility.service';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -77,7 +79,8 @@ export class HomePage implements OnInit {
 
   constructor(
     private router: Router,
-    private scannerService: ScannerService
+    private scannerService: ScannerService,
+    public a11y: AccessibilityService
   ) {
     addIcons({
       scanOutline,
@@ -91,6 +94,7 @@ export class HomePage implements OnInit {
       documentTextOutline,
       cloudUploadOutline,
       schoolOutline,
+      accessibilityOutline,
     });
   }
 
@@ -122,6 +126,11 @@ export class HomePage implements OnInit {
 
   goToImportInstituciones(): void {
     this.router.navigate(['/dev/import-instituciones']);
+  }
+
+  /** Navega a la página de configuración */
+  goToSettings(): void {
+    this.router.navigate(['/settings']);
   }
 
   private isLocalhost(): boolean {

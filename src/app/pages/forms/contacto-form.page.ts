@@ -100,13 +100,13 @@ function matchValidator(controlName: string, matchingControlName: string) {
         <ion-buttons slot="start">
           <ion-back-button defaultHref="/verification"></ion-back-button>
         </ion-buttons>
-        <ion-title>Información de Contacto</ion-title>
+        <ion-title>Contacto</ion-title>
       </ion-toolbar>
       <ion-toolbar>
         <div class="progress-container">
           <div class="progress-info">
-            <span class="step-label">Paso 1 de 4</span>
-            <span class="step-title">Datos de contacto</span>
+            <span class="step-label">PASO 1 DE 4</span>
+            <span class="step-title">Contacto</span>
           </div>
           <ion-progress-bar [value]="0.25" color="primary"></ion-progress-bar>
         </div>
@@ -119,10 +119,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
         <!-- Nota informativa -->
         <div class="info-banner">
           <ion-icon name="information-circle-outline"></ion-icon>
-          <p>
-            Por favor ingrese cada dato dos veces para verificar que la información sea correcta.
-            Es importante que estos datos estén actualizados para poder contactarle.
-          </p>
+          <p>Ingrese cada dato dos veces para verificar.</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -132,7 +129,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="mail-outline"></ion-icon>
-                Correo Electrónico
+                Correo
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -142,9 +139,9 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 <ion-item [class.valid]="isFieldValid('correoElectronico')">
                   <ion-input
                     formControlName="correoElectronico"
-                    label="Correo electrónico"
+                    label="Correo"
                     labelPlacement="stacked"
-                    placeholder="ejemplo@correo.com"
+                    placeholder="correo@ejemplo.com"
                     type="email"
                     autocomplete="email"
                     inputmode="email"
@@ -155,17 +152,17 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 </ion-item>
                 @if (showError('correoElectronico', 'required')) {
                   <ion-note color="danger" class="error-note">
-                    El correo electrónico es obligatorio
+                    Campo requerido
                   </ion-note>
                 }
                 @if (showError('correoElectronico', 'email')) {
                   <ion-note color="danger" class="error-note">
-                    Ingrese un correo electrónico válido
+                    Correo inválido
                   </ion-note>
                 }
                 @if (showError('correoElectronico', 'pattern')) {
                   <ion-note color="danger" class="error-note">
-                    Ingrese un correo electrónico válido
+                    Correo inválido
                   </ion-note>
                 }
 
@@ -173,9 +170,9 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 <ion-item [class.valid]="isConfirmationValid('correoElectronico', 'confirmarCorreo')">
                   <ion-input
                     formControlName="confirmarCorreo"
-                    label="Confirmar correo electrónico"
+                    label="Confirmar correo"
                     labelPlacement="stacked"
-                    placeholder="Ingrese nuevamente su correo"
+                    placeholder="Repita su correo"
                     type="email"
                     autocomplete="off"
                     inputmode="email"
@@ -187,12 +184,12 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 </ion-item>
                 @if (showError('confirmarCorreo', 'required')) {
                   <ion-note color="danger" class="error-note">
-                    Confirme su correo electrónico
+                    Confirme el correo
                   </ion-note>
                 }
                 @if (showError('confirmarCorreo', 'mismatch')) {
                   <ion-note color="danger" class="error-note">
-                    Los correos electrónicos no coinciden
+                    No coinciden
                   </ion-note>
                 }
 
@@ -201,7 +198,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
                   <div class="match-indicator" [class.match]="emailsMatch()" [class.no-match]="!emailsMatch()">
                     <ion-chip [color]="emailsMatch() ? 'success' : 'danger'">
                       <ion-icon [name]="emailsMatch() ? 'checkmark-circle' : 'close-circle'"></ion-icon>
-                      <ion-label>{{ emailsMatch() ? 'Los correos coinciden' : 'Los correos no coinciden' }}</ion-label>
+                      <ion-label>{{ emailsMatch() ? 'Coinciden' : 'No coinciden' }}</ion-label>
                     </ion-chip>
                   </div>
                 }
@@ -214,7 +211,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="call-outline"></ion-icon>
-                Teléfono Celular
+                Celular
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -224,7 +221,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 <ion-item [class.valid]="isFieldValid('celular')">
                   <ion-input
                     formControlName="celular"
-                    label="Número celular"
+                    label="Celular"
                     labelPlacement="stacked"
                     placeholder="3001234567"
                     type="tel"
@@ -238,17 +235,17 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 </ion-item>
                 @if (showError('celular', 'required')) {
                   <ion-note color="danger" class="error-note">
-                    El número celular es obligatorio
+                    Campo requerido
                   </ion-note>
                 }
                 @if (showError('celular', 'pattern')) {
                   <ion-note color="danger" class="error-note">
-                    Ingrese un número celular válido (10 dígitos, inicia con 3)
+                    10 dígitos, inicia con 3
                   </ion-note>
                 }
                 @if (showError('celular', 'minlength') || showError('celular', 'maxlength')) {
                   <ion-note color="danger" class="error-note">
-                    El número debe tener 10 dígitos
+                    Debe tener 10 dígitos
                   </ion-note>
                 }
 
@@ -256,9 +253,9 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 <ion-item [class.valid]="isConfirmationValid('celular', 'confirmarCelular')">
                   <ion-input
                     formControlName="confirmarCelular"
-                    label="Confirmar número celular"
+                    label="Confirmar celular"
                     labelPlacement="stacked"
-                    placeholder="Ingrese nuevamente su número"
+                    placeholder="Repita el número"
                     type="tel"
                     inputmode="numeric"
                     maxlength="10"
@@ -270,12 +267,12 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 </ion-item>
                 @if (showError('confirmarCelular', 'required')) {
                   <ion-note color="danger" class="error-note">
-                    Confirme su número celular
+                    Confirme el número
                   </ion-note>
                 }
                 @if (showError('confirmarCelular', 'mismatch')) {
                   <ion-note color="danger" class="error-note">
-                    Los números celulares no coinciden
+                    No coinciden
                   </ion-note>
                 }
 
@@ -284,7 +281,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
                   <div class="match-indicator" [class.match]="phonesMatch()" [class.no-match]="!phonesMatch()">
                     <ion-chip [color]="phonesMatch() ? 'success' : 'danger'">
                       <ion-icon [name]="phonesMatch() ? 'checkmark-circle' : 'close-circle'"></ion-icon>
-                      <ion-label>{{ phonesMatch() ? 'Los números coinciden' : 'Los números no coinciden' }}</ion-label>
+                      <ion-label>{{ phonesMatch() ? 'Coinciden' : 'No coinciden' }}</ion-label>
                     </ion-chip>
                   </div>
                 }
@@ -297,7 +294,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="call-outline"></ion-icon>
-                Teléfono Fijo
+                Fijo
                 <ion-chip color="medium" class="optional-chip">Opcional</ion-chip>
               </ion-card-title>
             </ion-card-header>
@@ -320,7 +317,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
                 </ion-item>
                 @if (showError('telefonoFijo', 'pattern')) {
                   <ion-note color="danger" class="error-note">
-                    Ingrese un número fijo válido (10 dígitos con indicativo)
+                    Número inválido (10 dígitos)
                   </ion-note>
                 }
               </ion-list>
@@ -353,13 +350,20 @@ function matchValidator(controlName: string, matchingControlName: string) {
     </ion-content>
   `,
   styles: [`
-    /* ==================================
-       SHARED FORM STYLES - MD3
-       ================================== */
+    /* ===========================================
+       FORM STYLES — Modern Responsive Design
+       =========================================== */
 
     :host {
       --form-max-width: 600px;
-      --form-padding: var(--space-md, 16px);
+      --sp-xs: 0.5rem;
+      --sp-sm: 0.75rem;
+      --sp-md: 1rem;
+      --sp-lg: 1.5rem;
+      --sp-xl: 2rem;
+      --radius-sm: 0.75rem;
+      --radius-md: 1rem;
+      --radius-lg: 1.5rem;
     }
 
     .form-content {
@@ -368,87 +372,87 @@ function matchValidator(controlName: string, matchingControlName: string) {
 
     /* Progress Indicator */
     .progress-container {
-      padding: var(--space-sm, 12px) var(--space-md, 16px);
+      padding: var(--sp-sm) var(--sp-md);
     }
 
     .progress-info {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: var(--space-xs, 8px);
+      margin-bottom: var(--sp-xs);
     }
 
     .step-label {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--ion-color-primary);
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
     .step-title {
-      font-size: 0.8125rem;
-      color: var(--ion-color-medium-shade);
+      font-size: 0.875rem;
+      color: var(--ion-color-medium);
       font-weight: 500;
     }
 
     ion-progress-bar {
-      height: 6px;
-      border-radius: var(--radius-full, 9999px);
+      height: 0.375rem;
+      border-radius: 9999px;
       --buffer-background: rgba(var(--ion-color-primary-rgb), 0.08);
     }
 
     /* Form Container */
     .form-container {
-      padding: var(--form-padding);
+      padding: var(--sp-md);
       max-width: var(--form-max-width);
       margin: 0 auto;
-      padding-bottom: env(safe-area-inset-bottom, 0);
+      padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Info Banner */
     .info-banner {
       display: flex;
-      gap: var(--space-sm, 12px);
-      padding: var(--space-md, 16px);
-      background: rgba(var(--ion-color-primary-rgb), 0.08);
-      border-radius: var(--radius-lg, 16px);
-      margin-bottom: var(--space-lg, 24px);
+      gap: var(--sp-sm);
+      padding: var(--sp-md);
+      background: rgba(var(--ion-color-primary-rgb), 0.06);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-lg);
       align-items: flex-start;
-      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.12);
+      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.1);
     }
 
     .info-banner ion-icon {
-      font-size: 1.5rem;
+      font-size: 1.375rem;
       color: var(--ion-color-primary);
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 0.125rem;
     }
 
     .info-banner p {
       margin: 0;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       color: var(--ion-text-color);
       line-height: 1.6;
     }
 
     /* Cards */
     .form-card {
-      margin-bottom: var(--space-md, 16px);
-      border-radius: var(--radius-lg, 16px);
-      box-shadow: var(--elevation-1, 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1));
+      margin-bottom: var(--sp-md);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
     }
 
     .form-card ion-card-header {
-      padding-bottom: var(--space-xs, 8px);
+      padding-bottom: var(--sp-xs);
     }
 
     .form-card ion-card-title {
       display: flex;
       align-items: center;
-      gap: var(--space-sm, 12px);
-      font-size: 1rem;
-      font-weight: 600;
+      gap: var(--sp-sm);
+      font-size: 1.25rem;
+      font-weight: 700;
       line-height: 1.3;
     }
 
@@ -459,9 +463,9 @@ function matchValidator(controlName: string, matchingControlName: string) {
     }
 
     .optional-chip {
-      --background: var(--surface-container, #f1f5f9);
-      font-size: 0.625rem;
-      height: 20px;
+      --background: var(--ion-color-light);
+      font-size: 0.6875rem;
+      height: 1.375rem;
       margin-left: auto;
       flex-shrink: 0;
     }
@@ -472,12 +476,12 @@ function matchValidator(controlName: string, matchingControlName: string) {
     }
 
     ion-item {
-      --background: var(--surface-container, #f1f5f9);
-      --border-radius: var(--radius-md, 12px);
-      --min-height: 56px;
-      margin-bottom: var(--space-sm, 12px);
-      --padding-start: var(--space-md, 16px);
-      --padding-end: var(--space-md, 16px);
+      --background: var(--ion-color-light);
+      --border-radius: var(--radius-md);
+      --min-height: 3.5rem;
+      margin-bottom: var(--sp-sm);
+      --padding-start: var(--sp-md);
+      --padding-end: var(--sp-md);
       transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -490,13 +494,14 @@ function matchValidator(controlName: string, matchingControlName: string) {
     }
 
     ion-item:focus-within {
-      --background: rgba(var(--ion-color-primary-rgb), 0.06);
-      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
+      --background: rgba(var(--ion-color-primary-rgb), 0.05);
+      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.15);
     }
 
     ion-input {
-      --padding-top: var(--space-sm, 12px);
-      --padding-bottom: var(--space-sm, 12px);
+      --padding-top: var(--sp-sm);
+      --padding-bottom: var(--sp-sm);
+      font-size: 0.9375rem;
     }
 
     ion-item ion-icon[slot="end"] {
@@ -506,18 +511,18 @@ function matchValidator(controlName: string, matchingControlName: string) {
     /* Error Notes */
     .error-note {
       display: block;
-      padding: var(--space-xs, 8px) var(--space-md, 16px);
-      font-size: 0.75rem;
+      padding: var(--sp-xs) var(--sp-md);
+      font-size: 0.8125rem;
       font-weight: 500;
-      margin-top: -4px;
-      margin-bottom: var(--space-sm, 12px);
+      margin-top: -0.25rem;
+      margin-bottom: var(--sp-sm);
     }
 
     /* Match Indicator */
     .match-indicator {
       display: flex;
       justify-content: center;
-      padding: var(--space-xs, 8px) 0 var(--space-sm, 12px);
+      padding: var(--sp-xs) 0 var(--sp-sm);
     }
 
     .match-indicator ion-chip {
@@ -538,22 +543,75 @@ function matchValidator(controlName: string, matchingControlName: string) {
     .form-actions {
       display: flex;
       justify-content: space-between;
-      gap: var(--space-md, 16px);
-      margin-top: var(--space-xl, 32px);
-      padding-bottom: calc(var(--space-xl, 32px) + env(safe-area-inset-bottom, 0));
+      gap: var(--sp-md);
+      margin-top: var(--sp-xl);
+      padding-bottom: calc(var(--sp-lg) + env(safe-area-inset-bottom, 0px));
     }
 
     .form-actions ion-button {
       flex: 1;
-      --border-radius: var(--radius-lg, 16px);
-      min-height: 52px;
+      --border-radius: var(--radius-md);
+      min-height: 3rem;
       font-weight: 600;
       font-size: 0.9375rem;
+      --padding-start: 0.75rem;
+      --padding-end: 0.75rem;
     }
 
     .form-actions ion-button[fill="outline"] {
       --background: transparent;
       --border-width: 1.5px;
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      .form-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 380px) {
+      .form-card ion-card-title {
+        font-size: 1.125rem;
+      }
+
+      .info-banner p {
+        font-size: 0.8125rem;
+      }
+
+      .form-actions {
+        gap: var(--sp-sm);
+      }
+
+      .form-actions ion-button {
+        min-height: 2.75rem;
+        font-size: 0.875rem;
+        --padding-start: 0.5rem;
+        --padding-end: 0.5rem;
+      }
+
+      ion-input {
+        font-size: 0.875rem;
+      }
+    }
+
+    /* Responsive: tablets+ */
+    @media (min-width: 768px) {
+      .form-container {
+        padding: var(--sp-lg);
+      }
+
+      .form-card ion-card-title {
+        font-size: 1.375rem;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      ion-item {
+        transition: none;
+      }
     }
   `]
 })

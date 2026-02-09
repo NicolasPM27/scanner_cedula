@@ -6,3 +6,4 @@ export { PoblacionApiService } from './poblacion-api.service';
 export { InstitucionesApiService } from './instituciones-api.service';
 export { AfiliadoMapperService } from './afiliado-mapper.service';
 export { httpErrorInterceptor, ApiHttpError } from './http-error.interceptor';
+export { AccessibilityService } from './accessibility.service';

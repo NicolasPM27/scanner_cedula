@@ -1,85 +1,81 @@
-<ion-header [translucent]="true" class="ion-no-border">
+<ion-header [translucent]="true">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home" text="" icon="chevron-back-outline"></ion-back-button>
+      <ion-back-button defaultHref="/home"></ion-back-button>
     </ion-buttons>
-    <ion-title class="auth-toolbar-title">Actualización de datos</ion-title>
+    <ion-title>Autorización de Datos</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <!-- Decorative gradient header -->
-  <div class="gradient-header" aria-hidden="true"></div>
-  
-  <div class="auth-container animate-fade-in">
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div class="auth-container">
     
-    <!-- Hero Section -->
-    <section class="hero-section" aria-labelledby="auth-title">
-      <div class="hero-icon" aria-hidden="true">
-        <ion-icon name="shield-checkmark-outline"></ion-icon>
-      </div>
-      <h1 id="auth-title" class="headline-medium">Protección de Datos</h1>
-      <p class="body-large text-muted">Cumplimiento Ley 1581 de 2012</p>
-    </section>
-
-    <!-- Legal Notice Card -->
-    <section class="legal-card animate-slide-up" aria-labelledby="legal-title">
-      <h3 id="legal-title" class="legal-badge">Aviso de Privacidad</h3>
-      <p class="legal-text">
-        Autorizo de manera libre, previa y expresa al <strong>FOMAG</strong> para recolectar y tratar mis datos personales para la <strong>actualización de la Maestría de Afiliados</strong>.
-      </p>
-      <p class="legal-text legal-secondary">
-        Sus datos serán protegidos y usados exclusivamente para fines institucionales, validación de identidad y gestión de servicios.
-      </p>
-    </section>
-
-    <!-- Consent Checkboxes -->
-    <section class="consent-section animate-slide-up" aria-label="Consentimientos requeridos">
-      <div class="checkbox-card" [class.checked]="authorizationData.dataProcessingAgreed">
-        <ion-checkbox 
-          mode="md" 
-          labelPlacement="end" 
-          justify="start" 
-          [(ngModel)]="authorizationData.dataProcessingAgreed"
-          aria-describedby="consent-1-desc">
-          <div class="checkbox-label">
-            <span class="label-title">Autorizo el tratamiento de datos</span>
-            <span id="consent-1-desc" class="label-description">Confirmo mi consentimiento informado.</span>
+    <div class="auth-content">
+      <!-- Header compacto -->
+      <div class="auth-header">
+        @if (!a11y.isSimpleMode()) {
+          <div class="header-icon">
+            <ion-icon name="shield-checkmark-outline" color="primary"></ion-icon>
           </div>
-        </ion-checkbox>
+        }
+        <h1 class="auth-title">Aviso de Privacidad</h1>
+        <p class="auth-subtitle">Ley 1581 de 2012</p>
       </div>
 
-      <div class="checkbox-card" [class.checked]="authorizationData.privacyPolicyAgreed">
-        <ion-checkbox 
-          mode="md" 
-          labelPlacement="end" 
-          justify="start" 
-          [(ngModel)]="authorizationData.privacyPolicyAgreed"
-          aria-describedby="consent-2-desc">
-          <div class="checkbox-label">
-            <span class="label-title">Acepto la Política de Privacidad</span>
-            <span id="consent-2-desc" class="label-description">He leído mis derechos como titular.</span>
-          </div>
-        </ion-checkbox>
+      <!-- Notice compacto -->
+      <div class="privacy-notice">
+        <p class="notice-text">
+          Autorizo de manera libre, previa y expresa al <strong>FOMAG</strong> para recolectar y tratar mis datos personales para la <strong>actualización de la Maestría de Afiliados</strong>.
+        </p>
+        <p class="notice-subtext">
+          Sus datos serán protegidos y usados exclusivamente para fines institucionales, validación de identidad y gestión de servicios.
+        </p>
       </div>
-    </section>
 
-    <!-- Action Buttons -->
-    <div class="actions-container">
+      <!-- Checkboxes -->
+      <div class="consent-section">
+        <div class="consent-item" [class.is-checked]="authorizationData.dataProcessingAgreed">
+          <ion-checkbox 
+            [(ngModel)]="authorizationData.dataProcessingAgreed"
+            labelPlacement="end"
+            justify="start">
+            <div class="consent-label">
+              <span class="consent-title">Autorizo el tratamiento de datos</span>
+              <span class="consent-desc">Confirmo mi consentimiento informado.</span>
+            </div>
+          </ion-checkbox>
+        </div>
+
+        <div class="consent-item" [class.is-checked]="authorizationData.privacyPolicyAgreed">
+          <ion-checkbox 
+            [(ngModel)]="authorizationData.privacyPolicyAgreed"
+            labelPlacement="end"
+            justify="start">
+            <div class="consent-label">
+              <span class="consent-title">Acepto la Política de Privacidad</span>
+              <span class="consent-desc">He leído mis derechos como titular.</span>
+            </div>
+          </ion-checkbox>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="auth-actions">
       <ion-button 
         expand="block" 
         size="large"
-        class="primary-action"
         [disabled]="!isFormValid()"
-        (click)="confirm()">
+        (click)="confirm()"
+        class="primary-btn">
         <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
         Autorizar y Continuar
       </ion-button>
       
       <ion-button 
         expand="block" 
-        fill="clear" 
-        class="secondary-action"
+        fill="outline"
+        color="medium"
         (click)="cancel()">
         Cancelar
       </ion-button>

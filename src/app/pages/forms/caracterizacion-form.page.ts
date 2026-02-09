@@ -83,8 +83,8 @@ import {
       <ion-toolbar>
         <div class="progress-container">
           <div class="progress-info">
-            <span class="step-label">Paso 4 de 4</span>
-            <span class="step-title">Información adicional</span>
+            <span class="step-label">PASO 4 DE 4</span>
+            <span class="step-title">Adicional</span>
           </div>
           <ion-progress-bar [value]="1" color="primary"></ion-progress-bar>
         </div>
@@ -97,12 +97,7 @@ import {
         <!-- Nota informativa -->
         <div class="info-banner">
           <ion-icon name="information-circle-outline"></ion-icon>
-          <div>
-            <p>
-              Esta información nos permite ofrecerle servicios y programas especializados.
-              <strong>Todos los campos son opcionales</strong> y la información es confidencial.
-            </p>
-          </div>
+          <p><strong>Todos los campos son opcionales</strong> y confidenciales.</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -112,7 +107,7 @@ import {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="accessibility-outline"></ion-icon>
-                Condición de Discapacidad
+                Discapacidad
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -124,7 +119,7 @@ import {
                     formControlName="tieneDiscapacidad"
                     (ionChange)="onDiscapacidadChange($event)"
                   >
-                    ¿Tiene alguna discapacidad?
+                    ¿Tiene discapacidad?
                   </ion-toggle>
                 </ion-item>
 
@@ -132,9 +127,8 @@ import {
                   <ion-item class="animate-slide-in">
                     <ion-select
                       formControlName="tipoDiscapacidad"
-                      label="Tipo de discapacidad"
+                      label="Tipo"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el tipo"
                       interface="action-sheet"
                       [multiple]="true"
                     >
@@ -149,9 +143,9 @@ import {
                   <ion-item class="animate-slide-in">
                     <ion-textarea
                       formControlName="detalleDiscapacidad"
-                      label="Descripción adicional"
+                      label="Detalle (opcional)"
                       labelPlacement="stacked"
-                      placeholder="Puede agregar detalles sobre su condición (opcional)"
+                      placeholder="Detalles adicionales"
                       [autoGrow]="true"
                       [rows]="2"
                       [maxlength]="500"
@@ -168,7 +162,7 @@ import {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="people-outline"></ion-icon>
-                Pertenencia Étnica
+                Grupo Étnico
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -180,7 +174,7 @@ import {
                     formControlName="perteneceGrupoEtnico"
                     (ionChange)="onGrupoEtnicoChange($event)"
                   >
-                    ¿Pertenece a algún grupo étnico?
+                    ¿Pertenece a grupo étnico?
                   </ion-toggle>
                 </ion-item>
 
@@ -190,7 +184,6 @@ import {
                       formControlName="grupoEtnico"
                       label="Grupo étnico"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el grupo"
                       interface="action-sheet"
                     >
                       @for (grupo of gruposEtnicos; track grupo.value) {
@@ -210,7 +203,7 @@ import {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="heart-outline"></ion-icon>
-                Diversidad Sexual y de Género
+                Diversidad
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -222,7 +215,7 @@ import {
                     formControlName="perteneceLGBTIQ"
                     (ionChange)="onLGBTIQChange($event)"
                   >
-                    ¿Se identifica como parte de la población LGBTIQ+?
+                    ¿Se identifica como LGBTIQ+?
                   </ion-toggle>
                 </ion-item>
 
@@ -232,7 +225,6 @@ import {
                       formControlName="poblacionLGBTIQ"
                       label="Identidad"
                       labelPlacement="stacked"
-                      placeholder="Seleccione su identidad"
                       interface="action-sheet"
                     >
                       @for (poblacion of poblacionesLGBTIQ; track poblacion.value) {
@@ -252,7 +244,7 @@ import {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="information-circle-outline"></ion-icon>
-                Observaciones Adicionales
+                Observaciones
                 <ion-chip color="medium" class="optional-chip">Opcional</ion-chip>
               </ion-card-title>
             </ion-card-header>
@@ -263,7 +255,7 @@ import {
                     formControlName="observaciones"
                     label="Observaciones"
                     labelPlacement="stacked"
-                    placeholder="¿Hay algo más que desee que tengamos en cuenta?"
+                    placeholder="Notas adicionales"
                     [autoGrow]="true"
                     [rows]="3"
                     [maxlength]="1000"
@@ -297,13 +289,20 @@ import {
     </ion-content>
   `,
   styles: [`
-    /* ==================================
-       SHARED FORM STYLES - MD3
-       ================================== */
+    /* ===========================================
+       FORM STYLES — Modern Responsive Design
+       =========================================== */
 
     :host {
       --form-max-width: 600px;
-      --form-padding: var(--space-md, 16px);
+      --sp-xs: 0.5rem;
+      --sp-sm: 0.75rem;
+      --sp-md: 1rem;
+      --sp-lg: 1.5rem;
+      --sp-xl: 2rem;
+      --radius-sm: 0.75rem;
+      --radius-md: 1rem;
+      --radius-lg: 1.5rem;
     }
 
     .form-content {
@@ -312,87 +311,87 @@ import {
 
     /* Progress Indicator */
     .progress-container {
-      padding: var(--space-sm, 12px) var(--space-md, 16px);
+      padding: var(--sp-sm) var(--sp-md);
     }
 
     .progress-info {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: var(--space-xs, 8px);
+      margin-bottom: var(--sp-xs);
     }
 
     .step-label {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--ion-color-primary);
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
     .step-title {
-      font-size: 0.8125rem;
-      color: var(--ion-color-medium-shade);
+      font-size: 0.875rem;
+      color: var(--ion-color-medium);
       font-weight: 500;
     }
 
     ion-progress-bar {
-      height: 6px;
-      border-radius: var(--radius-full, 9999px);
+      height: 0.375rem;
+      border-radius: 9999px;
       --buffer-background: rgba(var(--ion-color-primary-rgb), 0.08);
     }
 
     /* Form Container */
     .form-container {
-      padding: var(--form-padding);
+      padding: var(--sp-md);
       max-width: var(--form-max-width);
       margin: 0 auto;
-      padding-bottom: env(safe-area-inset-bottom, 0);
+      padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Info Banner */
     .info-banner {
       display: flex;
-      gap: var(--space-sm, 12px);
-      padding: var(--space-md, 16px);
-      background: rgba(var(--ion-color-primary-rgb), 0.08);
-      border-radius: var(--radius-lg, 16px);
-      margin-bottom: var(--space-lg, 24px);
+      gap: var(--sp-sm);
+      padding: var(--sp-md);
+      background: rgba(var(--ion-color-primary-rgb), 0.06);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-lg);
       align-items: flex-start;
-      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.12);
+      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.1);
     }
 
     .info-banner ion-icon {
-      font-size: 1.5rem;
+      font-size: 1.375rem;
       color: var(--ion-color-primary);
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 0.125rem;
     }
 
     .info-banner p {
       margin: 0;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       color: var(--ion-text-color);
       line-height: 1.6;
     }
 
     /* Cards */
     .form-card {
-      margin-bottom: var(--space-md, 16px);
-      border-radius: var(--radius-lg, 16px);
-      box-shadow: var(--elevation-1, 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1));
+      margin-bottom: var(--sp-md);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
     }
 
     .form-card ion-card-header {
-      padding-bottom: var(--space-xs, 8px);
+      padding-bottom: var(--sp-xs);
     }
 
     .form-card ion-card-title {
       display: flex;
       align-items: center;
-      gap: var(--space-sm, 12px);
-      font-size: 1rem;
-      font-weight: 600;
+      gap: var(--sp-sm);
+      font-size: 1.25rem;
+      font-weight: 700;
       line-height: 1.3;
     }
 
@@ -403,9 +402,9 @@ import {
     }
 
     .optional-chip {
-      --background: var(--surface-container, #f1f5f9);
-      font-size: 0.625rem;
-      height: 20px;
+      --background: var(--ion-color-light);
+      font-size: 0.6875rem;
+      height: 1.375rem;
       margin-left: auto;
       flex-shrink: 0;
     }
@@ -416,12 +415,12 @@ import {
     }
 
     ion-item {
-      --background: var(--surface-container, #f1f5f9);
-      --border-radius: var(--radius-md, 12px);
-      --min-height: 56px;
-      margin-bottom: var(--space-sm, 12px);
-      --padding-start: var(--space-md, 16px);
-      --padding-end: var(--space-md, 16px);
+      --background: var(--ion-color-light);
+      --border-radius: var(--radius-md);
+      --min-height: 3.5rem;
+      margin-bottom: var(--sp-sm);
+      --padding-start: var(--sp-md);
+      --padding-end: var(--sp-md);
       transition: background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -430,8 +429,8 @@ import {
     }
 
     ion-item:focus-within {
-      --background: rgba(var(--ion-color-primary-rgb), 0.06);
-      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
+      --background: rgba(var(--ion-color-primary-rgb), 0.05);
+      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.15);
     }
 
     /* Toggle Items */
@@ -440,41 +439,55 @@ import {
     }
 
     .toggle-item ion-toggle {
-      --background: var(--surface-container);
+      --background: var(--ion-color-light-shade);
       --background-checked: var(--ion-color-primary);
-      padding: var(--space-sm, 12px) 0;
+      padding: var(--sp-sm) 0;
     }
 
     ion-select, ion-textarea {
-      --padding-top: var(--space-sm, 12px);
-      --padding-bottom: var(--space-sm, 12px);
+      --padding-top: var(--sp-sm);
+      --padding-bottom: var(--sp-sm);
+      font-size: 0.9375rem;
+    }
+
+    ion-select::part(text) {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+    }
+
+    ion-select::part(placeholder) {
+      opacity: 0.5;
+      font-size: 0.875rem;
     }
 
     /* Error Notes */
     .error-note {
       display: block;
-      padding: var(--space-xs, 8px) var(--space-md, 16px);
-      font-size: 0.75rem;
+      padding: var(--sp-xs) var(--sp-md);
+      font-size: 0.8125rem;
       font-weight: 500;
-      margin-top: -4px;
-      margin-bottom: var(--space-sm, 12px);
+      margin-top: -0.25rem;
+      margin-bottom: var(--sp-sm);
     }
 
     /* Form Actions */
     .form-actions {
       display: flex;
       justify-content: space-between;
-      gap: var(--space-md, 16px);
-      margin-top: var(--space-xl, 32px);
-      padding-bottom: calc(var(--space-xl, 32px) + env(safe-area-inset-bottom, 0));
+      gap: var(--sp-md);
+      margin-top: var(--sp-xl);
+      padding-bottom: calc(var(--sp-lg) + env(safe-area-inset-bottom, 0px));
     }
 
     .form-actions ion-button {
       flex: 1;
-      --border-radius: var(--radius-lg, 16px);
-      min-height: 52px;
+      --border-radius: var(--radius-md);
+      min-height: 3rem;
       font-weight: 600;
       font-size: 0.9375rem;
+      --padding-start: 0.75rem;
+      --padding-end: 0.75rem;
     }
 
     .form-actions ion-button[fill="outline"] {
@@ -490,11 +503,64 @@ import {
     @keyframes slideIn {
       from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-0.625rem);
       }
       to {
         opacity: 1;
         transform: translateY(0);
+      }
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      .form-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 380px) {
+      .form-card ion-card-title {
+        font-size: 1.125rem;
+      }
+
+      .form-actions {
+        gap: var(--sp-sm);
+      }
+
+      .form-actions ion-button {
+        min-height: 2.75rem;
+        font-size: 0.875rem;
+        --padding-start: 0.5rem;
+        --padding-end: 0.5rem;
+      }
+
+      ion-select, ion-textarea {
+        font-size: 0.875rem;
+      }
+
+      .toggle-item ion-toggle {
+        font-size: 0.875rem;
+      }
+    }
+
+    /* Responsive: tablets+ */
+    @media (min-width: 768px) {
+      .form-container {
+        padding: var(--sp-lg);
+      }
+
+      .form-card ion-card-title {
+        font-size: 1.375rem;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      ion-item,
+      .animate-slide-in {
+        transition: none;
+        animation: none;
       }
     }
   `]

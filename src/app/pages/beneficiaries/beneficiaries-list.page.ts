@@ -79,9 +79,9 @@ import { Beneficiario } from '../../models/afiliado.model';
           <div class="header-icon">
             <ion-icon name="people-outline"></ion-icon>
           </div>
-          <h1 class="headline-medium">Gestión de Beneficiarios</h1>
+          <h1 class="headline-medium">Beneficiarios</h1>
           <p class="body-large text-muted">
-            Revise y actualice la información de sus beneficiarios registrados.
+            Revise y actualice sus beneficiarios.
           </p>
         </div>
 
@@ -91,11 +91,11 @@ import { Beneficiario } from '../../models/afiliado.model';
             <ion-card-content>
               <div class="empty-state">
                 <ion-icon name="people-outline"></ion-icon>
-                <h3>Sin beneficiarios registrados</h3>
-                <p>Actualmente no tiene beneficiarios asociados a su cuenta.</p>
+                <h3>Sin beneficiarios</h3>
+                <p>No tiene beneficiarios registrados.</p>
                 <ion-button fill="outline" (click)="agregarBeneficiario()">
                   <ion-icon slot="start" name="add-outline"></ion-icon>
-                  Agregar beneficiario
+                  Agregar
                 </ion-button>
               </div>
             </ion-card-content>
@@ -191,7 +191,7 @@ import { Beneficiario } from '../../models/afiliado.model';
 
         @if (requierenActualizacion() > 0) {
           <ion-note color="warning" class="update-note">
-            Actualice todos los beneficiarios pendientes para continuar
+            Actualice beneficiarios pendientes para continuar
           </ion-note>
         }
 
@@ -211,13 +211,13 @@ import { Beneficiario } from '../../models/afiliado.model';
 
     .header-section {
       text-align: center;
-      padding: var(--space-lg, 24px) 0;
+      padding: var(--space-md, 16px) 0;
     }
 
     .header-icon {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto var(--space-md, 16px);
+      width: 64px;
+      height: 64px;
+      margin: 0 auto var(--space-sm, 12px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -226,17 +226,20 @@ import { Beneficiario } from '../../models/afiliado.model';
     }
 
     .header-icon ion-icon {
-      font-size: 40px;
+      font-size: 32px;
       color: var(--ion-color-primary);
     }
 
     .header-section h1 {
-      margin: 0 0 var(--space-xs, 8px);
+      margin: 0 0 var(--space-xs, 4px);
+      font-size: 1.5rem;
+      font-weight: 700;
     }
 
     .header-section p {
       margin: 0;
-      max-width: 300px;
+      font-size: 0.875rem;
+      max-width: 280px;
       margin-inline: auto;
     }
 
@@ -267,23 +270,25 @@ import { Beneficiario } from '../../models/afiliado.model';
 
     .empty-state {
       text-align: center;
-      padding: var(--space-xl, 32px) var(--space-md, 16px);
+      padding: var(--space-lg, 24px) var(--space-md, 16px);
     }
 
     .empty-state ion-icon {
-      font-size: 64px;
+      font-size: 48px;
       color: var(--ion-color-medium);
-      margin-bottom: var(--space-md, 16px);
+      margin-bottom: var(--space-sm, 12px);
     }
 
     .empty-state h3 {
-      margin: 0 0 var(--space-xs, 8px);
+      margin: 0 0 var(--space-xs, 4px);
       font-size: 1.125rem;
+      font-weight: 700;
     }
 
     .empty-state p {
-      margin: 0 0 var(--space-lg, 24px);
+      margin: 0 0 var(--space-md, 16px);
       color: var(--ion-color-medium);
+      font-size: 0.875rem;
     }
 
     .beneficiaries-list {
@@ -313,8 +318,8 @@ import { Beneficiario } from '../../models/afiliado.model';
     }
 
     .beneficiary-avatar {
-      width: 56px;
-      height: 56px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       background: var(--ion-color-primary);
       display: flex;
@@ -340,13 +345,17 @@ import { Beneficiario } from '../../models/afiliado.model';
     }
 
     .beneficiary-name {
-      margin: 0 0 var(--space-xs, 4px);
-      font-size: 1rem;
+      margin: 0 0 2px;
+      font-size: 0.9375rem;
       font-weight: 600;
       color: var(--ion-text-color);
-      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      white-space: normal;
+      line-height: 1.3;
     }
 
     .beneficiary-details {
@@ -384,13 +393,46 @@ import { Beneficiario } from '../../models/afiliado.model';
     .form-actions {
       display: flex;
       justify-content: space-between;
-      gap: var(--space-md, 16px);
+      gap: var(--space-sm, 12px);
       margin-top: var(--space-lg, 24px);
+      padding-bottom: calc(var(--space-lg, 24px) + env(safe-area-inset-bottom, 0px));
     }
 
     .form-actions ion-button {
       flex: 1;
       --border-radius: var(--radius-md, 12px);
+      min-height: 3rem;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      --padding-start: 0.75rem;
+      --padding-end: 0.75rem;
+    }
+
+    /* Small phones */
+    @media (max-width: 380px) {
+      .header-section h1 {
+        font-size: 1.25rem;
+      }
+
+      .beneficiary-row {
+        gap: var(--space-sm, 12px);
+      }
+
+      .beneficiary-avatar {
+        width: 38px;
+        height: 38px;
+      }
+
+      .beneficiary-avatar span {
+        font-size: 1rem;
+      }
+
+      .form-actions ion-button {
+        min-height: 2.75rem;
+        font-size: 0.875rem;
+        --padding-start: 0.5rem;
+        --padding-end: 0.5rem;
+      }
     }
 
     .update-note {

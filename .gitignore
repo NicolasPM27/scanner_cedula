@@ -96,3 +96,5 @@ Poblacion\ prueba\ .csv
 .env.local
 .env.*.local
 
+
+.fake

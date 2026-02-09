@@ -2,7 +2,7 @@
   <ion-toolbar>
     <ion-title>Actualización de datos</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear">
+      <ion-button fill="clear" (click)="goToSettings()" aria-label="Configuración">
         <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -11,107 +11,179 @@
 
 <ion-content>
 
-  <!-- FOMAG Branding Section -->
-  <header class="fomag-branding-section" role="banner">
-    <img 
-      src="assets/logos/FOMAGMesa-de-trabajo-34@2x.png" 
-      alt="FOMAG - Administrado por Fiduprevisora" 
-      class="fomag-logo"
-      loading="eager"
-    >
-  </header>
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MODO SIMPLE: Interfaz reducida, clara, alta legibilidad           -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  @if (a11y.isSimpleMode()) {
 
-  <!-- Hero Section -->
-  <section class="hero-section animate-fade-in" aria-labelledby="hero-title">
-    <div class="hero-icon" aria-hidden="true">
-      <ion-icon name="scan-outline"></ion-icon>
-    </div>
-    <h2 id="hero-title" class="headline-medium">Actualiza tu información</h2>
-    <p class="body-large text-muted">Captura y actualiza la información de tu documento de identidad de forma rápida y segura</p>
+    <!-- Logo FOMAG -->
+    <header class="fomag-branding-section simple-branding" role="banner">
+      <img 
+        src="assets/logos/FOMAGMesa-de-trabajo-34@2x.png" 
+        alt="FOMAG - Administrado por Fiduprevisora" 
+        class="fomag-logo"
+        loading="eager"
+      >
+    </header>
 
-    <!-- Status chips - solo visibles en modo desarrollo -->
-    <div class="status-row" *ngIf="isDev && deviceInfo">
-      <ion-chip [color]="deviceInfo.isSupported ? 'success' : 'medium'">
-        <ion-label>
-          {{ deviceInfo.isSupported ? '✓ Dispositivo compatible' : '✗ No compatible' }}
-        </ion-label>
-      </ion-chip>
-      <ion-chip [color]="deviceInfo.hasPermissions ? 'success' : 'warning'">
-        <ion-label>
-          {{ deviceInfo.hasPermissions ? '✓ Permisos OK' : '⚠️ Permisos requeridos' }}
-        </ion-label>
-      </ion-chip>
-    </div>
-  </section>
+    <!-- Texto prominente: acción principal clara sin iconos decorativos -->
+    <section class="simple-hero" aria-labelledby="simple-hero-title">
+      <h1 id="simple-hero-title">Actualizar Datos</h1>
+      <p>Escanee su cédula para iniciar la actualización de información</p>
+    </section>
 
-  <!-- Quick Actions -->
-  <div class="quick-actions">
-    <ion-button expand="block" size="large" class="scan-button" (click)="goToScanner('auto')">
-      <ion-icon slot="start" name="camera-outline"></ion-icon>
-      Escanear Cédula
-    </ion-button>
-
-    <!-- Dev bypass button -->
-    <div *ngIf="isDev" class="dev-bypass-separator">
-      <ion-button expand="block" fill="outline" color="warning" (click)="goToVerification()">
-        <ion-icon slot="start" name="person-circle"></ion-icon>
-        Ir a Verificación (Dev)
-      </ion-button>
-      <ion-button expand="block" fill="outline" color="tertiary" (click)="goToImportInstituciones()">
-        <ion-icon slot="start" name="school-outline"></ion-icon>
-        Importar Instituciones (Dev)
+    <div class="simple-actions">
+      <ion-button 
+        expand="block" 
+        size="large" 
+        class="simple-scan-button" 
+        (click)="goToScanner('auto')"
+        aria-label="Escanear cédula de ciudadanía">
+        Escanear Cédula
       </ion-button>
     </div>
-  </div>
 
-  <!-- Features Card -->
-  <ion-card class="features-card animate-slide-up">
-    <ion-card-header>
-      <ion-card-title>Características</ion-card-title>
-      <ion-card-subtitle>Procesamiento inteligente de documentos</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-list lines="none" class="features-list">
-        <ion-item>
-          <ion-icon slot="start" name="flash-outline" color="primary"></ion-icon>
+    <!-- Instrucciones simplificadas: solo texto, sin iconos -->
+    <div class="simple-instructions">
+      <div class="simple-instruction-text">
+        <p><strong>Rápido y seguro</strong> &mdash; Su información se procesa en este dispositivo</p>
+      </div>
+    </div>
+
+    <!-- Acceso a configuración -->
+    <div class="simple-settings-link">
+      <ion-button fill="clear" (click)="goToSettings()" aria-label="Ir a configuración">
+        Configuración
+      </ion-button>
+    </div>
+
+    <!-- Dev bypass (solo dev) -->
+    @if (isDev) {
+      <div class="dev-bypass-separator">
+        <ion-button expand="block" fill="outline" color="warning" (click)="goToVerification()">
+          <ion-icon slot="start" name="person-circle"></ion-icon>
+          Ir a Verificación (Dev)
+        </ion-button>
+      </div>
+    }
+
+  } @else {
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MODO NORMAL: Interfaz completa original                           -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- FOMAG Branding Section -->
+    <header class="fomag-branding-section" role="banner">
+      <img 
+        src="assets/logos/FOMAGMesa-de-trabajo-34@2x.png" 
+        alt="FOMAG - Administrado por Fiduprevisora" 
+        class="fomag-logo"
+        loading="eager"
+      >
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section animate-fade-in" aria-labelledby="hero-title">
+      <div class="hero-icon" aria-hidden="true">
+        <ion-icon name="scan-outline"></ion-icon>
+      </div>
+      <h2 id="hero-title" class="headline-medium">Actualiza tu información</h2>
+      <p class="body-large text-muted">Captura y actualiza la información de tu documento de identidad de forma rápida y segura</p>
+
+      <!-- Status chips - solo visibles en modo desarrollo -->
+      @if (isDev && deviceInfo) {
+      <div class="status-row">
+        <ion-chip [color]="deviceInfo.isSupported ? 'success' : 'medium'">
           <ion-label>
-            <h3>Reconocimiento Rápido</h3>
-            <p>Extracción de datos en segundos</p>
+            {{ deviceInfo.isSupported ? '✓ Dispositivo compatible' : '✗ No compatible' }}
           </ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-icon slot="start" name="shield-checkmark-outline" color="success"></ion-icon>
+        </ion-chip>
+        <ion-chip [color]="deviceInfo.hasPermissions ? 'success' : 'warning'">
           <ion-label>
-            <h3>100% Seguro</h3>
-            <p>Procesamiento local en tu dispositivo</p>
+            {{ deviceInfo.hasPermissions ? '✓ Permisos OK' : '⚠️ Permisos requeridos' }}
           </ion-label>
-        </ion-item>
-        <ion-item>
-          <ion-icon slot="start" name="sparkles-outline" color="tertiary"></ion-icon>
-          <ion-label>
-            <h3>ML Kit Integrado</h3>
-            <p>Tecnología de Google para OCR</p>
-          </ion-label>
-        </ion-item>
-      </ion-list>
-    </ion-card-content>
-  </ion-card>
+        </ion-chip>
+      </div>
+      }
+    </section>
 
-  <!-- Recent Scans Section -->
-  <div class="section-header">
-    <h3 class="title-large">Escaneos Recientes</h3>
-    <ion-button fill="clear" size="small">Ver todos</ion-button>
-  </div>
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <ion-button expand="block" size="large" class="scan-button" (click)="goToScanner('auto')">
+        <ion-icon slot="start" name="camera-outline"></ion-icon>
+        Escanear Cédula
+      </ion-button>
 
-  <div class="empty-state">
-    <ion-icon name="document-text-outline"></ion-icon>
-    <p class="body-medium text-muted">No hay escaneos recientes</p>
-    <p class="body-small text-muted">Los documentos escaneados aparecerán aquí</p>
-  </div>
+      <!-- Dev bypass button -->
+      @if (isDev) {
+      <div class="dev-bypass-separator">
+        <ion-button expand="block" fill="outline" color="warning" (click)="goToVerification()">
+          <ion-icon slot="start" name="person-circle"></ion-icon>
+          Ir a Verificación (Dev)
+        </ion-button>
+        <ion-button expand="block" fill="outline" color="tertiary" (click)="goToImportInstituciones()">
+          <ion-icon slot="start" name="school-outline"></ion-icon>
+          Importar Instituciones (Dev)
+        </ion-button>
+      </div>
+      }
+    </div>
 
-<!-- FAB para escaneo rápido -->
-<ion-fab slot="fixed" vertical="bottom" horizontal="end">
-  <ion-fab-button (click)="goToScanner('auto')" color="primary">
-    <ion-icon name="scan"></ion-icon>
-  </ion-fab-button>
-</ion-fab>
+    <!-- Features Card -->
+    <ion-card class="features-card animate-slide-up">
+      <ion-card-header>
+        <ion-card-title>Características</ion-card-title>
+        <ion-card-subtitle>Procesamiento inteligente de documentos</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list lines="none" class="features-list">
+          <ion-item>
+            <ion-icon slot="start" name="flash-outline" color="primary"></ion-icon>
+            <ion-label>
+              <h3>Reconocimiento Rápido</h3>
+              <p>Extracción de datos en segundos</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon slot="start" name="shield-checkmark-outline" color="success"></ion-icon>
+            <ion-label>
+              <h3>100% Seguro</h3>
+              <p>Procesamiento local en tu dispositivo</p>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon slot="start" name="sparkles-outline" color="tertiary"></ion-icon>
+            <ion-label>
+              <h3>ML Kit Integrado</h3>
+              <p>Tecnología de Google para OCR</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Recent Scans Section -->
+    <div class="section-header">
+      <h3 class="title-large">Escaneos Recientes</h3>
+      <ion-button fill="clear" size="small">Ver todos</ion-button>
+    </div>
+
+    <div class="empty-state">
+      <ion-icon name="document-text-outline"></ion-icon>
+      <p class="body-medium text-muted">No hay escaneos recientes</p>
+      <p class="body-small text-muted">Los documentos escaneados aparecerán aquí</p>
+    </div>
+
+  }
+
+  <!-- FAB para escaneo rápido (solo en modo normal) -->
+  @if (!a11y.isSimpleMode()) {
+    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+      <ion-fab-button (click)="goToScanner('auto')" color="primary">
+        <ion-icon name="scan"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+  }
+
+</ion-content>

@@ -1,0 +1,223 @@
+// =============================================================================
+// SETTINGS PAGE - Configuración & Modo Simple
+// =============================================================================
+
+.mode-toggle-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  margin-bottom: var(--space-md);
+
+  .mode-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--ion-color-primary-rgb), 0.1);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-lg);
+
+    ion-icon {
+      font-size: 44px;
+      color: var(--ion-color-primary);
+    }
+  }
+
+  h2 {
+    margin: 0 0 var(--space-sm);
+    color: var(--ion-text-color);
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0 0 var(--space-xl);
+    max-width: 320px;
+    line-height: 1.6;
+    color: var(--ion-color-medium-shade);
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--surface-container);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 300px;
+    justify-content: space-between;
+  }
+
+  .toggle-label {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--ion-text-color);
+  }
+
+  .simple-toggle {
+    --handle-width: 28px;
+    --handle-height: 28px;
+    --handle-max-height: 28px;
+  }
+}
+
+// Features info card
+.features-info-card {
+  margin: 0 var(--space-md) var(--space-lg);
+  
+  h3 {
+    margin: 0 0 var(--space-md);
+    color: var(--ion-text-color);
+    font-weight: 600;
+  }
+
+  .features-list {
+    padding: 0;
+    background: transparent;
+
+    ion-item {
+      --background: transparent;
+      --padding-start: 0;
+      --inner-padding-end: 0;
+      --min-height: 52px;
+      margin-bottom: var(--space-xs);
+
+      ion-icon {
+        font-size: 1.5rem;
+        margin-right: var(--space-md);
+      }
+
+      h3 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        margin: 0 0 2px;
+        color: var(--ion-text-color);
+      }
+
+      p {
+        font-size: 0.8125rem;
+        margin: 0;
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+}
+
+// Active confirmation
+.active-confirmation-card {
+  margin: 0 var(--space-md) var(--space-lg);
+  border: 2px solid var(--ion-color-success);
+  text-align: center;
+
+  .active-icon {
+    margin-bottom: var(--space-md);
+
+    ion-icon {
+      font-size: 56px;
+    }
+  }
+
+  h3 {
+    margin: 0 0 var(--space-sm);
+    color: var(--ion-color-success);
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// Version info
+.version-info {
+  text-align: center;
+  padding: var(--space-xl) var(--space-md);
+
+  ion-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    font-size: 0.8125rem;
+    color: var(--ion-color-medium);
+
+    ion-icon {
+      font-size: 1rem;
+    }
+  }
+}
+
+// =============================================================================
+// SIMPLE MODE OVERRIDES FOR THIS PAGE — TEXT-FIRST
+// =============================================================================
+:host-context(body.simple-mode) {
+  .mode-toggle-section {
+    padding: var(--space-xl) var(--space-lg) var(--space-xl);
+    align-items: flex-start;
+    text-align: left;
+
+    // mode-icon-wrapper is hidden via *ngIf in simple mode
+
+    h2 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      font-size: 1.25rem;
+      max-width: 400px;
+      line-height: 1.6;
+      color: var(--ion-color-medium-shade);
+    }
+
+    .toggle-row {
+      padding: var(--space-lg);
+      max-width: 100%;
+      border: 2px solid var(--ion-border-color);
+      border-radius: var(--radius-lg);
+    }
+
+    .toggle-label {
+      font-size: 1.375rem;
+      font-weight: 700;
+    }
+
+    .simple-toggle {
+      --handle-width: 34px;
+      --handle-height: 34px;
+      --handle-max-height: 34px;
+      transform: scale(1.2);
+    }
+  }
+
+  // Active confirmation: text-only, no icon
+  .active-confirmation-card {
+    border-width: 3px;
+    text-align: left;
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--ion-color-success);
+    }
+
+    p {
+      font-size: 1.1875rem;
+      line-height: 1.6;
+    }
+  }
+
+  // Version info in simple mode
+  .version-info ion-note {
+    font-size: 1rem;
+
+    ion-icon {
+      display: none; // No decorative icon
+    }
+  }
+}

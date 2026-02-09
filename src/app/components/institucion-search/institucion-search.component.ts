@@ -44,9 +44,7 @@ export interface InstitucionOption {
     IonLabel,
     IonNote,
     IonSpinner,
-    IonChip,
     IonIcon,
-    IonButton,
   ],
   template: `
     <div class="search-container">

@@ -1,0 +1,92 @@
+<ion-header [translucent]="true" class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" aria-label="Volver al inicio"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Configuración</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <!-- Toggle principal del Modo Simple -->
+  <section class="mode-toggle-section" aria-labelledby="simple-mode-heading">
+    <!-- Decorative icon only in normal mode -->
+    @if (!a11y.isSimpleMode()) {
+      <div class="mode-icon-wrapper" aria-hidden="true">
+        <ion-icon name="accessibility-outline"></ion-icon>
+      </div>
+    }
+
+    <h2 id="simple-mode-heading" class="headline-medium">Modo Simple</h2>
+    <p class="body-large text-muted">
+      Interfaz con letras grandes, alto contraste y botones amplios. Ideal para adultos mayores.
+    </p>
+
+    <div class="toggle-row">
+      <ion-label class="toggle-label">
+        {{ a11y.isSimpleMode() ? 'Activado' : 'Desactivado' }}
+      </ion-label>
+      <ion-toggle
+        [checked]="a11y.isSimpleMode()"
+        (ionChange)="onToggleChange($event)"
+        aria-label="Activar o desactivar modo simple"
+        class="simple-toggle"
+        color="success">
+      </ion-toggle>
+    </div>
+  </section>
+
+  <!-- Características del modo -->
+  @if (!a11y.isSimpleMode()) {
+  <ion-card class="features-info-card">
+    <ion-card-content>
+      <h3 class="title-medium">¿Qué cambia al activar?</h3>
+      <ion-list lines="none" class="features-list">
+        <ion-item>
+          <ion-icon slot="start" name="text-outline" color="primary" aria-hidden="true"></ion-icon>
+          <ion-label>
+            <h3>Texto más grande</h3>
+            <p>Letras ampliadas para lectura cómoda</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="contrast-outline" color="primary" aria-hidden="true"></ion-icon>
+          <ion-label>
+            <h3>Alto contraste</h3>
+            <p>Colores más nítidos y diferenciados</p>
+          </ion-label>
+        </ion-item>
+        <ion-item>
+          <ion-icon slot="start" name="hand-left-outline" color="primary" aria-hidden="true"></ion-icon>
+          <ion-label>
+            <h3>Botones amplios</h3>
+            <p>Áreas de toque más grandes y cómodas</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+  }
+
+  <!-- Confirmación cuando está activo — text only, no decorative icon -->
+  @if (a11y.isSimpleMode()) {
+  <ion-card class="active-confirmation-card">
+    <ion-card-content>
+      <h3 class="title-medium">Modo Simple activo</h3>
+      <p class="body-medium text-muted">
+        La interfaz se ha adaptado para mayor comodidad visual. Puedes desactivarlo en cualquier momento.
+      </p>
+    </ion-card-content>
+  </ion-card>
+  }
+
+  <!-- Info de versión -->
+  <div class="version-info">
+    <ion-note>
+      <ion-icon name="information-circle-outline" aria-hidden="true"></ion-icon>
+      Actualización de datos FOMAG v1.0
+    </ion-note>
+  </div>
+
+</ion-content>

@@ -83,13 +83,13 @@ import {
         <ion-buttons slot="start">
           <ion-back-button defaultHref="/forms/contact"></ion-back-button>
         </ion-buttons>
-        <ion-title>Información Laboral</ion-title>
+        <ion-title>Datos Laborales</ion-title>
       </ion-toolbar>
       <ion-toolbar>
         <div class="progress-container">
           <div class="progress-info">
-            <span class="step-label">Paso 3 de 4</span>
-            <span class="step-title">Datos laborales</span>
+            <span class="step-label">PASO 3 DE 4</span>
+            <span class="step-title">Laboral</span>
           </div>
           <ion-progress-bar [value]="0.75" color="primary"></ion-progress-bar>
         </div>
@@ -106,7 +106,7 @@ import {
             <ion-card-header>
               <ion-card-title>
                 <ion-icon name="briefcase-outline"></ion-icon>
-                Tipo de Afiliación
+                Afiliación
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
@@ -116,7 +116,7 @@ import {
                     formControlName="tipoAfiliado"
                     label="Tipo de afiliado"
                     labelPlacement="stacked"
-                    placeholder="Seleccione su tipo de afiliación"
+                    placeholder="Seleccione"
                     interface="action-sheet"
                     (ionChange)="onTipoAfiliadoChange($event)"
                   >
@@ -129,7 +129,7 @@ import {
                 </ion-item>
                 @if (showError('tipoAfiliado')) {
                   <ion-note color="danger" class="error-note">
-                    Seleccione su tipo de afiliación
+                    Campo requerido
                   </ion-note>
                 }
               </ion-list>
@@ -154,10 +154,9 @@ import {
                       formControlName="departamento"
                       label="Departamento"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el departamento"
                       interface="action-sheet"
                       (ionChange)="onDepartamentoChange($event)"
-                      aria-label="Seleccione el departamento donde trabaja"
+                      aria-label="Departamento"
                     >
                       @for (dep of departamentos(); track dep.codigoDepartamento) {
                         <ion-select-option [value]="dep.codigoDepartamento">
@@ -181,11 +180,10 @@ import {
                       formControlName="municipio"
                       label="Municipio"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el municipio"
                       interface="action-sheet"
                       [disabled]="!form.get('departamento')?.value"
                       (ionChange)="onMunicipioChange($event)"
-                      aria-label="Seleccione el municipio donde trabaja"
+                      aria-label="Municipio"
                     >
                       @if (municipios().length === 0 && form.get('departamento')?.value) {
                         <ion-select-option value="" disabled>
@@ -202,14 +200,9 @@ import {
                       <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
                     }
                   </ion-item>
-                  @if (!form.get('departamento')?.value) {
-                    <ion-note color="medium" class="hint-note">
-                      Primero seleccione un departamento
-                    </ion-note>
-                  }
                   @if (showError('municipio')) {
                     <ion-note color="danger" class="error-note">
-                      Seleccione el municipio
+                      Campo requerido
                     </ion-note>
                   }
 
@@ -217,12 +210,11 @@ import {
                   <ion-item>
                     <ion-select
                       formControlName="secretariaEducacion"
-                      label="Secretaría de Educación"
+                      label="Secretaría"
                       labelPlacement="stacked"
-                      placeholder="Seleccione la secretaría"
                       interface="action-sheet"
                       (ionChange)="onSecretariaChange($event)"
-                      aria-label="Seleccione la secretaría de educación"
+                      aria-label="Secretaría de educación"
                     >
                       @for (sec of secretarias(); track sec.id) {
                         <ion-select-option [value]="sec.id">
@@ -236,7 +228,7 @@ import {
                   </ion-item>
                   @if (showError('secretariaEducacion')) {
                     <ion-note color="danger" class="error-note">
-                      Seleccione la secretaría de educación
+                      Campo requerido
                     </ion-note>
                   }
 
@@ -244,13 +236,12 @@ import {
                   <ion-item>
                     <ion-select
                       formControlName="institucionEducativa"
-                      label="Institución Educativa"
+                      label="Institución"
                       labelPlacement="stacked"
-                      placeholder="Seleccione la institución"
                       interface="action-sheet"
                       [disabled]="!puedeCargarEstablecimientos()"
                       (ionChange)="onEstablecimientoChange($event)"
-                      aria-label="Seleccione la institución educativa"
+                      aria-label="Institución educativa"
                     >
                       @if (establecimientos().length === 0 && puedeCargarEstablecimientos()) {
                         <ion-select-option value="" disabled>
@@ -270,16 +261,15 @@ import {
                   <ion-item>
                     <ion-select
                       formControlName="sede"
-                      label="Sede (Opcional)"
+                      label="Sede"
                       labelPlacement="stacked"
-                      placeholder="Seleccione la sede"
                       interface="action-sheet"
                       [disabled]="!form.get('institucionEducativa')?.value"
-                      aria-label="Seleccione la sede educativa (opcional)"
+                      aria-label="Sede educativa"
                     >
                       @if (sedes().length === 0 && form.get('institucionEducativa')?.value && !loadingSedes()) {
                         <ion-select-option value="" disabled>
-                          Esta institución no tiene sedes registradas
+                          Sin sedes
                         </ion-select-option>
                       }
                       @for (s of sedes(); track s.codigoSede) {
@@ -292,11 +282,6 @@ import {
                       <ion-spinner slot="end" name="crescent" color="primary"></ion-spinner>
                     }
                   </ion-item>
-                  @if (!form.get('institucionEducativa')?.value) {
-                    <ion-note color="medium" class="hint-note">
-                      Primero seleccione una institución educativa
-                    </ion-note>
-                  }
                 
                   <!-- Cargo -->
                   <ion-item>
@@ -304,7 +289,7 @@ import {
                       formControlName="cargo"
                       label="Cargo"
                       labelPlacement="stacked"
-                      placeholder="Ej: Docente de Matemáticas"
+                      placeholder="Ej: Docente"
                       type="text"
                     ></ion-input>
                   </ion-item>
@@ -320,7 +305,6 @@ import {
                       formControlName="escalafon"
                       label="Escalafón"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el escalafón"
                       interface="action-sheet"
                     >
                       <ion-select-option value="2277">Decreto 2277</ion-select-option>
@@ -337,9 +321,8 @@ import {
                   <ion-item>
                     <ion-select
                       formControlName="gradoEscalafon"
-                      label="Grado en el escalafón"
+                      label="Grado escalafón"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el grado"
                       interface="action-sheet"
                     >
                       @for (grado of gradosEscalafon(); track grado) {
@@ -360,7 +343,7 @@ import {
               <ion-card-header>
                 <ion-card-title>
                   <ion-icon name="calendar-outline"></ion-icon>
-                  Información de Pensión
+                  Pensión
                 </ion-card-title>
               </ion-card-header>
               <ion-card-content>
@@ -368,10 +351,7 @@ import {
                 <!-- Nota informativa -->
                 <div class="info-banner">
                   <ion-icon name="information-circle-outline"></ion-icon>
-                  <p>
-                    La información laboral es opcional para pensionados.
-                    Complete solo si desea actualizar estos datos.
-                  </p>
+                  <p>Campos opcionales para pensionados.</p>
                 </div>
 
                 <ion-list lines="none">
@@ -380,9 +360,8 @@ import {
                   <ion-item>
                     <ion-select
                       formControlName="secretariaEducacion"
-                      label="Última Secretaría de Educación"
+                      label="Última secretaría"
                       labelPlacement="stacked"
-                      placeholder="Seleccione la secretaría"
                       interface="action-sheet"
                     >
                       @for (sec of secretarias(); track sec.id) {
@@ -400,9 +379,9 @@ import {
                   <ion-item>
                     <ion-input
                       formControlName="cargo"
-                      label="Último cargo desempeñado"
+                      label="Último cargo"
                       labelPlacement="stacked"
-                      placeholder="Ej: Docente de Ciencias"
+                      placeholder="Ej: Docente"
                       type="text"
                     ></ion-input>
                   </ion-item>
@@ -418,11 +397,8 @@ import {
                 <div class="beneficiary-info">
                   <ion-icon name="information-circle-outline"></ion-icon>
                   <div>
-                    <h3>Información no requerida</h3>
-                    <p>
-                      Como beneficiario, no es necesario completar información laboral.
-                      Puede continuar al siguiente paso.
-                    </p>
+                    <h3>No requerido</h3>
+                    <p>Como beneficiario, puede continuar al siguiente paso.</p>
                   </div>
                 </div>
               </ion-card-content>
@@ -455,13 +431,20 @@ import {
     </ion-content>
   `,
   styles: [`
-    /* ==================================
-       SHARED FORM STYLES - MD3
-       ================================== */
+    /* ===========================================
+       FORM STYLES — Modern Responsive Design
+       =========================================== */
 
     :host {
       --form-max-width: 600px;
-      --form-padding: var(--space-md, 16px);
+      --sp-xs: 0.5rem;
+      --sp-sm: 0.75rem;
+      --sp-md: 1rem;
+      --sp-lg: 1.5rem;
+      --sp-xl: 2rem;
+      --radius-sm: 0.75rem;
+      --radius-md: 1rem;
+      --radius-lg: 1.5rem;
     }
 
     .form-content {
@@ -470,87 +453,87 @@ import {
 
     /* Progress Indicator */
     .progress-container {
-      padding: var(--space-sm, 12px) var(--space-md, 16px);
+      padding: var(--sp-sm) var(--sp-md);
     }
 
     .progress-info {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: var(--space-xs, 8px);
+      margin-bottom: var(--sp-xs);
     }
 
     .step-label {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       color: var(--ion-color-primary);
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
     }
 
     .step-title {
-      font-size: 0.8125rem;
-      color: var(--ion-color-medium-shade);
+      font-size: 0.875rem;
+      color: var(--ion-color-medium);
       font-weight: 500;
     }
 
     ion-progress-bar {
-      height: 6px;
-      border-radius: var(--radius-full, 9999px);
+      height: 0.375rem;
+      border-radius: 9999px;
       --buffer-background: rgba(var(--ion-color-primary-rgb), 0.08);
     }
 
     /* Form Container */
     .form-container {
-      padding: var(--form-padding);
+      padding: var(--sp-md);
       max-width: var(--form-max-width);
       margin: 0 auto;
-      padding-bottom: env(safe-area-inset-bottom, 0);
+      padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Info Banner */
     .info-banner {
       display: flex;
-      gap: var(--space-sm, 12px);
-      padding: var(--space-md, 16px);
-      background: rgba(var(--ion-color-primary-rgb), 0.08);
-      border-radius: var(--radius-lg, 16px);
-      margin-bottom: var(--space-lg, 24px);
+      gap: var(--sp-sm);
+      padding: var(--sp-md);
+      background: rgba(var(--ion-color-primary-rgb), 0.06);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-lg);
       align-items: flex-start;
-      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.12);
+      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.1);
     }
 
     .info-banner ion-icon {
-      font-size: 1.5rem;
+      font-size: 1.375rem;
       color: var(--ion-color-primary);
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 0.125rem;
     }
 
     .info-banner p {
       margin: 0;
-      font-size: 0.8125rem;
+      font-size: 0.875rem;
       color: var(--ion-text-color);
       line-height: 1.6;
     }
 
     /* Cards */
     .form-card {
-      margin-bottom: var(--space-md, 16px);
-      border-radius: var(--radius-lg, 16px);
-      box-shadow: var(--elevation-1, 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1));
+      margin-bottom: var(--sp-md);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.08);
     }
 
     .form-card ion-card-header {
-      padding-bottom: var(--space-xs, 8px);
+      padding-bottom: var(--sp-xs);
     }
 
     .form-card ion-card-title {
       display: flex;
       align-items: center;
-      gap: var(--space-sm, 12px);
-      font-size: 1rem;
-      font-weight: 600;
+      gap: var(--sp-sm);
+      font-size: 1.25rem;
+      font-weight: 700;
       line-height: 1.3;
     }
 
@@ -560,13 +543,14 @@ import {
       flex-shrink: 0;
     }
 
+    /* Info Card & Beneficiary */
     .info-card {
       background: rgba(var(--ion-color-primary-rgb), 0.04);
     }
 
     .beneficiary-info {
       display: flex;
-      gap: var(--space-md, 16px);
+      gap: var(--sp-md);
       align-items: flex-start;
     }
 
@@ -577,7 +561,7 @@ import {
     }
 
     .beneficiary-info h3 {
-      margin: 0 0 var(--space-xs, 8px);
+      margin: 0 0 var(--sp-xs);
       font-size: 1rem;
       font-weight: 600;
     }
@@ -595,34 +579,64 @@ import {
     }
 
     ion-item {
-      --background: var(--surface-container, #f1f5f9);
-      --border-radius: var(--radius-md, 12px);
+      --background: var(--ion-color-light);
+      --border-radius: var(--radius-md);
       --border-width: 0;
-      --padding-start: var(--space-md, 16px);
-      --padding-end: var(--space-md, 16px);
-      margin-bottom: var(--space-md, 16px);
+      --min-height: 3.5rem;
+      --padding-start: var(--sp-md);
+      --padding-end: var(--sp-md);
+      margin-bottom: var(--sp-sm);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    ion-item:last-child {
+      margin-bottom: 0;
+    }
+
+    ion-item:focus-within {
+      --background: rgba(var(--ion-color-primary-rgb), 0.05);
+      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.15);
+    }
+
+    ion-select, ion-input {
+      --padding-top: var(--sp-sm);
+      --padding-bottom: var(--sp-sm);
+      font-size: 0.9375rem;
+    }
+
+    /* Prevent select text truncation */
+    ion-select::part(text) {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
+      font-size: 0.9375rem;
+    }
+
+    ion-select::part(placeholder) {
+      opacity: 0.5;
+      font-size: 0.875rem;
     }
 
     /* Error & Hint Notes */
     .error-note {
       display: block;
-      padding: var(--space-xs, 8px) var(--space-md, 16px);
-      font-size: 0.75rem;
+      padding: var(--sp-xs) var(--sp-md);
+      font-size: 0.8125rem;
       font-weight: 500;
-      margin-top: -4px;
-      margin-bottom: var(--space-sm, 12px);
+      margin-top: -0.25rem;
+      margin-bottom: var(--sp-sm);
     }
 
     .hint-note {
       display: flex;
       align-items: center;
-      gap: var(--space-xs, 8px);
-      padding: var(--space-xs, 8px) var(--space-md, 16px);
-      font-size: 0.75rem;
+      gap: var(--sp-xs);
+      padding: var(--sp-xs) var(--sp-md);
+      font-size: 0.8125rem;
       font-style: italic;
-      margin-top: -4px;
-      margin-bottom: var(--space-sm, 12px);
-      opacity: 0.8;
+      margin-top: -0.25rem;
+      margin-bottom: var(--sp-sm);
+      opacity: 0.75;
     }
 
     .hint-note::before {
@@ -631,45 +645,23 @@ import {
       font-size: 0.875rem;
     }
 
-    ion-item:last-child {
-      margin-bottom: 0;
-    }
-
-    ion-item:focus-within {
-      --background: rgba(var(--ion-color-primary-rgb), 0.06);
-      box-shadow: 0 0 0 2px rgba(var(--ion-color-primary-rgb), 0.2);
-    }
-
-    ion-select, ion-input {
-      --padding-top: var(--space-sm, 12px);
-      --padding-bottom: var(--space-sm, 12px);
-    }
-
-    /* Error Notes */
-    .error-note {
-      display: block;
-      padding: var(--space-xs, 8px) var(--space-md, 16px);
-      font-size: 0.75rem;
-      font-weight: 500;
-      margin-top: -4px;
-      margin-bottom: var(--space-sm, 12px);
-    }
-
     /* Form Actions */
     .form-actions {
       display: flex;
       justify-content: space-between;
-      gap: var(--space-md, 16px);
-      margin-top: var(--space-xl, 32px);
-      padding-bottom: calc(var(--space-xl, 32px) + env(safe-area-inset-bottom, 0));
+      gap: var(--sp-md);
+      margin-top: var(--sp-xl);
+      padding-bottom: calc(var(--sp-lg) + env(safe-area-inset-bottom, 0px));
     }
 
     .form-actions ion-button {
       flex: 1;
-      --border-radius: var(--radius-lg, 16px);
-      min-height: 52px;
+      --border-radius: var(--radius-md);
+      min-height: 3rem;
       font-weight: 600;
       font-size: 0.9375rem;
+      --padding-start: 0.75rem;
+      --padding-end: 0.75rem;
     }
 
     .form-actions ion-button[fill="outline"] {
@@ -685,11 +677,60 @@ import {
     @keyframes slideIn {
       from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-0.625rem);
       }
       to {
         opacity: 1;
         transform: translateY(0);
+      }
+    }
+
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      .form-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 380px) {
+      .form-card ion-card-title {
+        font-size: 1.125rem;
+      }
+
+      .form-actions {
+        gap: var(--sp-sm);
+      }
+
+      .form-actions ion-button {
+        min-height: 2.75rem;
+        font-size: 0.875rem;
+        --padding-start: 0.5rem;
+        --padding-end: 0.5rem;
+      }
+
+      ion-select, ion-input {
+        font-size: 0.875rem;
+      }
+    }
+
+    /* Responsive: tablets+ */
+    @media (min-width: 768px) {
+      .form-container {
+        padding: var(--sp-lg);
+      }
+
+      .form-card ion-card-title {
+        font-size: 1.375rem;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      ion-item,
+      .animate-slide-in {
+        transition: none;
+        animation: none;
       }
     }
   `]

@@ -83,7 +83,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
         <ion-buttons slot="start">
           <ion-back-button defaultHref="/beneficiaries"></ion-back-button>
         </ion-buttons>
-        <ion-title>Actualizar Beneficiario</ion-title>
+        <ion-title>Beneficiario</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -124,7 +124,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
               <ion-card-header>
                 <ion-card-title>
                   <ion-icon name="home-outline"></ion-icon>
-                  Información de Residencia
+                  Residencia
                 </ion-card-title>
               </ion-card-header>
               <ion-card-content>
@@ -135,9 +135,8 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     <ion-item>
                       <ion-select
                         formControlName="estadoCivil"
-                        label="Estado Civil"
+                        label="Estado civil"
                         labelPlacement="stacked"
-                        placeholder="Seleccione estado civil"
                         interface="action-sheet"
                       >
                         @for (estado of estadosCiviles; track estado.value) {
@@ -155,7 +154,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                       formControlName="zona"
                       label="Zona"
                       labelPlacement="stacked"
-                      placeholder="Urbana o Rural"
                       interface="action-sheet"
                     >
                       @for (zona of zonas; track zona.value) {
@@ -167,7 +165,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                   </ion-item>
                   @if (showError('zona')) {
                     <ion-note color="danger" class="error-note">
-                      Seleccione la zona
+                      Requerido
                     </ion-note>
                   }
 
@@ -180,7 +178,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                       formControlName="departamento"
                       label="Departamento"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el departamento"
                       interface="action-sheet"
                       [disabled]="loadingDepartamentos() || departamentos().length === 0"
                       (ionChange)="onDepartamentoChange($event)"
@@ -194,7 +191,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                   </ion-item>
                   @if (showError('departamento')) {
                     <ion-note color="danger" class="error-note">
-                      Seleccione el departamento
+                      Requerido
                     </ion-note>
                   }
 
@@ -207,7 +204,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                       formControlName="municipio"
                       label="Municipio"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el municipio"
                       interface="action-sheet"
                       [disabled]="loadingMunicipios() || municipiosFiltrados().length === 0"
                     >
@@ -220,7 +216,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                   </ion-item>
                   @if (showError('municipio')) {
                     <ion-note color="danger" class="error-note">
-                      Seleccione el municipio
+                      Requerido
                     </ion-note>
                   }
 
@@ -228,15 +224,15 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                   <ion-item>
                     <ion-input
                       formControlName="direccion"
-                      label="Dirección de residencia"
+                      label="Dirección"
                       labelPlacement="stacked"
-                      placeholder="Ej: Calle 100 # 15-20"
+                      placeholder="Calle 100 # 15-20"
                       type="text"
                     ></ion-input>
                   </ion-item>
                   @if (showError('direccion')) {
                     <ion-note color="danger" class="error-note">
-                      Ingrese la dirección
+                      Mínimo 5 caracteres
                     </ion-note>
                   }
 
@@ -246,7 +242,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                       formControlName="estrato"
                       label="Estrato"
                       labelPlacement="stacked"
-                      placeholder="Seleccione el estrato"
                       interface="action-sheet"
                     >
                       @for (estrato of estratos; track estrato.value) {
@@ -258,7 +253,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                   </ion-item>
                   @if (showError('estrato')) {
                     <ion-note color="danger" class="error-note">
-                      Seleccione el estrato
+                      Requerido
                     </ion-note>
                   }
                 </ion-list>
@@ -271,7 +266,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                 <ion-card-header>
                   <ion-card-title>
                     <ion-icon name="call-outline"></ion-icon>
-                    Información de Contacto
+                    Contacto
                     <ion-chip color="warning" class="required-chip">Requerido</ion-chip>
                   </ion-card-title>
                 </ion-card-header>
@@ -280,9 +275,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                   <!-- Info -->
                   <div class="info-banner">
                     <ion-icon name="information-circle-outline"></ion-icon>
-                    <p>
-                      Los beneficiarios mayores de 18 años deben proporcionar información de contacto actualizada.
-                    </p>
+                    <p>Mayores de 18 años deben actualizar su contacto.</p>
                   </div>
 
                   <ion-list lines="none">
@@ -291,7 +284,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     <ion-item>
                       <ion-input
                         formControlName="correoElectronico"
-                        label="Correo electrónico"
+                        label="Correo"
                         labelPlacement="stacked"
                         placeholder="ejemplo@correo.com"
                         type="email"
@@ -299,7 +292,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     </ion-item>
                     @if (showError('correoElectronico')) {
                       <ion-note color="danger" class="error-note">
-                        Ingrese un correo electrónico válido
+                        Correo inválido
                       </ion-note>
                     }
 
@@ -307,7 +300,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     <ion-item>
                       <ion-input
                         formControlName="celular"
-                        label="Número celular"
+                        label="Celular"
                         labelPlacement="stacked"
                         placeholder="3001234567"
                         type="tel"
@@ -316,7 +309,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
                     </ion-item>
                     @if (showError('celular')) {
                       <ion-note color="danger" class="error-note">
-                        Ingrese un número celular válido (10 dígitos)
+                        10 dígitos requeridos
                       </ion-note>
                     }
                   </ion-list>
@@ -437,8 +430,8 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
       display: flex;
       align-items: center;
       gap: var(--space-sm, 12px);
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 1.25rem;
+      font-weight: 700;
     }
 
     .form-card ion-card-title ion-icon {
@@ -471,6 +464,12 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
     ion-select, ion-input {
       --padding-top: var(--space-sm, 12px);
       --padding-bottom: var(--space-sm, 12px);
+    }
+
+    ion-select::part(text) {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .error-note {
@@ -514,6 +513,46 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
     .form-actions ion-button {
       flex: 1;
       --border-radius: var(--radius-md, 12px);
+      min-height: 3rem;
+      font-weight: 600;
+      font-size: 0.9375rem;
+    }
+
+    /* Responsive: small phones */
+    @media (max-width: 380px) {
+      .beneficiary-avatar {
+        width: 56px;
+        height: 56px;
+      }
+
+      .beneficiary-avatar span {
+        font-size: 1.125rem;
+      }
+
+      .beneficiary-info h2 {
+        font-size: 1rem;
+      }
+
+      .form-card ion-card-title {
+        font-size: 1.125rem;
+      }
+
+      .form-actions {
+        flex-direction: column;
+        gap: var(--space-sm, 8px);
+      }
+
+      .form-actions ion-button {
+        min-height: 2.75rem;
+        font-size: 0.875rem;
+      }
+    }
+
+    /* Responsive: tablets+ */
+    @media (min-width: 768px) {
+      .form-card ion-card-title {
+        font-size: 1.375rem;
+      }
     }
 
     .text-center {

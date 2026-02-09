@@ -53,6 +53,7 @@ import {
 } from 'ionicons/icons';
 import { ScannerService } from '../services/scanner.service';
 import { FlujoActualizacionService } from '../services/flujo-actualizacion.service';
+import { AccessibilityService } from '../services/accessibility.service';
 import { CedulaData, ScanErrorCode } from '../models/cedula.model';
 
 /**
@@ -91,7 +92,7 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
     <ion-header [translucent]="true">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button defaultHref="/home"></ion-back-button>
+          <ion-back-button defaultHref="/home" aria-label="Volver"></ion-back-button>
         </ion-buttons>
         <ion-title>Escáner de Cédula</ion-title>
       </ion-toolbar>
@@ -104,9 +105,10 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
         </ion-toolbar>
       </ion-header>
 
-      <div class="scanner-container">
-        <!-- Estado del dispositivo -->
-        @if (deviceInfo()) {
+      <div class="scanner-container" [class.simple-scanner]="a11y.isSimpleMode()">
+
+        <!-- Estado del dispositivo (oculto en simple mode) -->
+        @if (deviceInfo() && !a11y.isSimpleMode()) {
           <div class="device-status">
             <ion-chip [color]="deviceInfo()?.isSupported ? 'success' : 'medium'">
               <ion-icon [name]="deviceInfo()?.isSupported ? 'checkmark-circle' : 'close-circle'"></ion-icon>
@@ -119,7 +121,36 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
           </div>
         }
 
-        <!-- Botones de acción -->
+        <!-- ══ SIMPLE MODE: Texto principal, sin iconos decorativos ══ -->
+        @if (a11y.isSimpleMode() && !cedulaData() && !isScanning()) {
+          <div class="simple-scan-hero">
+            <h1 class="simple-headline">Escanear Cédula</h1>
+            <p class="simple-subtitle">Presione el botón para abrir la cámara y apuntar al documento</p>
+            <div class="simple-steps-text">
+              <p><strong>1.</strong> Tenga su cédula a la mano</p>
+              <p><strong>2.</strong> Presione "Iniciar Escaneo"</p>
+              <p><strong>3.</strong> Apunte la cámara al documento</p>
+            </div>
+            <ion-button expand="block" size="large" class="simple-main-scan-btn" (click)="scanCedula()" aria-label="Iniciar escaneo de cédula">
+              Iniciar Escaneo
+            </ion-button>
+          </div>
+        }
+
+        @if (a11y.isSimpleMode() && isScanning()) {
+          <div class="simple-scanning-state">
+            <div class="simple-scanning-indicator" aria-live="polite">
+              <h2>Escaneando...</h2>
+              <p>Mantenga el documento frente a la cámara</p>
+            </div>
+            <ion-button expand="block" color="danger" (click)="cancelScan()" class="simple-cancel-btn">
+              Cancelar
+            </ion-button>
+          </div>
+        }
+
+        <!-- ══ NORMAL MODE: Botones múltiples ══ -->
+        @if (!a11y.isSimpleMode()) {
         <div class="action-section">
           <div class="button-row">
             <ion-button
@@ -148,6 +179,7 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
             </ion-button>
           }
         </div>
+        }
 
         <!-- Mensaje de error -->
         @if (errorMessage()) {
@@ -339,14 +371,14 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
                 </div>
               }
 
-              <ion-button expand="block" color="primary" (click)="continuarActualizacion()" [disabled]="isScanning()">
+              <ion-button expand="block" color="primary" (click)="continuarActualizacion()" [disabled]="isScanning()" [class.simple-continue-btn]="a11y.isSimpleMode()">
                 <ion-icon slot="start" name="checkmark-circle"></ion-icon>
-                Continuar con la actualización
+                {{ a11y.isSimpleMode() ? 'Continuar' : 'Continuar con la actualización' }}
               </ion-button>
 
-              <ion-button expand="block" fill="outline" color="medium" (click)="clearData()">
+              <ion-button expand="block" fill="outline" color="medium" (click)="clearData()" [class.simple-retry-btn]="a11y.isSimpleMode()">
                 <ion-icon slot="start" name="refresh"></ion-icon>
-                Limpiar y escanear de nuevo
+                {{ a11y.isSimpleMode() ? 'Escanear de nuevo' : 'Limpiar y escanear de nuevo' }}
               </ion-button>
             </ion-card-content>
           </ion-card>
@@ -818,6 +850,203 @@ import { CedulaData, ScanErrorCode } from '../models/cedula.model';
         transform: translateY(0);
       }
     }
+
+    /* ============================================
+       SIMPLE MODE — Text-first scanner layout
+       ============================================ */
+
+    /* Simple mode scan hero - TEXT FIRST, no decorative icons */
+    .simple-scan-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      text-align: left;
+      padding: var(--space-xl, 32px) var(--space-lg, 24px);
+      max-width: 480px;
+      margin: 0 auto;
+
+      .simple-headline {
+        margin: 0 0 var(--space-sm, 12px);
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--ion-text-color);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+
+      .simple-subtitle {
+        margin: 0 0 var(--space-lg, 24px);
+        font-size: 1.1875rem;
+        line-height: 1.55;
+        color: var(--ion-color-medium-shade);
+      }
+
+      .simple-steps-text {
+        background: var(--surface-container, #f3f4f6);
+        border-radius: var(--radius-md, 12px);
+        border-left: 4px solid var(--ion-color-primary);
+        padding: var(--space-md, 16px) var(--space-lg, 24px);
+        margin-bottom: var(--space-xl, 32px);
+
+        p {
+          margin: 0 0 var(--space-xs, 8px);
+          font-size: 1.0625rem;
+          line-height: 1.6;
+          color: var(--ion-text-color);
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+
+          strong {
+            color: var(--ion-color-primary);
+            font-weight: 700;
+            font-size: 1.125rem;
+          }
+        }
+      }
+    }
+
+    .simple-main-scan-btn {
+      --border-radius: var(--radius-lg, 16px);
+      height: 72px;
+      font-size: 1.3125rem;
+      font-weight: 700;
+      width: 100%;
+      --background: var(--ion-color-primary);
+      --box-shadow: 0 4px 16px rgba(var(--ion-color-primary-rgb, 55, 48, 163), 0.3);
+    }
+
+    /* Simple scanning state — text only, no spinning icon */
+    .simple-scanning-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-xxl, 48px) var(--space-lg, 24px);
+      gap: var(--space-xl, 32px);
+    }
+
+    .simple-scanning-indicator {
+      text-align: center;
+      padding: var(--space-lg, 24px);
+      background: rgba(var(--ion-color-primary-rgb), 0.06);
+      border-radius: var(--radius-lg, 16px);
+      border: 2px solid rgba(var(--ion-color-primary-rgb), 0.15);
+      width: 100%;
+      max-width: 400px;
+
+      h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin: 0 0 var(--space-sm, 12px);
+        color: var(--ion-color-primary);
+      }
+
+      p {
+        font-size: 1.125rem;
+        color: var(--ion-color-medium-shade);
+        margin: 0;
+        line-height: 1.5;
+      }
+    }
+
+    .simple-cancel-btn {
+      width: 100%;
+      max-width: 400px;
+      --border-radius: var(--radius-lg, 16px);
+      height: 60px;
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+
+    /* Simple mode button overrides in data card */
+    .simple-continue-btn {
+      --border-radius: var(--radius-lg, 16px) !important;
+      height: 64px !important;
+      font-size: 1.1875rem !important;
+      font-weight: 700 !important;
+      margin-bottom: var(--space-md, 16px) !important;
+    }
+
+    .simple-retry-btn {
+      --border-radius: var(--radius-md, 12px) !important;
+      height: 56px !important;
+      font-size: 1.0625rem !important;
+      font-weight: 600 !important;
+    }
+
+    /* Simple mode container adjustments */
+    .simple-scanner {
+      padding: var(--space-lg, 24px);
+
+      /* Hide decorative icons in card header */
+      .card-header-custom {
+        background: var(--ion-color-primary);
+      }
+
+      .cedula-number .number {
+        font-size: 2.25rem;
+        font-weight: 800;
+      }
+
+      .cedula-number .label {
+        font-size: 1rem;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .info-section h4 {
+        font-size: 1.0625rem;
+
+        /* Hide decorative icons in section headers */
+        ion-icon { display: none; }
+      }
+      
+      .info-item .info-label {
+        font-size: 0.9375rem;
+        font-weight: 600;
+      }
+
+      .info-item .info-value {
+        font-size: 1.125rem;
+      }
+
+      /* Hide icons in info grid, show only text */
+      .info-item ion-icon {
+        display: none;
+      }
+
+      .data-list ion-label h3 {
+        font-size: 1.125rem;
+      }
+
+      .data-list ion-label p {
+        font-size: 0.9375rem;
+      }
+
+      /* Hide technical section entirely in simple mode */
+      .info-section.technical {
+        display: none;
+      }
+
+      /* Instructions card: text only */
+      .instructions-card {
+        ion-card-title ion-icon { display: none; }
+        
+        .instructions-list ion-item ion-icon { display: none; }
+      }
+    }
+
+    /* Spinning icon for scanning state */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning-icon {
+      animation: spin 1.5s linear infinite !important;
+    }
   `]
 })
 export class ScanCedulaComponent implements OnInit {
@@ -836,7 +1065,8 @@ export class ScanCedulaComponent implements OnInit {
   constructor(
     private scannerService: ScannerService,
     private route: ActivatedRoute,
-    private flujoActualizacion: FlujoActualizacionService
+    private flujoActualizacion: FlujoActualizacionService,
+    public a11y: AccessibilityService
   ) {
     addIcons({
       camera,
