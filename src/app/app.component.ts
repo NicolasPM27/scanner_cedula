@@ -1,12 +1,13 @@
 import { Component } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { AccessibilityService } from './services/accessibility.service';
+import { HelpFabComponent } from './components/help-fab/help-fab.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: 'app.component.html',
-  imports: [IonApp, IonRouterOutlet],
+  imports: [IonApp, IonRouterOutlet, HelpFabComponent],
 })
 export class AppComponent {
   /**

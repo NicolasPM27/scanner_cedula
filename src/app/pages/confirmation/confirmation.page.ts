@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {
@@ -16,6 +16,8 @@ import {
   IonItem,
   IonLabel,
   IonChip,
+  IonSpinner,
+  IonToast,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -31,8 +33,12 @@ import {
   locationOutline,
   briefcaseOutline,
   peopleOutline,
+  notificationsOutline,
+  checkmarkDoneOutline,
 } from 'ionicons/icons';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
+import { ComprobantePdfService } from '../../services/comprobante-pdf.service';
+import { NotificacionService } from '../../services/notificacion.service';
 import { DatosAfiliado } from '../../models/afiliado.model';
 
 @Component({
@@ -54,6 +60,8 @@ import { DatosAfiliado } from '../../models/afiliado.model';
     IonItem,
     IonLabel,
     IonChip,
+    IonSpinner,
+    IonToast,
   ],
   template: `
     <ion-header [translucent]="true">
@@ -81,6 +89,20 @@ import { DatosAfiliado } from '../../models/afiliado.model';
         <p class="body-large text-muted text-center animate-fade-in">
           Sus datos han sido actualizados correctamente en nuestro sistema.
         </p>
+
+        <!-- Notification Status Banner -->
+        @if (notificacionEnviada()) {
+          <div class="notification-banner animate-slide-up">
+            <ion-icon name="checkmark-done-outline"></ion-icon>
+            <span>Notificación enviada a {{ destinatariosNotificacion().join(', ') }}</span>
+          </div>
+        }
+        @if (notificacionError()) {
+          <div class="notification-banner notification-warn animate-slide-up">
+            <ion-icon name="notifications-outline"></ion-icon>
+            <span>No se pudo enviar la notificación por correo. Su actualización fue registrada correctamente.</span>
+          </div>
+        }
 
         <!-- Summary Card -->
         <ion-card class="summary-card animate-slide-up">
@@ -198,9 +220,19 @@ import { DatosAfiliado } from '../../models/afiliado.model';
             Volver al Inicio
           </ion-button>
           
-          <ion-button expand="block" fill="outline" (click)="descargarComprobante()">
-            <ion-icon slot="start" name="download-outline"></ion-icon>
-            Descargar Comprobante
+          <ion-button
+            expand="block"
+            fill="outline"
+            (click)="descargarComprobante()"
+            [disabled]="generandoPdf()"
+          >
+            @if (generandoPdf()) {
+              <ion-spinner name="crescent" slot="start"></ion-spinner>
+              Generando...
+            } @else {
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              Descargar Comprobante
+            }
           </ion-button>
           
           <ion-button expand="block" fill="clear" (click)="compartir()">
@@ -210,7 +242,28 @@ import { DatosAfiliado } from '../../models/afiliado.model';
         </div>
 
       </div>
+
     </ion-content>
+
+    <!-- Toast de éxito PDF -->
+    <ion-toast
+      [isOpen]="showToastPdf()"
+      message="Comprobante PDF descargado correctamente"
+      duration="3000"
+      position="bottom"
+      color="success"
+      (didDismiss)="showToastPdf.set(false)"
+    ></ion-toast>
+
+    <!-- Toast de error PDF -->
+    <ion-toast
+      [isOpen]="showToastPdfError()"
+      message="Error al generar el comprobante. Intente nuevamente."
+      duration="4000"
+      position="bottom"
+      color="danger"
+      (didDismiss)="showToastPdfError.set(false)"
+    ></ion-toast>
   `,
   styles: [`
     .confirmation-content {
@@ -300,7 +353,33 @@ import { DatosAfiliado } from '../../models/afiliado.model';
     }
 
     .confirmation-container > p {
-      margin: 0 0 var(--space-xl, 32px);
+      margin: 0 0 var(--space-md, 16px);
+    }
+
+    /* Notification Banner */
+    .notification-banner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm, 12px);
+      padding: var(--space-sm, 12px) var(--space-md, 16px);
+      background: rgba(var(--ion-color-success-rgb), 0.1);
+      border: 1px solid rgba(var(--ion-color-success-rgb), 0.25);
+      border-radius: var(--radius-md, 12px);
+      margin-bottom: var(--space-lg, 24px);
+      font-size: 0.8125rem;
+      color: var(--ion-color-success-shade, #059669);
+      line-height: 1.4;
+    }
+
+    .notification-banner ion-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .notification-banner.notification-warn {
+      background: rgba(var(--ion-color-warning-rgb), 0.1);
+      border-color: rgba(var(--ion-color-warning-rgb), 0.25);
+      color: var(--ion-color-warning-shade, #B45309);
     }
 
     .text-center {
@@ -472,6 +551,21 @@ export class ConfirmationPage implements OnInit {
   fechaActual = '';
   folioGenerado = '';
 
+  // Estado UI
+  generandoPdf = signal(false);
+  showToastPdf = signal(false);
+  showToastPdfError = signal(false);
+  notificacionEnviada = signal(false);
+  notificacionError = signal(false);
+  destinatariosNotificacion = signal<string[]>([]);
+
+  // Correo anterior (capturado desde verificación) para notificar cambio
+  private correoAnterior?: string;
+
+  // Servicios inyectados
+  private readonly pdfService = inject(ComprobantePdfService);
+  private readonly notificacionService = inject(NotificacionService);
+
   constructor(
     private flujoService: FlujoActualizacionService,
     private router: Router
@@ -489,16 +583,25 @@ export class ConfirmationPage implements OnInit {
       locationOutline,
       briefcaseOutline,
       peopleOutline,
+      notificationsOutline,
+      checkmarkDoneOutline,
     });
   }
 
   ngOnInit(): void {
     this.cargarDatos();
     this.generarMetadatos();
+    this.enviarNotificacionEmail();
   }
 
   private cargarDatos(): void {
-    this.afiliado.set(this.flujoService.afiliado());
+    const afiliadoData = this.flujoService.afiliado();
+    this.afiliado.set(afiliadoData);
+
+    // Capturar correo anterior si se conoce (del estado de verificación)
+    // En una implementación completa, este valor vendría del flujo al iniciar
+    // la actualización (correo que ya estaba registrado en la BD).
+    this.correoAnterior = afiliadoData?.contacto?.correoElectronico;
   }
 
   private generarMetadatos(): void {
@@ -517,6 +620,33 @@ export class ConfirmationPage implements OnInit {
     this.folioGenerado = `ACT-${timestamp}-${random}`;
   }
 
+  /**
+   * Envía notificación por correo electrónico de manera asíncrona.
+   * No bloquea la UI; el resultado se muestra como un banner informativo.
+   */
+  private async enviarNotificacionEmail(): Promise<void> {
+    const afiliadoData = this.afiliado();
+    if (!afiliadoData?.contacto?.correoElectronico) return;
+
+    try {
+      const resp = await this.notificacionService.notificarActualizacion(
+        afiliadoData,
+        this.correoAnterior,
+        this.folioGenerado,
+        this.fechaActual
+      );
+      if (resp.success) {
+        this.notificacionEnviada.set(true);
+        this.destinatariosNotificacion.set(resp.destinatarios);
+      } else {
+        this.notificacionError.set(true);
+      }
+    } catch {
+      // No mostrar error crítico — la actualización ya fue exitosa
+      this.notificacionError.set(true);
+    }
+  }
+
   beneficiariosActualizados(): number {
     return this.afiliado()?.beneficiarios?.filter(b => b.actualizado).length || 0;
   }
@@ -530,13 +660,53 @@ export class ConfirmationPage implements OnInit {
     this.flujoService.reiniciarFlujo();
   }
 
-  descargarComprobante(): void {
-    // TODO: Implementar descarga de PDF
-    console.log('Descargar comprobante');
+  /**
+   * Genera y descarga el comprobante PDF usando jsPDF
+   */
+  async descargarComprobante(): Promise<void> {
+    const afiliadoData = this.afiliado();
+    if (!afiliadoData) return;
+
+    this.generandoPdf.set(true);
+
+    try {
+      await this.pdfService.generarComprobante(
+        afiliadoData,
+        this.folioGenerado,
+        this.fechaActual
+      );
+      this.showToastPdf.set(true);
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      this.showToastPdfError.set(true);
+    } finally {
+      this.generandoPdf.set(false);
+    }
   }
 
-  compartir(): void {
-    // TODO: Implementar compartir
-    console.log('Compartir');
+  /**
+   * Comparte el resultado usando Web Share API (con fallback)
+   */
+  async compartir(): Promise<void> {
+    const text = `Actualización de datos FOMAG realizada exitosamente.\nFolio: ${this.folioGenerado}\nFecha: ${this.fechaActual}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Comprobante FOMAG',
+          text,
+        });
+      } catch {
+        // Usuario canceló el diálogo de compartir
+      }
+    } else {
+      // Fallback: copiar al portapapeles
+      try {
+        await navigator.clipboard.writeText(text);
+        this.showToastPdf.set(true); // Reutilizar toast de éxito
+      } catch {
+        console.warn('No se pudo copiar al portapapeles');
+      }
+    }
   }
 }

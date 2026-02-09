@@ -18,8 +18,6 @@ import {
   IonCardContent,
   IonList,
   IonItem,
-  IonFab,
-  IonFabButton,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -64,8 +62,6 @@ import { environment } from '../../environments/environment';
     IonCardContent,
     IonList,
     IonItem,
-    IonFab,
-    IonFabButton,
   ],
 })
 export class HomePage implements OnInit {

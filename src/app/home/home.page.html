@@ -177,13 +177,4 @@
 
   }
 
-  <!-- FAB para escaneo rápido (solo en modo normal) -->
-  @if (!a11y.isSimpleMode()) {
-    <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-      <ion-fab-button (click)="goToScanner('auto')" color="primary">
-        <ion-icon name="scan"></ion-icon>
-      </ion-fab-button>
-    </ion-fab>
-  }
-
 </ion-content>
