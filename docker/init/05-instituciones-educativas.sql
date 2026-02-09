@@ -29,7 +29,7 @@ BEGIN
         codigo_departamento  INT            NOT NULL,
         nombre               NVARCHAR(100)  NOT NULL,
         activo               BIT            NOT NULL DEFAULT 1,
-        created_at           DATETIME2(0)   NOT NULL DEFAULT SYSUTCDATETIME(),
+        created_at           DATETIME2(0)   NOT NULL DEFAULT CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)),
         CONSTRAINT PK_departamentos PRIMARY KEY CLUSTERED (codigo_departamento)
     );
 
@@ -49,7 +49,7 @@ BEGIN
         nombre               NVARCHAR(120)  NOT NULL,
         codigo_departamento  INT            NOT NULL,
         activo               BIT            NOT NULL DEFAULT 1,
-        created_at           DATETIME2(0)   NOT NULL DEFAULT SYSUTCDATETIME(),
+        created_at           DATETIME2(0)   NOT NULL DEFAULT CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)),
         CONSTRAINT PK_municipios PRIMARY KEY CLUSTERED (codigo_municipio),
         CONSTRAINT FK_municipios_departamento
             FOREIGN KEY (codigo_departamento)
@@ -76,7 +76,7 @@ BEGIN
         id                   INT IDENTITY(1,1) NOT NULL,
         nombre               NVARCHAR(150)     NOT NULL,
         activo               BIT               NOT NULL DEFAULT 1,
-        created_at           DATETIME2(0)      NOT NULL DEFAULT SYSUTCDATETIME(),
+        created_at           DATETIME2(0)      NOT NULL DEFAULT CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)),
         CONSTRAINT PK_secretarias PRIMARY KEY CLUSTERED (id),
         CONSTRAINT UQ_secretarias_nombre UNIQUE (nombre)
     );
@@ -98,7 +98,7 @@ BEGIN
         codigo_municipio        INT             NOT NULL,
         secretaria_id           INT             NOT NULL,
         activo                  BIT             NOT NULL DEFAULT 1,
-        created_at              DATETIME2(0)    NOT NULL DEFAULT SYSUTCDATETIME(),
+        created_at              DATETIME2(0)    NOT NULL DEFAULT CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)),
         CONSTRAINT PK_establecimientos PRIMARY KEY CLUSTERED (codigo_establecimiento),
         CONSTRAINT FK_establecimientos_municipio
             FOREIGN KEY (codigo_municipio)
@@ -134,7 +134,7 @@ BEGIN
         telefono                NVARCHAR(30)    NULL,
         estado                  NVARCHAR(30)    NOT NULL DEFAULT 'ACTIVO',
         activo                  BIT             NOT NULL DEFAULT 1,
-        created_at              DATETIME2(0)    NOT NULL DEFAULT SYSUTCDATETIME(),
+        created_at              DATETIME2(0)    NOT NULL DEFAULT CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)),
         CONSTRAINT PK_sedes PRIMARY KEY CLUSTERED (codigo_sede),
         CONSTRAINT FK_sedes_establecimiento
             FOREIGN KEY (codigo_establecimiento)
@@ -346,7 +346,7 @@ BEGIN
         registros_error INT               NOT NULL DEFAULT 0,
         estado          NVARCHAR(20)      NOT NULL DEFAULT 'PENDIENTE'
                         CHECK (estado IN ('PENDIENTE', 'EN_PROCESO', 'COMPLETADO', 'ERROR')),
-        iniciado_en     DATETIME2(0)      NOT NULL DEFAULT SYSUTCDATETIME(),
+        iniciado_en     DATETIME2(0)      NOT NULL DEFAULT CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)),
         completado_en   DATETIME2(0)      NULL,
         errores_detalle NVARCHAR(MAX)     NULL,  -- JSON con detalle de errores
         CONSTRAINT PK_importaciones PRIMARY KEY CLUSTERED (id)

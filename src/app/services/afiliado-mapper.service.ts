@@ -323,7 +323,11 @@ export class AfiliadoMapperService {
   private formatDate(date: any): string {
     if (!date) return '';
     if (date instanceof Date) {
-      return date.toISOString().split('T')[0];
+      // Usar componentes locales (Bogotá) en vez de toISOString() que convierte a UTC
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
     }
     if (typeof date === 'string') {
       if (/^\d{4}-\d{2}-\d{2}/.test(date)) {
@@ -331,7 +335,10 @@ export class AfiliadoMapperService {
       }
       const parsed = new Date(date);
       if (!isNaN(parsed.getTime())) {
-        return parsed.toISOString().split('T')[0];
+        const y = parsed.getFullYear();
+        const m = String(parsed.getMonth() + 1).padStart(2, '0');
+        const d = String(parsed.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
       }
     }
     return String(date);

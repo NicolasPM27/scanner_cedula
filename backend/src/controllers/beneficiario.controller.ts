@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { getPool, sql } from '../config/database';
 import { mapFormToDbColumns, buildUpdateQuery } from '../utils/field-mapper';
+import { getBogotaDate } from '../utils/bogota-date';
 
 /**
  * Obtiene todos los beneficiarios de un cotizante
@@ -104,7 +105,7 @@ export async function actualizarBeneficiario(
     const dbColumns = await mapFormToDbColumns(datos);
 
     // Audit fields
-    dbColumns.fecha_ultima_actualizacion = new Date();
+    dbColumns.fecha_ultima_actualizacion = getBogotaDate();
 
     // Build and execute UPDATE
     const { query, inputs } = buildUpdateQuery(dbColumns, id);

@@ -556,7 +556,7 @@ export async function importarInstituciones(
     .input('errores', sql.NVarChar(sql.MAX), result.errors.length > 0 ? JSON.stringify(result.errors.slice(0, 200)) : null)
     .query(`UPDATE ie.importaciones
       SET registros_ok = @ok, registros_error = @err, estado = @estado,
-          completado_en = SYSUTCDATETIME(), errores_detalle = @errores
+          completado_en = CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'SA Pacific Standard Time' AS DATETIME2(0)), errores_detalle = @errores
       WHERE id = @id`);
 
   return result;

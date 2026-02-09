@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { getPool, sql } from '../config/database';
 import { mapFormToDbColumns, buildUpdateQuery } from '../utils/field-mapper';
+import { getBogotaDate } from '../utils/bogota-date';
 
 /**
  * Busca un afiliado por numero de documento (cotizantes, no beneficiarios)
@@ -113,10 +114,10 @@ export async function actualizarAfiliado(
     const dbColumns = await mapFormToDbColumns(datos);
 
     // Audit fields
-    dbColumns.fecha_ultima_actualizacion = new Date();
+    dbColumns.fecha_ultima_actualizacion = getBogotaDate();
     if (datos.aceptoHabeasData) {
       dbColumns.acepto_habeas_data = true;
-      dbColumns.fecha_acepto_habeas_data = new Date();
+      dbColumns.fecha_acepto_habeas_data = getBogotaDate();
     }
 
     // Build and execute UPDATE
