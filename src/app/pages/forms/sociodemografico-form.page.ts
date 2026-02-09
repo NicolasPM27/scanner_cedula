@@ -24,6 +24,7 @@ import {
   IonButtons,
   IonBackButton,
   IonNote,
+  IonSpinner,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -42,13 +43,11 @@ import {
   InformacionSociodemografica,
 } from '../../models/afiliado.model';
 import {
-  DEPARTAMENTOS,
-  MUNICIPIOS,
   LOCALIDADES_BOGOTA,
   BARRIOS_BOGOTA,
-  Municipio,
   Barrio,
 } from '../../data/datos-geograficos';
+import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo-api.service';
 
 @Component({
   selector: 'app-sociodemografico-form',
@@ -75,6 +74,7 @@ import {
     IonButtons,
     IonBackButton,
     IonNote,
+    IonSpinner,
   ],
   template: `
     <ion-header [translucent]="true">
@@ -170,15 +170,19 @@ import {
 
                 <!-- Departamento -->
                 <ion-item>
+                  @if (loadingDepartamentos()) {
+                    <ion-spinner name="crescent" class="select-spinner"></ion-spinner>
+                  }
                   <ion-select
                     formControlName="departamento"
                     label="Departamento"
                     labelPlacement="stacked"
                     placeholder="Seleccione el departamento"
                     interface="action-sheet"
+                    [disabled]="loadingDepartamentos() || departamentos().length === 0"
                     (ionChange)="onDepartamentoChange($event)"
                   >
-                    @for (depto of departamentos; track depto.codigo) {
+                    @for (depto of departamentos(); track depto.codigo) {
                       <ion-select-option [value]="depto.codigo">
                         {{ depto.nombre }}
                       </ion-select-option>
@@ -193,13 +197,16 @@ import {
 
                 <!-- Municipio -->
                 <ion-item>
+                  @if (loadingMunicipios()) {
+                    <ion-spinner name="crescent" class="select-spinner"></ion-spinner>
+                  }
                   <ion-select
                     formControlName="municipio"
                     label="Municipio"
                     labelPlacement="stacked"
                     placeholder="Seleccione el municipio"
                     interface="action-sheet"
-                    [disabled]="municipiosFiltrados().length === 0"
+                    [disabled]="loadingMunicipios() || municipiosFiltrados().length === 0"
                     (ionChange)="onMunicipioChange($event)"
                   >
                     @for (mun of municipiosFiltrados(); track mun.codigo) {
@@ -475,6 +482,16 @@ import {
       --background: transparent;
       --border-width: 1.5px;
     }
+
+    .select-spinner {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      z-index: 1;
+    }
   `]
 })
 export class SociodemograficoFormPage implements OnInit {
@@ -484,18 +501,21 @@ export class SociodemograficoFormPage implements OnInit {
   estadosCiviles = ESTADOS_CIVILES;
   zonas = ZONAS;
   estratos = ESTRATOS;
-  departamentos = DEPARTAMENTOS;
   localidades = LOCALIDADES_BOGOTA;
-  
-  // Signals para filtrado dinámico
-  municipiosFiltrados = signal<Municipio[]>([]);
+
+  // Signals para datos geográficos dinámicos
+  departamentos = signal<GeoDepartamento[]>([]);
+  municipiosFiltrados = signal<GeoMunicipio[]>([]);
   barriosFiltrados = signal<Barrio[]>([]);
   esBogota = signal(false);
+  loadingDepartamentos = signal(false);
+  loadingMunicipios = signal(false);
 
   constructor(
     private fb: FormBuilder,
     private flujoService: FlujoActualizacionService,
-    private router: Router
+    private router: Router,
+    private geoService: GeoApiService
   ) {
     addIcons({
       arrowForward,
@@ -509,7 +529,7 @@ export class SociodemograficoFormPage implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.cargarDatosExistentes();
+    this.cargarDepartamentos();
   }
 
   private initForm(): void {
@@ -525,10 +545,29 @@ export class SociodemograficoFormPage implements OnInit {
     });
   }
 
-  private cargarDatosExistentes(): void {
+  private async cargarDepartamentos(): Promise<void> {
+    this.loadingDepartamentos.set(true);
+    try {
+      const deptos = await this.geoService.getDepartamentos();
+      this.departamentos.set(deptos);
+    } catch (error) {
+      console.error('Error cargando departamentos:', error);
+    } finally {
+      this.loadingDepartamentos.set(false);
+    }
+    await this.cargarDatosExistentes();
+  }
+
+  private async cargarDatosExistentes(): Promise<void> {
     const afiliado = this.flujoService.afiliado();
     if (afiliado?.sociodemografica) {
       const socio = afiliado.sociodemografica;
+
+      // Cargar municipios antes de patchear para que el select tenga opciones
+      if (socio.departamento) {
+        await this.actualizarMunicipios(socio.departamento);
+      }
+
       this.form.patchValue({
         estadoCivil: socio.estadoCivil,
         zona: socio.zona,
@@ -540,9 +579,7 @@ export class SociodemograficoFormPage implements OnInit {
         estrato: socio.estrato,
       });
 
-      // Actualizar filtros si hay datos
-      if (socio.departamento) {
-        this.actualizarMunicipios(socio.departamento);
+      if (socio.municipio) {
         this.verificarBogota(socio.municipio);
       }
       if (socio.localidad) {
@@ -561,10 +598,9 @@ export class SociodemograficoFormPage implements OnInit {
     }
   }
 
-  onDepartamentoChange(event: any): void {
+  async onDepartamentoChange(event: any): Promise<void> {
     const codigoDepartamento = event.detail.value;
-    this.actualizarMunicipios(codigoDepartamento);
-    
+
     // Limpiar municipio y localidad/barrio
     this.form.patchValue({
       municipio: '',
@@ -573,6 +609,8 @@ export class SociodemograficoFormPage implements OnInit {
     });
     this.esBogota.set(false);
     this.barriosFiltrados.set([]);
+
+    await this.actualizarMunicipios(codigoDepartamento);
   }
 
   onMunicipioChange(event: any): void {
@@ -597,9 +635,17 @@ export class SociodemograficoFormPage implements OnInit {
     });
   }
 
-  private actualizarMunicipios(codigoDepartamento: string): void {
-    const filtrados = MUNICIPIOS.filter(m => m.codigoDepartamento === codigoDepartamento);
-    this.municipiosFiltrados.set(filtrados);
+  private async actualizarMunicipios(codigoDepartamento: string): Promise<void> {
+    this.loadingMunicipios.set(true);
+    try {
+      const municipios = await this.geoService.getMunicipios(codigoDepartamento);
+      this.municipiosFiltrados.set(municipios);
+    } catch (error) {
+      console.error('Error cargando municipios:', error);
+      this.municipiosFiltrados.set([]);
+    } finally {
+      this.loadingMunicipios.set(false);
+    }
   }
 
   private verificarBogota(codigoMunicipio: string): void {

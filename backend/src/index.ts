@@ -9,6 +9,7 @@ import { connectToDatabase, closeDatabaseConnection } from './config/database';
 import { afiliadoRoutes } from './routes/afiliado.routes';
 import { beneficiarioRoutes } from './routes/beneficiario.routes';
 import { institucionRoutes } from './routes/institucion.routes';
+import { geoRoutes } from './routes/geo.routes';
 import { healthRoutes } from './routes/health.routes';
 import { scanRoutes } from './routes/scan.routes';
 import { errorHandler } from './middleware/error-handler';
@@ -35,6 +36,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/afiliados', afiliadoRoutes);
 app.use('/api/beneficiarios', beneficiarioRoutes);
 app.use('/api/instituciones', institucionRoutes);
+app.use('/api/geo', geoRoutes);
 app.use('/api/scan', scanRoutes);
 
 // ── 6. Manejo global de errores ─────────────────────────

@@ -25,6 +25,7 @@ import {
   IonChip,
   IonAvatar,
   IonText,
+  IonSpinner,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -47,11 +48,7 @@ import {
   ZONAS,
   ESTRATOS,
 } from '../../models/afiliado.model';
-import {
-  DEPARTAMENTOS,
-  MUNICIPIOS,
-  Municipio,
-} from '../../data/datos-geograficos';
+import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo-api.service';
 
 @Component({
   selector: 'app-beneficiary-detail',
@@ -78,6 +75,7 @@ import {
     IonBackButton,
     IonNote,
     IonChip,
+    IonSpinner,
   ],
   template: `
     <ion-header [translucent]="true">
@@ -175,15 +173,19 @@ import {
 
                   <!-- Departamento -->
                   <ion-item>
+                    @if (loadingDepartamentos()) {
+                      <ion-spinner name="crescent" class="select-spinner"></ion-spinner>
+                    }
                     <ion-select
                       formControlName="departamento"
                       label="Departamento"
                       labelPlacement="stacked"
                       placeholder="Seleccione el departamento"
                       interface="action-sheet"
+                      [disabled]="loadingDepartamentos() || departamentos().length === 0"
                       (ionChange)="onDepartamentoChange($event)"
                     >
-                      @for (depto of departamentos; track depto.codigo) {
+                      @for (depto of departamentos(); track depto.codigo) {
                         <ion-select-option [value]="depto.codigo">
                           {{ depto.nombre }}
                         </ion-select-option>
@@ -198,13 +200,16 @@ import {
 
                   <!-- Municipio -->
                   <ion-item>
+                    @if (loadingMunicipios()) {
+                      <ion-spinner name="crescent" class="select-spinner"></ion-spinner>
+                    }
                     <ion-select
                       formControlName="municipio"
                       label="Municipio"
                       labelPlacement="stacked"
                       placeholder="Seleccione el municipio"
                       interface="action-sheet"
-                      [disabled]="municipiosFiltrados().length === 0"
+                      [disabled]="loadingMunicipios() || municipiosFiltrados().length === 0"
                     >
                       @for (mun of municipiosFiltrados(); track mun.codigo) {
                         <ion-select-option [value]="mun.codigo">
@@ -514,18 +519,32 @@ import {
     .text-center {
       text-align: center;
     }
+
+    .select-spinner {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      z-index: 1;
+    }
   `]
 })
 export class BeneficiaryDetailPage implements OnInit {
   form!: FormGroup;
   beneficiario = signal<Beneficiario | undefined>(undefined);
-  municipiosFiltrados = signal<Municipio[]>([]);
 
   // Options
   estadosCiviles = ESTADOS_CIVILES;
   zonas = ZONAS;
   estratos = ESTRATOS;
-  departamentos = DEPARTAMENTOS;
+
+  // Signals para datos geográficos dinámicos
+  departamentos = signal<GeoDepartamento[]>([]);
+  municipiosFiltrados = signal<GeoMunicipio[]>([]);
+  loadingDepartamentos = signal(false);
+  loadingMunicipios = signal(false);
 
   // Regex patterns
   private emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -535,7 +554,8 @@ export class BeneficiaryDetailPage implements OnInit {
     private fb: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private flujoService: FlujoActualizacionService
+    private flujoService: FlujoActualizacionService,
+    private geoService: GeoApiService
   ) {
     addIcons({
       arrowForward,
@@ -552,7 +572,7 @@ export class BeneficiaryDetailPage implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.cargarBeneficiario();
+    this.cargarDepartamentos();
   }
 
   private initForm(): void {
@@ -570,14 +590,27 @@ export class BeneficiaryDetailPage implements OnInit {
     });
   }
 
-  private cargarBeneficiario(): void {
+  private async cargarDepartamentos(): Promise<void> {
+    this.loadingDepartamentos.set(true);
+    try {
+      const deptos = await this.geoService.getDepartamentos();
+      this.departamentos.set(deptos);
+    } catch (error) {
+      console.error('Error cargando departamentos:', error);
+    } finally {
+      this.loadingDepartamentos.set(false);
+    }
+    this.cargarBeneficiario();
+  }
+
+  private async cargarBeneficiario(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');
     const beneficiarioSeleccionado = this.flujoService.beneficiarioSeleccionado();
-    
+
     if (beneficiarioSeleccionado && id && beneficiarioSeleccionado.id === id) {
       this.beneficiario.set(beneficiarioSeleccionado);
       this.configurarValidadores();
-      this.cargarDatosExistentes();
+      await this.cargarDatosExistentes();
     } else {
       // Buscar en la lista de beneficiarios
       const afiliado = this.flujoService.afiliado();
@@ -585,7 +618,7 @@ export class BeneficiaryDetailPage implements OnInit {
       if (encontrado) {
         this.beneficiario.set(encontrado);
         this.configurarValidadores();
-        this.cargarDatosExistentes();
+        await this.cargarDatosExistentes();
       }
     }
   }
@@ -607,10 +640,16 @@ export class BeneficiaryDetailPage implements OnInit {
     }
   }
 
-  private cargarDatosExistentes(): void {
+  private async cargarDatosExistentes(): Promise<void> {
     const beneficiario = this.beneficiario();
     if (beneficiario?.sociodemografica) {
       const socio = beneficiario.sociodemografica;
+
+      // Cargar municipios antes de patchear para que el select tenga opciones
+      if (socio.departamento) {
+        await this.actualizarMunicipios(socio.departamento);
+      }
+
       this.form.patchValue({
         estadoCivil: socio.estadoCivil,
         zona: socio.zona,
@@ -619,10 +658,6 @@ export class BeneficiaryDetailPage implements OnInit {
         direccion: socio.direccion,
         estrato: socio.estrato,
       });
-
-      if (socio.departamento) {
-        this.actualizarMunicipios(socio.departamento);
-      }
     }
 
     if (beneficiario?.contacto) {
@@ -681,15 +716,23 @@ export class BeneficiaryDetailPage implements OnInit {
     return parentesco ? (colores[parentesco] || 'medium') : 'medium';
   }
 
-  onDepartamentoChange(event: any): void {
+  async onDepartamentoChange(event: any): Promise<void> {
     const codigoDepartamento = event.detail.value;
-    this.actualizarMunicipios(codigoDepartamento);
     this.form.patchValue({ municipio: '' });
+    await this.actualizarMunicipios(codigoDepartamento);
   }
 
-  private actualizarMunicipios(codigoDepartamento: string): void {
-    const filtrados = MUNICIPIOS.filter(m => m.codigoDepartamento === codigoDepartamento);
-    this.municipiosFiltrados.set(filtrados);
+  private async actualizarMunicipios(codigoDepartamento: string): Promise<void> {
+    this.loadingMunicipios.set(true);
+    try {
+      const municipios = await this.geoService.getMunicipios(codigoDepartamento);
+      this.municipiosFiltrados.set(municipios);
+    } catch (error) {
+      console.error('Error cargando municipios:', error);
+      this.municipiosFiltrados.set([]);
+    } finally {
+      this.loadingMunicipios.set(false);
+    }
   }
 
   showError(field: string): boolean {
