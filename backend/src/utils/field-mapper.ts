@@ -35,6 +35,16 @@ const DISCAPACIDAD_MAP: Record<string, number> = {
   sordo_ceguera: 7,
 };
 
+const PARENTESCO_MAP: Record<string, number> = {
+  cotizante: 1,
+  hijo: 2,
+  conyuge: 3,
+  padre: 4,
+  madre: 5,
+  hermano: 6,
+  no_aplica: 99,
+};
+
 // Reverse maps for DB→form
 const ESTADO_CIVIL_REVERSE: Record<number, string> = {};
 for (const [k, v] of Object.entries(ESTADO_CIVIL_MAP)) { ESTADO_CIVIL_REVERSE[v] = k; }
@@ -183,6 +193,11 @@ export async function mapFormToDbColumns(formData: Record<string, any>): Promise
     }
   }
 
+  // Parentesco
+  if (formData.parentesco && PARENTESCO_MAP[formData.parentesco] !== undefined) {
+    result['parentesco_id'] = PARENTESCO_MAP[formData.parentesco];
+  }
+
   // Discapacidad (multi-select → FK + text CSV)
   if (formData.tipoDiscapacidad !== undefined) {
     const discId = resolveDiscapacidadId(formData.tipoDiscapacidad);
@@ -226,6 +241,35 @@ export function buildUpdateQuery(
   }
 
   const query = `UPDATE fomag.afiliado SET ${setClauses.join(', ')} WHERE numero_documento = @numero_documento`;
+
+  return { query, inputs };
+}
+
+// ---------------------------------------------------------------------------
+// Build INSERT query targeting fomag.afiliado
+// ---------------------------------------------------------------------------
+
+export function buildInsertQuery(
+  columns: Record<string, any>
+): { query: string; inputs: Record<string, any> } {
+  const dbColumns: string[] = [];
+  const valueClauses: string[] = [];
+  const inputs: Record<string, any> = {};
+
+  let paramIndex = 0;
+  for (const [column, value] of Object.entries(columns)) {
+    const paramName = `p${paramIndex}`;
+    dbColumns.push(`[${column}]`);
+    valueClauses.push(`@${paramName}`);
+    inputs[paramName] = value;
+    paramIndex++;
+  }
+
+  if (dbColumns.length === 0) {
+    throw new Error('No hay campos para insertar');
+  }
+
+  const query = `INSERT INTO fomag.afiliado (${dbColumns.join(', ')}) VALUES (${valueClauses.join(', ')})`;
 
   return { query, inputs };
 }

@@ -38,6 +38,12 @@ export interface AppEnvironment {
   port: number;
   /** Nivel de log */
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  /** ¿Auth Entra ID habilitada? */
+  azureEnabled: boolean;
+  /** Tenant de Microsoft Entra ID */
+  azureTenantId: string;
+  /** Client ID del API backend */
+  azureClientId: string;
 }
 
 /**
@@ -53,5 +59,8 @@ export function getAppEnvironment(): AppEnvironment {
     isDev,
     port: parseInt(process.env.PORT || '3000', 10),
     logLevel: (process.env.LOG_LEVEL as AppEnvironment['logLevel']) || (isDev ? 'debug' : 'info'),
+    azureEnabled: process.env.AZURE_ENABLED === 'true',
+    azureTenantId: process.env.AZURE_TENANT_ID || '',
+    azureClientId: process.env.AZURE_CLIENT_ID || '',
   };
 }

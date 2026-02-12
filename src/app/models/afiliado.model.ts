@@ -138,7 +138,7 @@ export interface Beneficiario {
   segundoNombre?: string;
   fechaNacimiento: string;
   edad: number;
-  parentesco: 'conyuge' | 'hijo' | 'padre' | 'madre' | 'otro';
+  parentesco: 'conyuge' | 'hijo' | 'padre' | 'madre' | 'hermano' | 'otro';
   
   // Información del beneficiario
   sociodemografica?: InformacionSociodemografica;
@@ -157,6 +157,7 @@ export interface EstadoFlujo {
   afiliado?: DatosAfiliado;
   beneficiarioSeleccionado?: Beneficiario;
   esCorreccion?: boolean;
+  esCreacion?: boolean;
   errores?: string[];
 }
 

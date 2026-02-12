@@ -34,10 +34,12 @@ import {
   createOutline,
   peopleOutline,
   callOutline,
+  personAddOutline,
 } from 'ionicons/icons';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
 import { DatosAfiliado, Beneficiario } from '../../models/afiliado.model';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../auth/auth.service';
 
 type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'error';
 
@@ -118,17 +120,43 @@ type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'erro
               </ion-card-header>
               <ion-card-content>
                 <div class="info-row">
-                  <span class="label">Cédula:</span>
+                  <span class="label">Documento:</span>
                   <span class="value">{{ formatCedula(afiliado()?.numeroDocumento) }}</span>
                 </div>
-                <div class="info-row">
-                  <span class="label">Última actualización:</span>
-                  <span class="value">{{ afiliado()?.fechaUltimaActualizacion }}</span>
-                </div>
+                @if (afiliado()?.fechaNacimiento) {
+                  <div class="info-row">
+                    <span class="label">Fecha nacimiento:</span>
+                    <span class="value">{{ formatDate(afiliado()?.fechaNacimiento) }}</span>
+                  </div>
+                }
+                @if (afiliado()?.genero) {
+                  <div class="info-row">
+                    <span class="label">Género:</span>
+                    <span class="value">{{ afiliado()?.genero === 'M' ? 'Masculino' : 'Femenino' }}</span>
+                  </div>
+                }
+                @if (afiliado()?.contacto?.celular) {
+                  <div class="info-row">
+                    <span class="label">Celular:</span>
+                    <span class="value">{{ afiliado()?.contacto?.celular }}</span>
+                  </div>
+                }
                 @if (afiliado()?.contacto?.correoElectronico) {
                   <div class="info-row">
-                    <span class="label">Correo registrado:</span>
+                    <span class="label">Correo:</span>
                     <span class="value">{{ afiliado()?.contacto?.correoElectronico }}</span>
+                  </div>
+                }
+                @if (afiliado()?.sociodemografica?.direccion) {
+                  <div class="info-row">
+                    <span class="label">Dirección:</span>
+                    <span class="value">{{ afiliado()?.sociodemografica?.direccion }}</span>
+                  </div>
+                }
+                @if (afiliado()?.fechaUltimaActualizacion) {
+                  <div class="info-row">
+                    <span class="label">Última actualización:</span>
+                    <span class="value">{{ formatDate(afiliado()?.fechaUltimaActualizacion) }}</span>
                   </div>
                 }
                 @if (beneficiarios().length > 0) {
@@ -196,6 +224,13 @@ type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'erro
 
             <div class="options-section">
               <p class="body-medium">Si cree que esto es un error, por favor contacte a soporte.</p>
+
+              @if (authService.isAdminSignal()) {
+                <ion-button expand="block" color="primary" (click)="registrarNuevoAfiliado()">
+                  <ion-icon slot="start" name="person-add-outline"></ion-icon>
+                  Registrar como nuevo afiliado
+                </ion-button>
+              }
               
               <ion-button expand="block" (click)="volverAlInicio()">
                 <ion-icon slot="start" name="arrow-back"></ion-icon>
@@ -489,7 +524,8 @@ export class VerificacionPage implements OnInit {
 
   constructor(
     private flujoService: FlujoActualizacionService,
-    private router: Router
+    private router: Router,
+    public authService: AuthService
   ) {
     addIcons({
       checkmarkCircle,
@@ -505,6 +541,7 @@ export class VerificacionPage implements OnInit {
       createOutline,
       peopleOutline,
       callOutline,
+      personAddOutline,
     });
   }
 
@@ -566,6 +603,10 @@ export class VerificacionPage implements OnInit {
 
   async actualizarBeneficiario(): Promise<void> {
     await this.flujoService.manejarUsuarioExistente('beneficiario');
+  }
+
+  async registrarNuevoAfiliado(): Promise<void> {
+    await this.flujoService.continuarNuevoUsuario();
   }
 
   volverAlInicio(): void {

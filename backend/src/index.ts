@@ -12,6 +12,7 @@ import { institucionRoutes } from './routes/institucion.routes';
 import { geoRoutes } from './routes/geo.routes';
 import { healthRoutes } from './routes/health.routes';
 import { scanRoutes } from './routes/scan.routes';
+import { authRoutes } from './routes/auth.routes';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 import { terminateTesseract } from './services/image-processor.service';
@@ -38,6 +39,7 @@ app.use('/api/beneficiarios', beneficiarioRoutes);
 app.use('/api/instituciones', institucionRoutes);
 app.use('/api/geo', geoRoutes);
 app.use('/api/scan', scanRoutes);
+app.use('/api/auth', authRoutes);
 
 // ── 6. Manejo global de errores ─────────────────────────
 app.use(errorHandler);
@@ -52,6 +54,7 @@ async function startServer(): Promise<void> {
       console.log(`🚀 Servidor corriendo en http://localhost:${env.port}`);
       console.log(`📍 Ambiente: ${env.nodeEnv} | Log level: ${env.logLevel}`);
       console.log(`📍 Health check: http://localhost:${env.port}/api/health`);
+      console.log(`🔐 Auth Entra ID: ${env.azureEnabled ? 'Habilitada' : 'Deshabilitada (mock dev)'}`);
 
       if (env.isDev) {
         console.log(`🔓 CORS: Todos los orígenes permitidos (desarrollo)`);

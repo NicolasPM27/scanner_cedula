@@ -25,6 +25,28 @@ const AZURE_ORIGIN_PATTERNS = [
 ];
 
 /**
+ * Compila patrones regex definidos por variable de entorno.
+ * Formato: CORS_ORIGIN_REGEX=^https://.*\\.ngrok-free\\.dev$,^https://.*\\.trycloudflare\\.com$
+ */
+function buildAllowedOriginRegexPatterns(): RegExp[] {
+  const envPatterns = process.env.CORS_ORIGIN_REGEX
+    ?.split(',')
+    .map((p) => p.trim())
+    .filter(Boolean) ?? [];
+
+  return envPatterns
+    .map((pattern) => {
+      try {
+        return new RegExp(pattern);
+      } catch (error) {
+        console.warn(`⚠️ Patrón CORS_ORIGIN_REGEX inválido ignorado: ${pattern}`);
+        return null;
+      }
+    })
+    .filter((regex): regex is RegExp => regex !== null);
+}
+
+/**
  * Construye la lista de orígenes permitidos según el ambiente.
  * En producción, solo se permiten orígenes explícitos + Azure patterns.
  */
@@ -65,6 +87,7 @@ export function createCorsConfig(): CorsOptions {
 
   // Producción: validación estricta
   const allowedOrigins = buildAllowedOrigins();
+  const allowedOriginRegexPatterns = buildAllowedOriginRegexPatterns();
 
   return {
     origin: (origin, callback) => {
@@ -74,6 +97,10 @@ export function createCorsConfig(): CorsOptions {
       }
 
       if (allowedOrigins.includes(origin) || matchesAzurePattern(origin)) {
+        return callback(null, true);
+      }
+
+      if (allowedOriginRegexPatterns.some((pattern) => pattern.test(origin))) {
         return callback(null, true);
       }
 

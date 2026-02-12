@@ -93,10 +93,6 @@ import { Beneficiario } from '../../models/afiliado.model';
                 <ion-icon name="people-outline"></ion-icon>
                 <h3>Sin beneficiarios</h3>
                 <p>No tiene beneficiarios registrados.</p>
-                <ion-button fill="outline" (click)="agregarBeneficiario()">
-                  <ion-icon slot="start" name="add-outline"></ion-icon>
-                  Agregar
-                </ion-button>
               </div>
             </ion-card-content>
           </ion-card>
@@ -473,6 +469,10 @@ export class BeneficiariesListPage implements OnInit {
     this.cargarBeneficiarios();
   }
 
+  ionViewWillEnter(): void {
+    this.cargarBeneficiarios();
+  }
+
   private cargarBeneficiarios(): void {
     const afiliado = this.flujoService.afiliado();
     if (afiliado?.beneficiarios) {
@@ -521,11 +521,6 @@ export class BeneficiariesListPage implements OnInit {
 
   async seleccionarBeneficiario(beneficiario: Beneficiario): Promise<void> {
     await this.flujoService.seleccionarBeneficiario(beneficiario);
-  }
-
-  agregarBeneficiario(): void {
-    // TODO: Implementar agregar beneficiario
-    console.log('Agregar beneficiario');
   }
 
   async volver(): Promise<void> {

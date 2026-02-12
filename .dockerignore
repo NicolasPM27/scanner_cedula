@@ -1,0 +1,13 @@
+node_modules/
+backend/
+android/
+ios/
+.angular/
+.git/
+www/
+docker/
+dist/
+*.md
+.env*
+.vscode/
+.idea/

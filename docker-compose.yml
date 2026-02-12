@@ -1,0 +1,49 @@
+# ── FOMAG ActDatos ────────────────────────────────────────
+# Frontend (nginx) + API (Node.js)
+#
+# Prerequisitos:
+#   docker network create fomag-network
+#   docker network connect fomag-network fomag-sqlserver
+#
+# Uso:
+#   docker compose up -d --build
+# ──────────────────────────────────────────────────────────
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fomag-frontend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - api
+    networks:
+      - fomag-network
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fomag-api
+    ports:
+      - "${API_PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=fomag-sqlserver
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - fomag-network
+    restart: unless-stopped
+
+networks:
+  fomag-network:
+    external: true
+
+volumes:
+  uploads_data:

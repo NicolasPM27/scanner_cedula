@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { obtenerBeneficiarios, actualizarBeneficiario } from '../controllers/beneficiario.controller';
+import { obtenerBeneficiarios, actualizarBeneficiario, crearBeneficiario } from '../controllers/beneficiario.controller';
 
 const router = Router();
 
@@ -8,6 +8,12 @@ const router = Router();
  * Obtiene todos los beneficiarios de un cotizante
  */
 router.get('/cotizante/:numeroDocumento', obtenerBeneficiarios);
+
+/**
+ * POST /api/beneficiarios
+ * Crea un nuevo beneficiario vinculado a un cotizante
+ */
+router.post('/', crearBeneficiario);
 
 /**
  * PUT /api/beneficiarios/:id

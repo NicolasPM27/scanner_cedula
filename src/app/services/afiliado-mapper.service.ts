@@ -316,7 +316,13 @@ export class AfiliadoMapperService {
       if (p.includes('hijo') || p.includes('hija')) return 'hijo';
       if (p.includes('padre')) return 'padre';
       if (p.includes('madre')) return 'madre';
+      if (p.includes('hermano') || p.includes('hermana')) return 'hermano';
     }
+    if (id === 2) return 'hijo';
+    if (id === 3) return 'conyuge';
+    if (id === 4) return 'padre';
+    if (id === 5) return 'madre';
+    if (id === 6) return 'hermano';
     return 'otro';
   }
 

@@ -81,6 +81,55 @@
   </ion-card>
   }
 
+  <section class="admin-section" aria-labelledby="admin-heading">
+    <ion-card>
+      <ion-card-content>
+        <h3 id="admin-heading" class="title-medium">
+          <ion-icon name="shield-checkmark-outline" aria-hidden="true"></ion-icon>
+          Administración
+        </h3>
+
+        @if (!auth.authEnabled()) {
+          <p class="body-medium text-muted">
+            Modo desarrollo: autenticación deshabilitada. Se usa usuario Admin mock.
+          </p>
+        }
+
+        @if (!auth.isAuthenticatedSignal()) {
+          <p class="body-medium text-muted">
+            Inicie sesión para acceder a funciones administrativas.
+          </p>
+          <ion-button expand="block" (click)="loginAdmin()">
+            <ion-icon slot="start" name="log-in-outline"></ion-icon>
+            Iniciar sesión como administrador
+          </ion-button>
+        } @else {
+          <div class="admin-user">
+            <p class="body-medium">
+              <strong>{{ userInfo?.name }}</strong><br />
+              {{ userInfo?.email }}
+            </p>
+          </div>
+
+          @if (auth.isAdminSignal()) {
+            <p class="body-medium text-muted">Permisos de administrador activos.</p>
+            <ion-button expand="block" (click)="irPanelAdmin()">
+              <ion-icon slot="start" name="open-outline"></ion-icon>
+              Ir al panel admin
+            </ion-button>
+          } @else {
+            <p class="body-medium text-muted">No tiene permisos de administrador.</p>
+          }
+
+          <ion-button expand="block" fill="outline" color="medium" (click)="logout()">
+            <ion-icon slot="start" name="log-out-outline"></ion-icon>
+            Cerrar sesión
+          </ion-button>
+        }
+      </ion-card-content>
+    </ion-card>
+  </section>
+
   <!-- Info de versión -->
   <div class="version-info">
     <ion-note>

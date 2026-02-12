@@ -74,9 +74,12 @@ Thumbs.db
 
 # Backend
 backend/dist/
+backend/.env
+backend/eng.traineddata
+backend/uploads/
 
-# Docker data
-docker/data/
+# Old Docker setup
+docker/
 
 # iOS
 ios/DerivedData/
@@ -84,10 +87,19 @@ ios/DerivedData/
 # Android build
 android/app/build/
 
+# Test files
+karma.conf.js
+src/test.ts
+src/app/**/*.spec.ts
+
+# Dev-only configs
+proxy.conf.json
+ionic.starter.json
+
 # Test data files
 Poblacion\ prueba\ .csv
 
-# Copilot
+# Copilot & GitHub workflows
 .copilot/
 .github/
 
@@ -95,6 +107,5 @@ Poblacion\ prueba\ .csv
 .env
 .env.local
 .env.*.local
-
 
 .fake

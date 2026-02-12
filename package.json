@@ -21,6 +21,8 @@
     "@angular/platform-browser": "^20.0.0",
     "@angular/platform-browser-dynamic": "^20.0.0",
     "@angular/router": "^20.0.0",
+    "@azure/msal-angular": "^5.0.4",
+    "@azure/msal-browser": "^5.2.0",
     "@capacitor-mlkit/barcode-scanning": "^7.0.0",
     "@capacitor/android": "^8.0.2",
     "@capacitor/app": "8.0.0",

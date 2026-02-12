@@ -33,6 +33,7 @@ export class FlujoActualizacionService {
   readonly afiliado = computed(() => this._estado().afiliado);
   readonly beneficiarioSeleccionado = computed(() => this._estado().beneficiarioSeleccionado);
   readonly esCorreccion = computed(() => this._estado().esCorreccion);
+  readonly esCreacion = computed(() => this._estado().esCreacion);
 
   // Datos temporales durante el flujo
   private datosTemporales: {
@@ -66,7 +67,8 @@ export class FlujoActualizacionService {
 
     this._estado.set({
       paso: 'verificacion',
-      afiliado
+      afiliado,
+      esCreacion: false,
     });
 
     // Navegar a la pantalla de verificación
@@ -123,6 +125,7 @@ export class FlujoActualizacionService {
       paso: 'contacto',
       afiliado,
       esCorreccion: true,
+      esCreacion: false,
     });
 
     await this.router.navigate(['/forms/contact']);
@@ -205,14 +208,16 @@ export class FlujoActualizacionService {
     if (opcion === 'corregir') {
       this._estado.update(e => ({
         ...e,
-        paso: 'sociodemografico',
+        paso: 'contacto',
         esCorreccion: true,
+        esCreacion: false,
       }));
-      await this.router.navigate(['/forms/sociodemographic']);
+      await this.router.navigate(['/forms/contact']);
     } else {
       this._estado.update(e => ({
         ...e,
         paso: 'seleccion_beneficiarios',
+        esCreacion: false,
       }));
       await this.router.navigate(['/beneficiaries']);
     }
@@ -224,10 +229,54 @@ export class FlujoActualizacionService {
   async continuarNuevoUsuario(): Promise<void> {
     this._estado.update(e => ({
       ...e,
-      paso: 'sociodemografico',
+      paso: 'contacto',
       esCorreccion: false,
+      esCreacion: true,
     }));
-    await this.router.navigate(['/forms/sociodemographic']);
+    await this.router.navigate(['/forms/contact']);
+  }
+
+  /**
+   * Inicia flujo admin para creación manual (sin escáner)
+   */
+  async iniciarCreacionManual(
+    identidad: Pick<
+      DatosAfiliado,
+      | 'numeroDocumento'
+      | 'primerNombre'
+      | 'segundoNombre'
+      | 'primerApellido'
+      | 'segundoApellido'
+      | 'fechaNacimiento'
+      | 'genero'
+      | 'tipoAfiliado'
+    >
+  ): Promise<void> {
+    this._estado.set({
+      paso: 'contacto',
+      afiliado: {
+        ...identidad,
+        tipoAfiliado: identidad.tipoAfiliado || 'docente_activo',
+      },
+      esCorreccion: false,
+      esCreacion: true,
+    });
+
+    await this.router.navigate(['/forms/contact']);
+  }
+
+  /**
+   * Inicia flujo admin para edición directa de un afiliado existente
+   */
+  async iniciarEdicionAdmin(afiliado: DatosAfiliado): Promise<void> {
+    this._estado.set({
+      paso: 'contacto',
+      afiliado,
+      esCorreccion: true,
+      esCreacion: false,
+    });
+
+    await this.router.navigate(['/forms/contact']);
   }
 
   /**
@@ -373,25 +422,40 @@ export class FlujoActualizacionService {
    * Envía los datos al servidor
    */
   async finalizarActualizacion(): Promise<void> {
-    const afiliado = this._estado().afiliado;
+    const estado = this._estado();
+    const afiliado = estado.afiliado;
+    const esCreacion = estado.esCreacion === true;
     
     console.log('🔄 Iniciando finalizarActualizacion');
-    console.log('🔄 Afiliado actual:', afiliado ? { id: afiliado.id, nombre: afiliado.primerNombre } : 'null');
+    console.log(
+      '🔄 Afiliado actual:',
+      afiliado ? { id: afiliado.id, nombre: afiliado.primerNombre, esCreacion } : 'null'
+    );
     
-    if (!afiliado?.id) {
+    if (!afiliado) {
+      console.error('❌ No hay afiliado para guardar');
+      throw new Error('No hay afiliado para guardar');
+    }
+
+    if (!esCreacion && !afiliado.id) {
       console.error('❌ No hay afiliado o falta ID');
       throw new Error('No hay afiliado para actualizar o falta el ID');
     }
 
     // Preparar payload para el afiliado
     console.log('📦 Preparando payload...');
-    const payload = this.mapperService.afiliadoFormToDbPayload(afiliado);
+    const payload = this.buildAfiliadoPayload(afiliado);
     console.log('📦 Payload preparado:', JSON.stringify(payload, null, 2));
 
-    // Actualizar afiliado en la BD
-    console.log('💾 Enviando actualización de afiliado ID:', afiliado.id);
-    await this.apiService.actualizarAfiliado(String(afiliado.id), payload);
-    console.log('✅ Afiliado actualizado exitosamente');
+    if (esCreacion) {
+      console.log('💾 Creando afiliado nuevo');
+      await this.apiService.crearAfiliado(payload);
+      console.log('✅ Afiliado creado exitosamente');
+    } else {
+      console.log('💾 Enviando actualización de afiliado ID:', afiliado.id);
+      await this.apiService.actualizarAfiliado(String(afiliado.id), payload);
+      console.log('✅ Afiliado actualizado exitosamente');
+    }
 
     // Actualizar beneficiarios modificados
     if (afiliado.beneficiarios) {
@@ -421,7 +485,7 @@ export class FlujoActualizacionService {
    * Reinicia el flujo completo
    */
   reiniciarFlujo(): void {
-    this._estado.set({ paso: 'inicio' });
+    this._estado.set({ paso: 'inicio', esCreacion: false });
     this.datosTemporales = {};
     this.router.navigate(['/home']);
   }
@@ -449,10 +513,10 @@ export class FlujoActualizacionService {
       escaneo: 'inicio',
       verificacion: 'escaneo',
       usuario_existente: 'verificacion',
-      sociodemografico: 'verificacion',
-      contacto: 'sociodemografico',
-      laboral: 'contacto',
-      caracterizacion: this._estado().afiliado?.tipoAfiliado === 'docente_activo' ? 'laboral' : 'contacto',
+      contacto: 'verificacion',
+      sociodemografico: 'contacto',
+      laboral: 'sociodemografico',
+      caracterizacion: this._estado().afiliado?.tipoAfiliado === 'docente_activo' ? 'laboral' : 'sociodemografico',
       seleccion_beneficiarios: 'caracterizacion',
       actualizacion_beneficiario: 'seleccion_beneficiarios',
       confirmacion: 'seleccion_beneficiarios',
@@ -479,5 +543,21 @@ export class FlujoActualizacionService {
     };
 
     await this.router.navigate([rutasMapa[pasoAnterior]]);
+  }
+
+  private buildAfiliadoPayload(afiliado: DatosAfiliado): Record<string, any> {
+    const payload = this.mapperService.afiliadoFormToDbPayload(afiliado);
+
+    payload['numeroDocumento'] = afiliado.numeroDocumento;
+    payload['primerNombre'] = afiliado.primerNombre;
+    payload['segundoNombre'] = afiliado.segundoNombre;
+    payload['primerApellido'] = afiliado.primerApellido;
+    payload['segundoApellido'] = afiliado.segundoApellido;
+    payload['fechaNacimiento'] = afiliado.fechaNacimiento;
+    payload['genero'] = afiliado.genero;
+    payload['tipoAfiliado'] = afiliado.laboral?.tipoAfiliado || afiliado.tipoAfiliado;
+    payload['tipoDocumentoId'] = 1;
+
+    return payload;
   }
 }

@@ -19,6 +19,13 @@ export interface ObtenerBeneficiariosResponse {
 }
 
 /**
+ * Respuesta de búsqueda admin de afiliados
+ */
+export interface BuscarAfiliadosAdminResponse {
+  afiliados: Record<string, any>[];
+}
+
+/**
  * Respuesta de operaciones de actualización
  */
 export interface ActualizarResponse {
@@ -64,6 +71,14 @@ export class PoblacionApiService {
   }
 
   /**
+   * Busca afiliados para panel admin (documento o nombre)
+   */
+  async buscarAfiliadosAdmin(query: string): Promise<BuscarAfiliadosAdminResponse> {
+    const url = `${this.baseUrl}/afiliados/admin/buscar?q=${encodeURIComponent(query)}`;
+    return firstValueFrom(this.http.get<BuscarAfiliadosAdminResponse>(url));
+  }
+
+  /**
    * Obtiene los beneficiarios de un cotizante
    */
   async obtenerBeneficiarios(numeroDocumentoCotizante: string): Promise<ObtenerBeneficiariosResponse> {
@@ -86,6 +101,31 @@ export class PoblacionApiService {
       return response;
     } catch (error: any) {
       console.error('❌ Error actualizando afiliado:', {
+        message: error?.message,
+        status: error?.statusCode || error?.status,
+        mensajeOriginal: error?.mensajeOriginal,
+        name: error?.name,
+        fullError: error
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Crea un afiliado nuevo
+   */
+  async crearAfiliado(datos: Record<string, any>): Promise<ActualizarResponse> {
+    const url = `${this.baseUrl}/afiliados`;
+    console.log('📤 API Call - Creando afiliado');
+    console.log('📤 API Call - URL:', url);
+    console.log('📤 API Call - Payload:', JSON.stringify(datos, null, 2));
+
+    try {
+      const response = await firstValueFrom(this.http.post<ActualizarResponse>(url, datos));
+      console.log('✅ API Response - Afiliado creado:', JSON.stringify(response));
+      return response;
+    } catch (error: any) {
+      console.error('❌ Error creando afiliado:', {
         message: error?.message,
         status: error?.statusCode || error?.status,
         mensajeOriginal: error?.mensajeOriginal,
