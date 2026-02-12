@@ -119,7 +119,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
         <!-- Nota informativa -->
         <div class="info-banner">
           <ion-icon name="information-circle-outline"></ion-icon>
-          <p>Ingrese cada dato dos veces para verificar.</p>
+          <p>Los datos mostrados provienen de nuestros registros. Puede actualizarlos si han cambiado. Ingrese cada dato dos veces para verificar.</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -133,8 +133,11 @@ function matchValidator(controlName: string, matchingControlName: string) {
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
+              <ion-note class="field-hint">
+                Si su correo ha cambiado, puede modificarlo aqui.
+              </ion-note>
               <ion-list lines="none">
-                
+
                 <!-- Correo principal -->
                 <ion-item [class.valid]="isFieldValid('correoElectronico')">
                   <ion-input
@@ -215,8 +218,11 @@ function matchValidator(controlName: string, matchingControlName: string) {
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
+              <ion-note class="field-hint">
+                Si su numero ha cambiado, puede modificarlo aqui.
+              </ion-note>
               <ion-list lines="none">
-                
+
                 <!-- Celular principal -->
                 <ion-item [class.valid]="isFieldValid('celular')">
                   <ion-input
@@ -468,6 +474,15 @@ function matchValidator(controlName: string, matchingControlName: string) {
       height: 1.375rem;
       margin-left: auto;
       flex-shrink: 0;
+    }
+
+    /* Field Hints */
+    .field-hint {
+      display: block;
+      font-size: 0.8125rem;
+      color: var(--ion-color-medium);
+      padding: 0 var(--sp-xs) var(--sp-sm);
+      line-height: 1.5;
     }
 
     /* Lists & Items */

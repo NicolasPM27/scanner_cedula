@@ -78,13 +78,13 @@ import {
         <ion-buttons slot="start">
           <ion-back-button defaultHref="/forms/employment"></ion-back-button>
         </ion-buttons>
-        <ion-title>Caracterización</ion-title>
+        <ion-title>Enfoque de Diversidad</ion-title>
       </ion-toolbar>
       <ion-toolbar>
         <div class="progress-container">
           <div class="progress-info">
             <span class="step-label">PASO 4 DE 4</span>
-            <span class="step-title">Adicional</span>
+            <span class="step-title">Enfoque de Diversidad</span>
           </div>
           <ion-progress-bar [value]="1" color="primary"></ion-progress-bar>
         </div>
