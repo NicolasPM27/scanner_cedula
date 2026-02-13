@@ -43,6 +43,8 @@ import {
   analytics,
   videocamOutline,
   stopCircleOutline,
+  flashlight,
+  flashlightOutline,
 } from 'ionicons/icons';
 import {
   WebScannerService,
@@ -155,15 +157,34 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
             <!-- Guia visual -->
             <div class="camera-overlay">
-              <div class="guide-frame">
-                <div class="corner corner-tl"></div>
-                <div class="corner corner-tr"></div>
-                <div class="corner corner-bl"></div>
-                <div class="corner corner-br"></div>
+              <div class="guide-frame" [class.guide-frame-ready]="isReadyToCapture()">
+                <div class="corner corner-tl" [class.corner-ready]="isReadyToCapture()"></div>
+                <div class="corner corner-tr" [class.corner-ready]="isReadyToCapture()"></div>
+                <div class="corner corner-bl" [class.corner-ready]="isReadyToCapture()"></div>
+                <div class="corner corner-br" [class.corner-ready]="isReadyToCapture()"></div>
               </div>
+
+              <!-- Quality indicator -->
+              <div class="sharpness-container">
+                <div class="sharpness-bar-track">
+                  <div
+                    class="sharpness-bar-fill"
+                    [style.width.%]="proximityScore()"
+                    [style.background]="qualityColor()">
+                  </div>
+                </div>
+                <span class="sharpness-label" [style.color]="qualityColor()">
+                  {{ qualityText() }}
+                </span>
+              </div>
+
               <div class="guide-text-container">
                 <p class="guide-text">
-                  @if (tipoDocumento() === 'CC') {
+                  @if (proximityScore() < 65) {
+                    Acerque más el documento hasta que llene el recuadro
+                  } @else if (sharpnessScore() < 60) {
+                    Mantenga firme, enfocando...
+                  } @else if (tipoDocumento() === 'CC') {
                     Ubique la parte posterior de la cédula dentro del recuadro
                   } @else {
                     Ubique el documento dentro del recuadro
@@ -179,13 +200,17 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
               </ion-button>
               <ion-button
                 shape="round"
-                color="light"
+                [color]="isReadyToCapture() ? 'light' : 'medium'"
                 size="large"
                 (click)="captureAndProcess()"
-                class="capture-btn">
+                [disabled]="!isReadyToCapture()"
+                class="capture-btn"
+                [class.capture-btn-disabled]="!isReadyToCapture()">
                 <ion-icon slot="icon-only" name="camera"></ion-icon>
               </ion-button>
-              <div class="control-btn-spacer"></div>
+              <ion-button fill="clear" color="light" (click)="toggleTorch()" class="control-btn">
+                <ion-icon slot="icon-only" [name]="torchOn() ? 'flashlight' : 'flashlight-outline'"></ion-icon>
+              </ion-button>
             </div>
           </div>
         }
@@ -470,6 +495,11 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       border: 2px solid rgba(255, 255, 255, 0.4);
       border-radius: var(--border-radius-md);
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.3s ease;
+    }
+
+    .guide-frame-ready {
+      border-color: #00E676;
     }
 
     .corner {
@@ -477,6 +507,11 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       width: 2rem;
       height: 2rem;
       border: 4px solid #00E676;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .corner-ready {
+      box-shadow: 0 0 8px rgba(0, 230, 118, 0.6);
     }
 
     .corner-tl {
@@ -509,6 +544,38 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       border-left: none;
       border-top: none;
       border-bottom-right-radius: var(--border-radius-md);
+    }
+
+    /* Sharpness indicator */
+    .sharpness-container {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-top: var(--spacing-md);
+      padding: 0 var(--spacing-xl);
+      width: min(90vw, calc(80vh * 1.586));
+    }
+
+    .sharpness-bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .sharpness-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.2s ease, background 0.3s ease;
+    }
+
+    .sharpness-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+      min-width: 5.5rem;
+      text-align: right;
     }
 
     .guide-text-container {
@@ -550,10 +617,6 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       font-size: 2rem;
     }
 
-    .control-btn-spacer {
-      width: 3rem;
-    }
-
     .capture-btn {
       width: 4.5rem;
       height: 4.5rem;
@@ -564,6 +627,11 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
     .capture-btn ion-icon {
       font-size: 2rem;
+    }
+
+    .capture-btn-disabled {
+      opacity: 0.4;
+      --box-shadow: none;
     }
 
     /* Processing state */
@@ -841,12 +909,16 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 export class WebScannerPage implements OnDestroy {
   private videoRef = viewChild<ElementRef<HTMLVideoElement>>('videoEl');
   private orientationCleanup: (() => void) | null = null;
+  private autoCapturing = false;
 
   state = signal<PageState>('idle');
   tipoDocumento = signal<TipoDocumentoScan>('CC');
   cedulaData = signal<CedulaData | null>(null);
   authenticityScore = signal(0);
   errorMsg = signal('');
+  sharpnessScore = signal(0);
+  proximityScore = signal(0);
+  torchOn = signal(false);
 
   constructor(
     public webScanner: WebScannerService,
@@ -867,7 +939,36 @@ export class WebScannerPage implements OnDestroy {
       analytics,
       videocamOutline,
       stopCircleOutline,
+      flashlight,
+      flashlightOutline,
     });
+  }
+
+  /** True when both proximity and sharpness are good enough to capture */
+  isReadyToCapture(): boolean {
+    return this.proximityScore() >= 65 && this.sharpnessScore() >= 50;
+  }
+
+  /** Color based on the weakest metric (proximity first, then sharpness) */
+  qualityColor(): string {
+    const p = this.proximityScore();
+    const s = this.sharpnessScore();
+    if (p < 35) return '#FF5252';         // red - too far
+    if (p < 65) return '#FFD740';         // yellow - getting closer
+    if (s < 30) return '#FFD740';         // yellow - close but blurry
+    if (s < 60) return '#B2FF59';         // light green - almost there
+    return '#00E676';                     // green - ready
+  }
+
+  /** Descriptive label: prioritizes proximity feedback */
+  qualityText(): string {
+    const p = this.proximityScore();
+    const s = this.sharpnessScore();
+    if (p < 35) return 'Muy lejos';
+    if (p < 65) return 'Acérquese';
+    if (s < 30) return 'Borroso';
+    if (s < 60) return 'Enfocando...';
+    return 'Listo';
   }
 
   ngOnDestroy(): void {
@@ -877,6 +978,10 @@ export class WebScannerPage implements OnDestroy {
 
   async openCamera(): Promise<void> {
     this.state.set('camera');
+    this.sharpnessScore.set(0);
+    this.proximityScore.set(0);
+    this.torchOn.set(false);
+    this.autoCapturing = false;
     // Esperar al siguiente ciclo para que el <video> exista en el DOM
     await new Promise(r => setTimeout(r, 50));
 
@@ -890,6 +995,7 @@ export class WebScannerPage implements OnDestroy {
     try {
       await this.webScanner.openCamera(videoEl);
       this.listenOrientationChanges(videoEl);
+      this.startSharpnessMonitor(videoEl);
     } catch (err: any) {
       const msg = err?.name === 'NotAllowedError'
         ? 'Permiso de camara denegado. Habilite el acceso a la camara en la configuracion del navegador.'
@@ -901,10 +1007,33 @@ export class WebScannerPage implements OnDestroy {
     }
   }
 
+  private startSharpnessMonitor(videoEl: HTMLVideoElement): void {
+    this.webScanner.startSharpnessMonitor(
+      videoEl,
+      (sharpness, proximity) => {
+        this.sharpnessScore.set(sharpness);
+        this.proximityScore.set(proximity);
+      },
+      () => {
+        if (!this.autoCapturing && this.state() === 'camera') {
+          this.autoCapturing = true;
+          this.captureAndProcess();
+        }
+      },
+    );
+  }
+
   closeCamera(): void {
     this.webScanner.stopCamera();
     this.stopOrientationListener();
     this.state.set('idle');
+  }
+
+  async toggleTorch(): Promise<void> {
+    const result = await this.webScanner.toggleTorch();
+    if (result !== null) {
+      this.torchOn.set(result);
+    }
   }
 
   async captureAndProcess(): Promise<void> {
@@ -960,6 +1089,7 @@ export class WebScannerPage implements OnDestroy {
       try {
         this.webScanner.stopCamera();
         await this.webScanner.openCamera(videoEl);
+        this.startSharpnessMonitor(videoEl);
       } catch (err) {
         console.warn('[scanner] Error restarting camera on orientation change:', err);
       }

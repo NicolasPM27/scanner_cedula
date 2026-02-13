@@ -30,6 +30,9 @@ export interface ScanResponse {
 @Injectable({ providedIn: 'root' })
 export class WebScannerService {
   private stream: MediaStream | null = null;
+  private sharpnessRAF: number | null = null;
+  private sharpnessLastTime = 0;
+  private sustainedAboveThreshold = 0;
 
   constructor(private http: HttpClient) {}
 
@@ -40,17 +43,23 @@ export class WebScannerService {
 
   /**
    * Abre la camara trasera y la conecta a un elemento <video>
+   * Resolucion: 1080p ideal, 480p minimo — compatible con dispositivos de gama baja
    */
   async openCamera(video: HTMLVideoElement): Promise<void> {
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: { ideal: 'environment' },
-        width: { ideal: 3840, min: 1280 },
-        height: { ideal: 2160, min: 720 },
+        width: { ideal: 1920, min: 640 },
+        height: { ideal: 1080, min: 480 },
         frameRate: { ideal: 15, max: 24 },
-      },
+      } as MediaTrackConstraints,
       audio: false,
     };
+
+    // Add focusMode hint if supported (continuous autofocus)
+    try {
+      (constraints.video as any).focusMode = { ideal: 'continuous' };
+    } catch { /* ignore if not supported */ }
 
     this.stream = await navigator.mediaDevices.getUserMedia(constraints);
     video.srcObject = this.stream;
@@ -104,7 +113,7 @@ export class WebScannerService {
   /**
    * Captura un solo frame recortado al guide-frame
    */
-  captureFrame(video: HTMLVideoElement, quality = 0.95): string {
+  captureFrame(video: HTMLVideoElement, quality = 0.85): string {
     const { canvas } = this.cropToGuideFrame(video);
     return canvas.toDataURL('image/jpeg', quality).replace(/^data:image\/\w+;base64,/, '');
   }
@@ -113,7 +122,7 @@ export class WebScannerService {
    * Captura N frames, calcula nitidez de cada uno y retorna el mas nitido.
    * Esto compensa variaciones de enfoque entre frames.
    */
-  async captureBestFrame(video: HTMLVideoElement, numFrames = 4, quality = 0.95): Promise<string> {
+  async captureBestFrame(video: HTMLVideoElement, numFrames = 4, quality = 0.85): Promise<string> {
     let bestBase64 = '';
     let bestSharpness = -1;
 
@@ -162,6 +171,225 @@ export class WebScannerService {
   }
 
   /**
+   * Computes a normalized sharpness score (0-100) for a small center patch.
+   * Uses a 64x64 region for speed.
+   */
+  private computeSharpnessScore(video: HTMLVideoElement): number {
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (vw === 0 || vh === 0) return 0;
+
+    const patchSize = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = patchSize;
+    canvas.height = patchSize;
+    const ctx = canvas.getContext('2d')!;
+
+    const sx = Math.floor((vw - patchSize) / 2);
+    const sy = Math.floor((vh - patchSize) / 2);
+    ctx.drawImage(video, sx, sy, patchSize, patchSize, 0, 0, patchSize, patchSize);
+
+    const rawSharpness = this.computeSharpness(ctx, patchSize, patchSize);
+
+    // Normalize to 0-100 range. The raw variance ranges widely depending on content;
+    // empirically, values around 50000+ indicate a sharp document scan.
+    // We use a log scale for a more useful spread across the range.
+    const score = Math.min(100, Math.max(0, Math.round((Math.log1p(rawSharpness) / Math.log1p(80000)) * 100)));
+    return score;
+  }
+
+  /**
+   * Computes a proximity score (0-100) based on high-contrast content coverage.
+   *
+   * Uses luminance standard deviation per grid cell to distinguish document
+   * content (text, barcode = high contrast = high stdDev) from background
+   * (desk, fabric = uniform = low stdDev).
+   *
+   * Additionally requires strong edges (gradient > 40) within each cell —
+   * this filters out noise and soft textures that can inflate stdDev
+   * (e.g. patterned tablecloths, wood grain).
+   *
+   * A cell is "active" only if stdDev >= 30 AND strongEdge% >= 12%.
+   *
+   * Grid: 10x6 = 60 cells on a 200x120 downscaled image.
+   */
+  computeProximityScore(video: HTMLVideoElement): number {
+    const { canvas: fullCanvas } = this.cropToGuideFrame(video);
+    if (fullCanvas.width === 0 || fullCanvas.height === 0) return 0;
+
+    // Downscale for speed
+    const sw = 200;
+    const sh = 120;
+    const smallCanvas = document.createElement('canvas');
+    smallCanvas.width = sw;
+    smallCanvas.height = sh;
+    const sCtx = smallCanvas.getContext('2d')!;
+    sCtx.drawImage(fullCanvas, 0, 0, sw, sh);
+
+    const { data } = sCtx.getImageData(0, 0, sw, sh);
+
+    // Pre-compute luminance array
+    const lum = new Float32Array(sw * sh);
+    for (let i = 0; i < sw * sh; i++) {
+      const p = i * 4;
+      lum[i] = data[p] * 0.299 + data[p + 1] * 0.587 + data[p + 2] * 0.114;
+    }
+
+    // Grid: 10 cols x 6 rows = 60 cells
+    const cols = 10;
+    const rows = 6;
+    const cellW = Math.floor(sw / cols);
+    const cellH = Math.floor(sh / rows);
+    const stdDevThreshold = 30;   // high for document text/barcode, low for background
+    const strongEdgeThreshold = 40; // strong gradient — filters soft textures
+    const edgeDensityMin = 0.12;  // 12% of pixels must have strong edges
+
+    let activeCells = 0;
+    const totalCells = cols * rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x0 = c * cellW;
+        const y0 = r * cellH;
+        let sumL = 0;
+        let sumL2 = 0;
+        let n = 0;
+        let strongEdges = 0;
+        let edgeN = 0;
+
+        for (let y = y0; y < y0 + cellH; y++) {
+          for (let x = x0; x < x0 + cellW; x++) {
+            const idx = y * sw + x;
+            const l = lum[idx];
+            sumL += l;
+            sumL2 += l * l;
+            n++;
+
+            // Strong edge check (within bounds)
+            if (x < x0 + cellW - 1 && y < y0 + cellH - 1) {
+              const lr = lum[idx + 1];
+              const lb = lum[idx + sw];
+              const dx = Math.abs(lr - l);
+              const dy = Math.abs(lb - l);
+              if (dx + dy > strongEdgeThreshold) strongEdges++;
+              edgeN++;
+            }
+          }
+        }
+
+        if (n === 0) continue;
+
+        // Standard deviation of luminance
+        const mean = sumL / n;
+        const variance = sumL2 / n - mean * mean;
+        const stdDev = Math.sqrt(Math.max(0, variance));
+
+        // Cell is active only if it has BOTH high contrast AND strong edges
+        const hasContrast = stdDev >= stdDevThreshold;
+        const hasStrongEdges = edgeN > 0 && (strongEdges / edgeN) >= edgeDensityMin;
+
+        if (hasContrast && hasStrongEdges) {
+          activeCells++;
+        }
+      }
+    }
+
+    // Normalize: 70%+ active cells = 100 (document fills the frame completely)
+    // Below 25% = 0 (document too far or not present)
+    const coverage = activeCells / totalCells;
+    const minCoverage = 0.25;
+    const maxCoverage = 0.70;
+    const score = Math.min(100, Math.max(0,
+      Math.round(((coverage - minCoverage) / (maxCoverage - minCoverage)) * 100)
+    ));
+    return score;
+  }
+
+  /**
+   * Starts a real-time quality monitoring loop (~5fps).
+   * Reports both sharpness (0-100) and proximity (0-100) on each tick.
+   * Auto-capture fires when BOTH sharpness and proximity stay above thresholds
+   * for `sustainedMs`.
+   */
+  startSharpnessMonitor(
+    video: HTMLVideoElement,
+    onScore: (sharpness: number, proximity: number) => void,
+    onAutoCapture: () => void,
+    sharpnessThreshold = 60,
+    proximityThreshold = 65,
+    sustainedMs = 1500,
+  ): void {
+    this.stopSharpnessMonitor();
+    this.sustainedAboveThreshold = 0;
+    this.sharpnessLastTime = 0;
+
+    const targetInterval = 200; // ~5fps
+    let autoCaptured = false;
+
+    const tick = (timestamp: number) => {
+      if (timestamp - this.sharpnessLastTime < targetInterval) {
+        this.sharpnessRAF = requestAnimationFrame(tick);
+        return;
+      }
+      this.sharpnessLastTime = timestamp;
+
+      const sharpness = this.computeSharpnessScore(video);
+      const proximity = this.computeProximityScore(video);
+      onScore(sharpness, proximity);
+
+      const bothGood = sharpness >= sharpnessThreshold && proximity >= proximityThreshold;
+
+      if (bothGood) {
+        this.sustainedAboveThreshold += targetInterval;
+        if (this.sustainedAboveThreshold >= sustainedMs && !autoCaptured) {
+          autoCaptured = true;
+          onAutoCapture();
+          return; // stop the loop after auto-capture
+        }
+      } else {
+        this.sustainedAboveThreshold = 0;
+      }
+
+      this.sharpnessRAF = requestAnimationFrame(tick);
+    };
+
+    this.sharpnessRAF = requestAnimationFrame(tick);
+  }
+
+  /**
+   * Stops the sharpness monitoring loop.
+   */
+  stopSharpnessMonitor(): void {
+    if (this.sharpnessRAF !== null) {
+      cancelAnimationFrame(this.sharpnessRAF);
+      this.sharpnessRAF = null;
+    }
+    this.sustainedAboveThreshold = 0;
+  }
+
+  /**
+   * Toggles torch (flashlight) on the active video track.
+   * Returns the new torch state, or null if not supported.
+   */
+  async toggleTorch(forceState?: boolean): Promise<boolean | null> {
+    if (!this.stream) return null;
+    const track = this.stream.getVideoTracks()[0];
+    if (!track) return null;
+
+    try {
+      const capabilities = track.getCapabilities() as any;
+      if (!capabilities.torch) return null;
+
+      const current = (track.getSettings() as any).torch ?? false;
+      const desired = forceState !== undefined ? forceState : !current;
+      await track.applyConstraints({ advanced: [{ torch: desired } as any] });
+      return desired;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Envia frame(s) al backend para procesamiento
    */
   async processOnServer(
@@ -182,13 +410,13 @@ export class WebScannerService {
   }
 
   /**
-   * Pipeline completo: captura frame del video y procesa en backend
+   * Pipeline completo: captura best frame del video y procesa en backend
    */
   async scanFromVideo(
     video: HTMLVideoElement,
     tipoDocumento: TipoDocumentoScan
   ): Promise<ScanResponse> {
-    const frame1 = this.captureFrame(video);
+    const frame1 = await this.captureBestFrame(video);
     return this.processOnServer(frame1, tipoDocumento);
   }
 
@@ -196,6 +424,7 @@ export class WebScannerService {
    * Detiene la camara y libera recursos
    */
   stopCamera(): void {
+    this.stopSharpnessMonitor();
     if (this.stream) {
       this.stream.getTracks().forEach(t => t.stop());
       this.stream = null;

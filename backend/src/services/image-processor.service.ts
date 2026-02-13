@@ -75,35 +75,49 @@ export async function decodeAndValidateImage(base64: string): Promise<{
  * - Redimensiona a ancho optimo (1600px)
  * - Convierte a escala de grises
  * - Aumenta contraste y nitidez
+ * - Para imagenes muy pequenas (< 800px), aplica enhancement agresivo
  */
 async function preprocessForBarcode(buffer: Buffer): Promise<Buffer> {
-  return sharp(buffer)
-    .resize({ width: 1600, withoutEnlargement: false })
-    .grayscale()
-    .sharpen({ sigma: 1.5 })
-    .normalise()
-    .png()
-    .toBuffer();
+  const meta = await sharp(buffer).metadata();
+  const isSmall = (meta.width ?? 0) < 800;
+
+  let pipeline = sharp(buffer)
+    .resize({ width: isSmall ? 2000 : 1600, withoutEnlargement: false })
+    .grayscale();
+
+  if (isSmall) {
+    pipeline = pipeline.sharpen({ sigma: 3 }).linear(1.8, -100);
+  } else {
+    pipeline = pipeline.sharpen({ sigma: 1.5 });
+  }
+
+  return pipeline.normalise().png().toBuffer();
 }
 
 async function preprocessForBarcodeHighContrast(buffer: Buffer): Promise<Buffer> {
+  const meta = await sharp(buffer).metadata();
+  const isSmall = (meta.width ?? 0) < 800;
+
   return sharp(buffer)
-    .resize({ width: 1800, withoutEnlargement: false })
+    .resize({ width: isSmall ? 2200 : 1800, withoutEnlargement: false })
     .grayscale()
-    .linear(1.5, -(128 * 0.5))
-    .sharpen({ sigma: 2.5 })
+    .linear(isSmall ? 2.0 : 1.5, isSmall ? -120 : -(128 * 0.5))
+    .sharpen({ sigma: isSmall ? 3.5 : 2.5 })
     .normalise()
     .png()
     .toBuffer();
 }
 
 async function preprocessForBarcodeGamma(buffer: Buffer): Promise<Buffer> {
+  const meta = await sharp(buffer).metadata();
+  const isSmall = (meta.width ?? 0) < 800;
+
   return sharp(buffer)
-    .resize({ width: 1600, withoutEnlargement: false })
+    .resize({ width: isSmall ? 2000 : 1600, withoutEnlargement: false })
     .grayscale()
-    .gamma(2.0)
+    .gamma(isSmall ? 2.5 : 2.0)
     .normalise()
-    .sharpen({ sigma: 1.5 })
+    .sharpen({ sigma: isSmall ? 3 : 1.5 })
     .png()
     .toBuffer();
 }
@@ -118,15 +132,23 @@ async function preprocessForMRZ(buffer: Buffer, cropRatio = 0.60, thresh = 140):
   const metadata = await sharp(buffer).metadata();
   const width = metadata.width!;
   const height = metadata.height!;
+  const isSmall = width < 800;
 
   const mrzTop = Math.floor(height * cropRatio);
   const mrzHeight = height - mrzTop;
 
-  return sharp(buffer)
+  let pipeline = sharp(buffer)
     .extract({ left: 0, top: mrzTop, width, height: mrzHeight })
-    .resize({ width: 2000, withoutEnlargement: false })
-    .grayscale()
-    .sharpen({ sigma: 2 })
+    .resize({ width: isSmall ? 2400 : 2000, withoutEnlargement: false })
+    .grayscale();
+
+  if (isSmall) {
+    pipeline = pipeline.sharpen({ sigma: 3 }).linear(1.8, -100);
+  } else {
+    pipeline = pipeline.sharpen({ sigma: 2 });
+  }
+
+  return pipeline
     .normalise()
     .threshold(thresh)
     .png()

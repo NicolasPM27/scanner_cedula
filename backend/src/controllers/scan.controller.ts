@@ -79,11 +79,11 @@ export async function scanDocument(req: Request, res: Response): Promise<void> {
     const { buffer: imageBuffer, metadata } = await decodeAndValidateImage(frame1);
     console.log(`[scan] Imagen: ${metadata.width}x${metadata.height}, ${metadata.format}, ${imageBuffer.length} bytes`);
 
-    // Validar dimensiones minimas
-    if (metadata.width! < 640 || metadata.height! < 480) {
+    // Validar dimensiones minimas (320x240 — imagenes pequenas se procesan con enhancement agresivo)
+    if (metadata.width! < 320 || metadata.height! < 240) {
       res.status(400).json({
         success: false,
-        error: 'Imagen demasiado pequena. Se requiere minimo 640x480 pixeles.',
+        error: 'Imagen demasiado pequena. Se requiere minimo 320x240 pixeles.',
         authenticityScore: 0,
         checks: [],
       } satisfies ScanResponse);

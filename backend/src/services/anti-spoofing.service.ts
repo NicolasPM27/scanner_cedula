@@ -100,7 +100,7 @@ async function checkEXIFMetadata(buffer: Buffer): Promise<AuthenticityCheck> {
     // Verificar dimensiones razonables para una foto de documento
     const w = metadata.width || 0;
     const h = metadata.height || 0;
-    const hasReasonableDimensions = w >= 640 && h >= 480 && w <= 8000 && h <= 6000;
+    const hasReasonableDimensions = w >= 320 && h >= 240 && w <= 8000 && h <= 6000;
 
     // EXIF data (sharp expone lo basico)
     const hasExif = !!(metadata.exif && metadata.exif.length > 0);
