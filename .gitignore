@@ -110,4 +110,6 @@ Poblacion\ prueba\ .csv
 
 .fake
 
+# VsCode settings
 .vscode/
+!.vscode/settings.json
