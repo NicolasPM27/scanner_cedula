@@ -301,16 +301,10 @@ type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
               <ion-button fill="clear" color="light" (click)="closeCamera()" class="control-btn">
                 <ion-icon slot="icon-only" name="close-circle"></ion-icon>
               </ion-button>
-              <ion-button
-                shape="round"
-                [color]="isReadyToCapture() ? 'light' : 'medium'"
-                size="large"
-                (click)="captureAndProcess()"
-                [disabled]="!isReadyToCapture()"
-                class="capture-btn"
-                [class.capture-btn-disabled]="!isReadyToCapture()">
-                <ion-icon slot="icon-only" name="camera"></ion-icon>
-              </ion-button>
+              <div class="auto-capture-status" [class.auto-capture-ready]="isReadyToCapture()">
+                <ion-icon [name]="isReadyToCapture() ? 'checkmark-circle' : 'camera'"></ion-icon>
+                <span>{{ isReadyToCapture() ? 'Captura automática...' : 'Preparando captura automática' }}</span>
+              </div>
               <ion-button fill="clear" color="light" (click)="toggleTorch()" class="control-btn">
                 <ion-icon slot="icon-only" [name]="torchOn() ? 'flashlight' : 'flashlight-outline'"></ion-icon>
               </ion-button>
@@ -720,21 +714,28 @@ type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
       font-size: 2rem;
     }
 
-    .capture-btn {
-      width: 4.5rem;
-      height: 4.5rem;
-      --padding-start: 0;
-      --padding-end: 0;
-      --box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    .auto-capture-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.875rem;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
     }
 
-    .capture-btn ion-icon {
-      font-size: 2rem;
+    .auto-capture-status ion-icon {
+      font-size: 1rem;
     }
 
-    .capture-btn-disabled {
-      opacity: 0.4;
-      --box-shadow: none;
+    .auto-capture-ready {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: rgba(16, 185, 129, 0.6);
+      color: #bbf7d0;
     }
 
     /* Processing state */

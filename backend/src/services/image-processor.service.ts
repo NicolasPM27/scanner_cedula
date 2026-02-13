@@ -187,6 +187,63 @@ async function preprocessForBarcodeZoneCrop(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
+ * Crop lateral para casos donde el PDF417 queda en una franja vertical
+ * (captura con tarjeta rotada dentro del frame).
+ */
+async function preprocessForBarcodeSideCrop(
+  buffer: Buffer,
+  side: 'left' | 'right',
+): Promise<Buffer> {
+  const meta = await sharp(buffer).metadata();
+  const w = meta.width ?? 0;
+  const h = meta.height ?? 0;
+
+  if (w < 250 || h < 180) {
+    return preprocessForBarcode(buffer);
+  }
+
+  const cropWidth = Math.max(120, Math.floor(w * 0.42));
+  const left = side === 'left' ? 0 : Math.max(0, w - cropWidth);
+
+  const cropped = await sharp(buffer)
+    .extract({ left, top: 0, width: cropWidth, height: h })
+    .toBuffer();
+
+  return sharp(cropped)
+    .resize({ width: 2000, withoutEnlargement: false })
+    .grayscale()
+    .linear(1.7, -90)
+    .sharpen({ sigma: 3 })
+    .normalise()
+    .png()
+    .toBuffer();
+}
+
+/**
+ * Crop central amplio para reducir fondo y ampliar el area util del documento.
+ */
+async function preprocessForBarcodeCenterCrop(buffer: Buffer): Promise<Buffer> {
+  const meta = await sharp(buffer).metadata();
+  const w = meta.width ?? 0;
+  const h = meta.height ?? 0;
+
+  if (w < 320 || h < 240) {
+    return preprocessForBarcode(buffer);
+  }
+
+  const left = Math.floor(w * 0.1);
+  const top = Math.floor(h * 0.08);
+  const width = Math.floor(w * 0.8);
+  const height = Math.floor(h * 0.84);
+
+  const cropped = await sharp(buffer)
+    .extract({ left, top, width, height })
+    .toBuffer();
+
+  return preprocessForBarcodeHighContrast(cropped);
+}
+
+/**
  * Preprocesa imagen para OCR de zona MRZ.
  * Permite recortar franjas verticales diferentes (inferior/superior/centro/full)
  * porque segun orientacion el MRZ no siempre cae en la parte baja.
@@ -233,12 +290,61 @@ async function preprocessForMRZ(
   return pipeline.png().toBuffer();
 }
 
+/**
+ * Pure binarization for PDF417: resize → grayscale → normalize → threshold.
+ * No contrast manipulation that could distort bar widths — ideal for wide-bar
+ * barcodes found on 8-digit cédulas antiguas.
+ */
+async function preprocessForBarcodeThreshold(
+  buffer: Buffer,
+  thresholdValue: number,
+): Promise<Buffer> {
+  const meta = await sharp(buffer).metadata();
+  const isSmall = (meta.width ?? 0) < 800;
+
+  return sharp(buffer)
+    .resize({ width: isSmall ? 2000 : 1600, withoutEnlargement: false })
+    .grayscale()
+    .normalise()
+    .threshold(thresholdValue)
+    .png()
+    .toBuffer();
+}
+
 // ============================================================
 // DECODIFICACION DE BARCODE (PDF417 via ZXing-WASM)
 // ============================================================
 
 /**
- * Intenta decodificar un barcode PDF417 de la imagen
+ * Helper: intenta decodificar un buffer con las opciones dadas.
+ * Retorna el texto decodificado o null.
+ */
+async function tryDecodeBarcode(
+  readBarcodes: Awaited<ReturnType<typeof getReadBarcodes>>,
+  buffer: Buffer,
+  options: Record<string, unknown>,
+  label: string,
+): Promise<string | null> {
+  const results = await readBarcodes(buffer, options);
+  if (results.length > 0) {
+    const r = results[0] as { bytes?: Uint8Array; text?: string };
+    if (r.bytes && r.bytes.length > 0) {
+      const decoded = Buffer.from(r.bytes).toString('latin1');
+      console.log(`[scan] PDF417 detectado (${label}) via bytes, longitud: ${decoded.length}`);
+      return decoded;
+    }
+    if (r.text) {
+      console.log(`[scan] PDF417 detectado (${label}) via text, longitud: ${r.text.length}`);
+      return r.text;
+    }
+  }
+  return null;
+}
+
+/**
+ * Intenta decodificar un barcode PDF417 de la imagen.
+ * Prueba multiples variantes de preprocesamiento (crops, contraste, gamma, threshold)
+ * con el binarizer LocalAverage por defecto.
  */
 async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
   try {
@@ -257,10 +363,15 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
     // Pre-generate multiple preprocessing variants in parallel
     const basePromises: Promise<Buffer>[] = [
       preprocessForBarcodeZoneCrop(imageBuffer),
+      preprocessForBarcodeSideCrop(imageBuffer, 'left'),
+      preprocessForBarcodeSideCrop(imageBuffer, 'right'),
+      preprocessForBarcodeCenterCrop(imageBuffer),
       preprocessForBarcode(imageBuffer),
       preprocessForBarcodeHighContrast(imageBuffer),
       preprocessForBarcodeGamma(imageBuffer),
       sharp(imageBuffer).png().toBuffer(),
+      preprocessForBarcodeThreshold(imageBuffer, 128),
+      preprocessForBarcodeThreshold(imageBuffer, 160),
     ];
 
     const lowResPromises: Promise<Buffer>[] = isLowRes
@@ -272,14 +383,33 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
       : [];
 
     const allBuffers = await Promise.all([...basePromises, ...lowResPromises]);
-    const [barcodeCrop, standard, highContrast, gamma, raw, lowResBoost, lowResBin110, lowResBin140] = allBuffers;
+    const [
+      barcodeCrop,
+      sideLeft,
+      sideRight,
+      centerCrop,
+      standard,
+      highContrast,
+      gamma,
+      raw,
+      thresh128,
+      thresh160,
+      lowResBoost,
+      lowResBin110,
+      lowResBin140,
+    ] = allBuffers;
 
     const variants: Array<{ label: string; buffer: Buffer | undefined }> = [
       { label: 'barcode-crop', buffer: barcodeCrop },
+      { label: 'side-left', buffer: sideLeft },
+      { label: 'side-right', buffer: sideRight },
+      { label: 'center-crop', buffer: centerCrop },
       { label: 'standard', buffer: standard },
       { label: 'high-contrast', buffer: highContrast },
       { label: 'gamma', buffer: gamma },
       { label: 'raw', buffer: raw },
+      { label: 'thresh-128', buffer: thresh128 },
+      { label: 'thresh-160', buffer: thresh160 },
       { label: 'lowres-boost', buffer: lowResBoost },
       { label: 'lowres-bin110', buffer: lowResBin110 },
       { label: 'lowres-bin140', buffer: lowResBin140 },
@@ -287,19 +417,8 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
 
     for (const { label, buffer } of variants) {
       if (!buffer) continue;
-      const results = await readBarcodes(buffer, readerOptions);
-      if (results.length > 0) {
-        const r = results[0] as { bytes?: Uint8Array; text?: string };
-        if (r.bytes && r.bytes.length > 0) {
-          const decoded = Buffer.from(r.bytes).toString('latin1');
-          console.log(`[scan] PDF417 detectado (${label}) via bytes, longitud: ${decoded.length}`);
-          return decoded;
-        }
-        if (r.text) {
-          console.log(`[scan] PDF417 detectado (${label}) via text, longitud: ${r.text.length}`);
-          return r.text;
-        }
-      }
+      const decoded = await tryDecodeBarcode(readBarcodes, buffer, readerOptions, label);
+      if (decoded) return decoded;
     }
 
     return null;
@@ -756,6 +875,8 @@ export async function processDocumentAntigua(
 ): Promise<ProcessingResult> {
   const startTime = Date.now();
 
+  // Normaliza orientacion EXIF antes de rotaciones explicitas.
+  imageBuffer = await sharp(imageBuffer).rotate().toBuffer();
   const meta = await sharp(imageBuffer).metadata();
   if (meta.height! > meta.width!) {
     imageBuffer = await sharp(imageBuffer).rotate(90).toBuffer();

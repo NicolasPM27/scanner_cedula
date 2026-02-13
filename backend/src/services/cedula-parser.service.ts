@@ -31,18 +31,179 @@ export function parsePDF417(rawData: string | Buffer, tipoDocumento?: string): C
     throw new Error('Datos PDF417 vacios o muy cortos');
   }
 
-  if (!dataStr.includes(PDF417_CONSTANTS.IDENTIFIER)) {
-    throw new Error('Formato no reconocido: No se encontro identificador de cedula colombiana');
-  }
-
   const normalizedData = dataStr.replace(/\x00{2,}/g, '\x00');
   const segments = normalizedData.split('\x00').filter(s => s.length > 0);
 
-  if (segments.length < 6) {
-    throw new Error('Formato PDF417 invalido: Segmentos insuficientes');
+  // Standard null-delimited format (10-digit cédulas)
+  if (segments.length >= 4) {
+    const hasIdentifier = normalizedData.includes(PDF417_CONSTANTS.IDENTIFIER);
+    const hasPlausibleStructure = looksLikeColombianPDF417(segments);
+
+    if (hasIdentifier || hasPlausibleStructure) {
+      if (!hasIdentifier && hasPlausibleStructure) {
+        console.warn('[scan] PDF417 sin identificador PubDSK_, usando fallback por estructura');
+      }
+      return extractPDF417Fields(segments, tipoDocumento);
+    }
   }
 
-  return extractPDF417Fields(segments, tipoDocumento);
+  // Not enough null-delimited segments — try alternate approaches
+  // (common with 8-digit cédulas antiguas that use a different data format)
+  console.log(`[scan] PDF417 null-segments: ${segments.length}, intentando alternativas...`);
+  logBarcodeDiagnostics(dataStr);
+
+  // Try alternate delimiters
+  const altResult = tryAlternateDelimiters(dataStr, tipoDocumento);
+  if (altResult) return altResult;
+
+  // Try regex-based raw extraction as last resort
+  const rawResult = tryRawExtraction(dataStr);
+  if (rawResult) return rawResult;
+
+  throw new Error(`Formato PDF417 invalido: ${segments.length} null-segments, sin alternativa`);
+}
+
+function looksLikeColombianPDF417(segments: string[]): boolean {
+  if (segments.length < 3) return false;
+
+  const joined = segments.join(' ');
+
+  // Fecha de nacimiento tipica en payload (YYYYMMDD)
+  const hasBirthDate = /(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/.test(joined);
+
+  // Nombre/apellido en mayusculas (minimo 3 letras) en alguno de los segmentos
+  const hasNameLike = segments.some(seg => /[A-ZÁÉÍÓÚÑ]{3,}/.test(seg));
+
+  // Documento de 8 a 10 digitos en algun segmento
+  const hasDocNumber = segments.some(seg => /(?:^|\D)\d{8,10}(?:\D|$)/.test(seg));
+
+  return hasBirthDate && hasNameLike && hasDocNumber;
+}
+
+/**
+ * Log hex dump + printable representation for debugging unknown barcode formats.
+ */
+function logBarcodeDiagnostics(data: string): void {
+  const buf = Buffer.from(data, 'latin1');
+  const hexChunks: string[] = [];
+  for (let i = 0; i < Math.min(buf.length, 200); i += 50) {
+    hexChunks.push(buf.subarray(i, Math.min(i + 50, buf.length)).toString('hex'));
+  }
+  console.log(`[scan] PDF417 hex (${buf.length} bytes):`);
+  hexChunks.forEach((chunk, i) => console.log(`[scan]   ${i * 50}: ${chunk}`));
+
+  const printable = data.substring(0, 300).replace(/[\x00-\x1f\x7f-\xff]/g, '\u00b7');
+  console.log(`[scan] PDF417 printable(0-300): ${printable}`);
+}
+
+/**
+ * Try splitting barcode data with alternate delimiters used by some older card formats.
+ */
+function tryAlternateDelimiters(data: string, tipoDocumento?: string): CedulaData | null {
+  const delimiters = [
+    { char: '\x1e', name: 'RS(0x1e)' },
+    { char: '\x1d', name: 'GS(0x1d)' },
+    { char: '\x0a', name: 'LF(0x0a)' },
+    { char: '\x0d', name: 'CR(0x0d)' },
+  ];
+
+  for (const { char, name } of delimiters) {
+    if (!data.includes(char)) continue;
+    const segs = data.split(char).filter(s => s.length > 0);
+    if (segs.length >= 4 && looksLikeColombianPDF417(segs)) {
+      console.log(`[scan] PDF417 parsed con delimitador ${name} (${segs.length} segmentos)`);
+      return extractPDF417Fields(segs, tipoDocumento);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Last-resort extraction: scan the raw barcode data for known Colombian cédula patterns
+ * (document number, birth date, gender, names) without relying on delimiters.
+ */
+function tryRawExtraction(data: string): CedulaData | null {
+  // Replace non-printable chars with spaces for pattern matching
+  const clean = data.replace(/[\x00-\x1f\x7f-\x9f]/g, ' ');
+
+  // Look for birth date (YYYYMMDD, years 1920-2015)
+  const dateMatch = clean.match(/((?:19[2-9]\d|200\d|201[0-5]))(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/);
+  if (!dateMatch) {
+    console.log('[scan] PDF417 raw extraction: no se encontro fecha de nacimiento');
+    return null;
+  }
+  const fechaNacimiento = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
+  const datePos = clean.indexOf(dateMatch[0]);
+
+  // Gender — usually near the date in demographic data
+  const nearDate = clean.substring(Math.max(0, datePos - 30), datePos + dateMatch[0].length + 30);
+  const genderMatch = nearDate.match(/\b([MF])\b/) || nearDate.match(/([MF])/);
+  const genero: Genero = genderMatch ? (genderMatch[1] as Genero) : 'DESCONOCIDO';
+
+  // Document number — 8-10 consecutive digits, usually before the demographic data
+  const beforeDate = clean.substring(0, datePos);
+  const docMatches = beforeDate.match(/\d{8,10}/g) || [];
+  let numeroDocumento = '';
+  if (docMatches.length > 0) {
+    // Last occurrence before the date is most likely the doc number
+    numeroDocumento = docMatches[docMatches.length - 1].replace(/^0+/, '');
+  }
+  if (!numeroDocumento) {
+    // Try the full string
+    const allDocMatches = clean.match(/\d{8,10}/g) || [];
+    if (allDocMatches.length > 0) {
+      numeroDocumento = allDocMatches[0]!.replace(/^0+/, '');
+    }
+  }
+  if (!numeroDocumento) {
+    console.log('[scan] PDF417 raw extraction: no se encontro numero de documento');
+    return null;
+  }
+
+  // Names — sequences of uppercase letters (>=3 chars) that aren't common codes
+  const nameRegion = clean.replace(/PubDSK_\d+/g, ' '); // Remove identifier if present
+  const nameMatches = nameRegion.match(/[A-ZÁÉÍÓÚÑ]{3,}/g) || [];
+  // Filter out known non-name patterns (AFIS codes, etc.)
+  const names = nameMatches.filter(n =>
+    n.length >= 3 && n.length <= 25
+    && !/^\d+$/.test(n)
+    && !['COL', 'PUB', 'DSK'].includes(n)
+  );
+
+  // RH blood type
+  const rhMatch = clean.match(/([ABO]{1,2}[+-])/);
+  const rh = rhMatch ? parseRH(rhMatch[1]) : 'DESCONOCIDO' as GrupoRH;
+
+  // Location codes — 5 digits after birth date (dept 2 + muni 3)
+  const afterDate = clean.substring(datePos + dateMatch[0].length);
+  const locMatch = afterDate.match(/^(\d{2})(\d{3})/);
+  const codigoMunicipio = locMatch ? locMatch[1] : '';
+  const codigoDepartamento = locMatch ? locMatch[2] : '';
+  const ubicacion = findUbicacion(codigoMunicipio, codigoDepartamento);
+
+  // Assign names — best effort: apellido1, apellido2, nombre1, nombre2
+  const primerApellido = names[0] || '';
+  const segundoApellido = names[1] || '';
+  const primerNombre = names[2] || '';
+  const segundoNombre = names[3] || '';
+
+  console.log(`[scan] PDF417 raw extraction: doc=${numeroDocumento}, fecha=${fechaNacimiento}, genero=${genero}, rh=${rh}, nombres=[${names.slice(0, 5).join(', ')}]`);
+
+  return {
+    numeroDocumento,
+    primerApellido: normalizarNombre(primerApellido),
+    segundoApellido: normalizarNombre(segundoApellido),
+    primerNombre: normalizarNombre(primerNombre),
+    segundoNombre: normalizarNombre(segundoNombre),
+    nombres: normalizarNombre(`${primerNombre} ${segundoNombre}`.trim()),
+    fechaNacimiento,
+    genero,
+    rh,
+    tipoDocumento: 'ANTIGUA',
+    ubicacion,
+    confianza: 60
+  };
 }
 
 function extractPDF417Fields(segments: string[], tipoDocumento?: string): CedulaData {
