@@ -55,6 +55,7 @@ import { FlujoActualizacionService } from '../../services/flujo-actualizacion.se
 import { CedulaData } from '../../models/cedula.model';
 
 type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
+type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
 
 @Component({
   selector: 'app-web-scanner',
@@ -109,57 +110,24 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                 Debe tener el documento físico en mano.
               </p>
 
-              @if (tipoDocumento() === 'CC') {
+              @if (docSelector() === 'CC_ANTIGUA') {
                 <div class="document-guide-section">
                   <span class="document-side-badge">PARTE POSTERIOR</span>
-
-                  <!-- Two CC back variants side by side -->
-                  <div class="cc-variants-row">
-                    <!-- Old CC: PDF417 barcode -->
-                    <div class="cc-variant">
-                      <svg class="cc-back-diagram" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1" y="1" width="158" height="98" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
-                        <rect x="10" y="10" width="90" height="5" rx="2" fill="#dee2e6"/>
-                        <rect x="10" y="20" width="70" height="4" rx="2" fill="#e9ecef"/>
-                        <rect x="8" y="50" width="144" height="40" rx="4"
-                              fill="rgba(var(--ion-color-primary-rgb), 0.06)"
-                              stroke="var(--ion-color-primary)"
-                              stroke-width="1.5" stroke-dasharray="4 3"/>
-                        <g transform="translate(20, 56)">
-                          @for (i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]; track i) {
-                            <rect [attr.x]="i * 6" y="0" width="3" height="28" rx="0.5"
-                                  fill="var(--ion-color-primary)" opacity="0.4"/>
-                          }
-                        </g>
-                      </svg>
-                      <span class="cc-variant-label">Cédula antigua</span>
-                      <span class="cc-variant-detail">Código de barras</span>
-                    </div>
-
-                    <!-- New CC: MRZ + QR -->
-                    <div class="cc-variant">
-                      <svg class="cc-back-diagram" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1" y="1" width="158" height="98" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
-                        <!-- MRZ lines highlighted -->
-                        <rect x="8" y="8" width="90" height="84" rx="4"
-                              fill="rgba(var(--ion-color-primary-rgb), 0.06)"
-                              stroke="var(--ion-color-primary)"
-                              stroke-width="1.5" stroke-dasharray="4 3"/>
-                        <rect x="14" y="14" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
-                        <rect x="14" y="22" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
-                        <rect x="14" y="30" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
-                        <!-- QR code -->
-                        <rect x="112" y="52" width="36" height="36" rx="3" fill="#e9ecef" stroke="#dee2e6" stroke-width="1"/>
-                        <rect x="117" y="57" width="8" height="8" rx="1" fill="#bbb"/>
-                        <rect x="135" y="57" width="8" height="8" rx="1" fill="#bbb"/>
-                        <rect x="117" y="75" width="8" height="8" rx="1" fill="#bbb"/>
-                        <rect x="128" y="68" width="4" height="4" fill="#ccc"/>
-                      </svg>
-                      <span class="cc-variant-label">Cédula nueva</span>
-                      <span class="cc-variant-detail">Texto MRZ + QR</span>
-                    </div>
-                  </div>
-
+                  <svg class="cc-back-diagram" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="158" height="98" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+                    <rect x="10" y="10" width="90" height="5" rx="2" fill="#dee2e6"/>
+                    <rect x="10" y="20" width="70" height="4" rx="2" fill="#e9ecef"/>
+                    <rect x="8" y="50" width="144" height="40" rx="4"
+                          fill="rgba(var(--ion-color-primary-rgb), 0.06)"
+                          stroke="var(--ion-color-primary)"
+                          stroke-width="1.5" stroke-dasharray="4 3"/>
+                    <g transform="translate(20, 56)">
+                      @for (i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]; track i) {
+                        <rect [attr.x]="i * 6" y="0" width="3" height="28" rx="0.5"
+                              fill="var(--ion-color-primary)" opacity="0.4"/>
+                      }
+                    </g>
+                  </svg>
                   <ol class="instruction-steps">
                     <li class="step-item">
                       <span class="step-number">1</span>
@@ -167,11 +135,46 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                     </li>
                     <li class="step-item">
                       <span class="step-number">2</span>
-                      <span>Asegúrese de que todo el texto sea visible</span>
+                      <span>Ubique el código de barras en el centro</span>
                     </li>
                     <li class="step-item">
                       <span class="step-number">3</span>
-                      <span>Acerque la cámara hasta que llene el recuadro</span>
+                      <span>Acerque hasta que el código llene el recuadro</span>
+                    </li>
+                  </ol>
+                </div>
+              }
+
+              @if (docSelector() === 'CC_NUEVA') {
+                <div class="document-guide-section">
+                  <span class="document-side-badge">PARTE POSTERIOR</span>
+                  <svg class="cc-back-diagram" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="1" width="158" height="98" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+                    <rect x="8" y="8" width="90" height="84" rx="4"
+                          fill="rgba(var(--ion-color-primary-rgb), 0.06)"
+                          stroke="var(--ion-color-primary)"
+                          stroke-width="1.5" stroke-dasharray="4 3"/>
+                    <rect x="14" y="14" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
+                    <rect x="14" y="22" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
+                    <rect x="14" y="30" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
+                    <rect x="112" y="52" width="36" height="36" rx="3" fill="#e9ecef" stroke="#dee2e6" stroke-width="1"/>
+                    <rect x="117" y="57" width="8" height="8" rx="1" fill="#bbb"/>
+                    <rect x="135" y="57" width="8" height="8" rx="1" fill="#bbb"/>
+                    <rect x="117" y="75" width="8" height="8" rx="1" fill="#bbb"/>
+                    <rect x="128" y="68" width="4" height="4" fill="#ccc"/>
+                  </svg>
+                  <ol class="instruction-steps">
+                    <li class="step-item">
+                      <span class="step-number">1</span>
+                      <span>Voltee la cédula (parte de atrás)</span>
+                    </li>
+                    <li class="step-item">
+                      <span class="step-number">2</span>
+                      <span>Ubique las líneas de texto (MRZ) en la parte inferior</span>
+                    </li>
+                    <li class="step-item">
+                      <span class="step-number">3</span>
+                      <span>Asegúrese de que todo el texto sea legible</span>
                     </li>
                   </ol>
                 </div>
@@ -182,10 +185,11 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                   <ion-select
                     label="Tipo de documento"
                     labelPlacement="stacked"
-                    [value]="tipoDocumento()"
-                    (ionChange)="tipoDocumento.set($any($event).detail.value)"
+                    [value]="docSelector()"
+                    (ionChange)="docSelector.set($any($event).detail.value)"
                     interface="action-sheet">
-                    <ion-select-option value="CC">Cédula de Ciudadanía</ion-select-option>
+                    <ion-select-option value="CC_ANTIGUA">Cédula Antigua (código de barras)</ion-select-option>
+                    <ion-select-option value="CC_NUEVA">Cédula Nueva (MRZ + QR)</ion-select-option>
                     <ion-select-option value="CE">Cédula de Extranjería</ion-select-option>
                     <ion-select-option value="PA">Pasaporte</ion-select-option>
                     <ion-select-option value="TI">Tarjeta de Identidad</ion-select-option>
@@ -225,9 +229,11 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
             <!-- Guia visual -->
             <div class="camera-overlay">
-              @if (tipoDocumento() === 'CC') {
+              @if (docSelector() === 'CC_ANTIGUA' || docSelector() === 'CC_NUEVA') {
                 <div class="camera-top-label">
-                  <span class="persistent-badge">PARTE POSTERIOR</span>
+                  <span class="persistent-badge">
+                    {{ docSelector() === 'CC_ANTIGUA' ? 'CÉDULA ANTIGUA — CÓDIGO DE BARRAS' : 'CÉDULA NUEVA — ZONA MRZ' }}
+                  </span>
                 </div>
               }
               <div class="guide-frame" [class.guide-frame-ready]="isReadyToCapture()">
@@ -235,7 +241,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                 <div class="corner corner-tr" [class.corner-ready]="isReadyToCapture()"></div>
                 <div class="corner corner-bl" [class.corner-ready]="isReadyToCapture()"></div>
                 <div class="corner corner-br" [class.corner-ready]="isReadyToCapture()"></div>
-                @if (tipoDocumento() === 'CC') {
+                @if (docSelector() === 'CC_ANTIGUA') {
                   <div class="barcode-zone-indicator">
                     <svg class="barcode-icon" viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg">
                       <rect x="2" y="1" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
@@ -243,7 +249,18 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                       <rect x="5" y="7.5" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.6"/>
                       <rect x="5" y="11" width="10" height="2" rx="0.5" fill="currentColor" opacity="0.6"/>
                     </svg>
-                    <span>Parte posterior dentro del recuadro</span>
+                    <span>Código de barras dentro del recuadro</span>
+                  </div>
+                }
+                @if (docSelector() === 'CC_NUEVA') {
+                  <div class="barcode-zone-indicator">
+                    <svg class="barcode-icon" viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="2" y="1" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                      <rect x="5" y="4" width="14" height="1.5" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="5" y="7" width="14" height="1.5" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="5" y="10" width="14" height="1.5" rx="0.5" fill="currentColor" opacity="0.6"/>
+                    </svg>
+                    <span>Texto MRZ dentro del recuadro</span>
                   </div>
                 }
               </div>
@@ -268,8 +285,10 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                     Acerque más el documento hasta que llene el recuadro
                   } @else if (sharpnessScore() < 60) {
                     Mantenga firme, enfocando...
-                  } @else if (tipoDocumento() === 'CC') {
-                    Ubique la parte posterior de la cédula dentro del recuadro
+                  } @else if (docSelector() === 'CC_ANTIGUA') {
+                    Ubique el código de barras dentro del recuadro
+                  } @else if (docSelector() === 'CC_NUEVA') {
+                    Ubique la zona MRZ (texto inferior) dentro del recuadro
                   } @else {
                     Ubique el documento dentro del recuadro
                   }
@@ -1122,7 +1141,7 @@ export class WebScannerPage implements OnDestroy {
   private autoCapturing = false;
 
   state = signal<PageState>('idle');
-  tipoDocumento = signal<TipoDocumentoScan>('CC');
+  docSelector = signal<DocSelector>('CC_ANTIGUA');
   cedulaData = signal<CedulaData | null>(null);
   authenticityScore = signal(0);
   errorMsg = signal('');
@@ -1250,8 +1269,12 @@ export class WebScannerPage implements OnDestroy {
     const videoEl = this.videoRef()?.nativeElement;
     if (!videoEl) return;
 
+    const selector = this.docSelector();
+    const framesToCapture = selector === 'CC_ANTIGUA' ? 8 : 5;
+    const jpegQuality = selector === 'CC_ANTIGUA' ? 0.9 : 0.85;
+
     // Capture top 2 frames by sharpness BEFORE stopping camera
-    const frames = await this.webScanner.captureBestFrames(videoEl, 5, 2);
+    const frames = await this.webScanner.captureBestFrames(videoEl, framesToCapture, 2, jpegQuality);
     const frame1 = frames[0];
     const frame2 = frames.length > 1 ? frames[1] : undefined;
 
@@ -1260,7 +1283,17 @@ export class WebScannerPage implements OnDestroy {
     this.state.set('processing');
 
     try {
-      const response = await this.webScanner.processOnServer(frame1, this.tipoDocumento(), frame2);
+      let response: ScanResponse;
+
+      if (selector === 'CC_ANTIGUA') {
+        response = await this.webScanner.processAntiguaOnServer(frame1, frame2);
+      } else if (selector === 'CC_NUEVA') {
+        response = await this.webScanner.processNuevaOnServer(frame1, frame2);
+      } else {
+        // CE, PA, TI — use generic endpoint
+        const tipoMap: Record<string, TipoDocumentoScan> = { CE: 'CE', PA: 'PA', TI: 'TI' };
+        response = await this.webScanner.processOnServer(frame1, tipoMap[selector] ?? 'CC', frame2);
+      }
 
       if (response.success && response.data) {
         this.cedulaData.set(response.data);
@@ -1329,7 +1362,9 @@ export class WebScannerPage implements OnDestroy {
   formatDate(fecha: string): string {
     if (!fecha) return 'N/A';
     try {
-      return new Date(fecha + 'T12:00:00').toLocaleDateString('es-CO', {
+      const parsed = new Date(fecha + 'T12:00:00');
+      if (Number.isNaN(parsed.getTime())) return 'N/A';
+      return parsed.toLocaleDateString('es-CO', {
         year: 'numeric', month: 'long', day: 'numeric',
       });
     } catch {

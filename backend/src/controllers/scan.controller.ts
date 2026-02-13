@@ -14,6 +14,8 @@ import {
 import {
   decodeAndValidateImage,
   processDocument,
+  processDocumentAntigua,
+  processDocumentNueva,
 } from '../services/image-processor.service';
 import { runAntiSpoofingChecks } from '../services/anti-spoofing.service';
 
@@ -163,6 +165,268 @@ export async function scanDocument(req: Request, res: Response): Promise<void> {
   } catch (error) {
     const totalMs = Date.now() - startTime;
     console.error(`[scan] Error (${totalMs}ms):`, error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Error interno procesando el documento',
+      authenticityScore: 0,
+      checks: [],
+    } satisfies ScanResponse);
+  }
+}
+
+/**
+ * POST /api/scan/antigua
+ * Body: { frame1: string (base64), frame2?: string, timestamp: string }
+ * Pipeline optimizada para cedula antigua (PDF417)
+ */
+export async function scanAntiguaDocument(req: Request, res: Response): Promise<void> {
+  const startTime = Date.now();
+
+  try {
+    const { frame1, frame2, timestamp } = req.body;
+
+    if (!frame1) {
+      res.status(400).json({
+        success: false,
+        error: 'Se requiere al menos una imagen (frame1)',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    if (!timestamp) {
+      res.status(400).json({
+        success: false,
+        error: 'Se requiere timestamp de captura',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    const captureTime = new Date(timestamp).getTime();
+    const now = Date.now();
+    if (isNaN(captureTime) || Math.abs(now - captureTime) > 5 * 60 * 1000) {
+      res.status(400).json({
+        success: false,
+        error: 'Timestamp de captura invalido o expirado (max 5 minutos)',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    console.log('[scan/antigua] Procesando cedula antigua (PDF417)');
+
+    const { buffer: imageBuffer, metadata } = await decodeAndValidateImage(frame1);
+    console.log(`[scan/antigua] Imagen: ${metadata.width}x${metadata.height}, ${metadata.format}, ${imageBuffer.length} bytes`);
+
+    if (metadata.width! < 320 || metadata.height! < 240) {
+      res.status(400).json({
+        success: false,
+        error: 'Imagen demasiado pequena. Se requiere minimo 320x240 pixeles.',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    let frame2Buffer: Buffer | undefined;
+    if (frame2) {
+      try {
+        const decoded2 = await decodeAndValidateImage(frame2);
+        frame2Buffer = decoded2.buffer;
+      } catch {
+        console.warn('[scan/antigua] frame2 invalido, continuando sin anti-spoofing multi-frame');
+      }
+    }
+
+    const [result, spoofResult] = await Promise.all([
+      processDocumentAntigua(imageBuffer),
+      runAntiSpoofingChecks(imageBuffer, frame2Buffer),
+    ]);
+
+    let finalResult = result;
+    if (!finalResult.data && frame2Buffer) {
+      console.log('[scan/antigua] frame1 sin datos, intentando frame2 como fallback...');
+      finalResult = await processDocumentAntigua(frame2Buffer);
+      if (finalResult.data) {
+        console.log(`[scan/antigua] frame2 fallback exitoso: metodo=${finalResult.method}`);
+      }
+    }
+
+    if (!finalResult.data) {
+      const totalMs = Date.now() - startTime;
+      console.log(`[scan/antigua] No se pudo extraer datos (${totalMs}ms)`);
+
+      res.status(422).json({
+        success: false,
+        error: 'No se pudo leer el codigo de barras de la cedula. Asegurese de que la parte posterior este bien iluminada y el codigo de barras sea visible.',
+        authenticityScore: spoofResult.score,
+        checks: spoofResult.checks,
+      } satisfies ScanResponse);
+      return;
+    }
+
+    const totalMs = Date.now() - startTime;
+    const parsingScore = finalResult.data.confianza ?? 85;
+    const combinedScore = Math.round((parsingScore * 0.6) + (spoofResult.score * 0.4));
+
+    console.log(`[scan/antigua] Exito: metodo=${finalResult.method}, parsing=${parsingScore}, spoofing=${spoofResult.score}, combined=${combinedScore}, tiempo=${totalMs}ms`);
+
+    const allChecks = [
+      {
+        name: 'document_readable',
+        passed: true,
+        score: parsingScore,
+        details: `Documento leido via ${finalResult.method} en ${finalResult.processingTimeMs}ms`,
+      },
+      ...spoofResult.checks,
+    ];
+
+    res.json({
+      success: true,
+      data: finalResult.data,
+      authenticityScore: combinedScore,
+      checks: allChecks,
+    } satisfies ScanResponse);
+
+  } catch (error) {
+    const totalMs = Date.now() - startTime;
+    console.error(`[scan/antigua] Error (${totalMs}ms):`, error);
+
+    res.status(500).json({
+      success: false,
+      error: 'Error interno procesando el documento',
+      authenticityScore: 0,
+      checks: [],
+    } satisfies ScanResponse);
+  }
+}
+
+/**
+ * POST /api/scan/nueva
+ * Body: { frame1: string (base64), frame2?: string, timestamp: string }
+ * Pipeline optimizada para cedula nueva (MRZ)
+ */
+export async function scanNuevaDocument(req: Request, res: Response): Promise<void> {
+  const startTime = Date.now();
+
+  try {
+    const { frame1, frame2, timestamp } = req.body;
+
+    if (!frame1) {
+      res.status(400).json({
+        success: false,
+        error: 'Se requiere al menos una imagen (frame1)',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    if (!timestamp) {
+      res.status(400).json({
+        success: false,
+        error: 'Se requiere timestamp de captura',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    const captureTime = new Date(timestamp).getTime();
+    const now = Date.now();
+    if (isNaN(captureTime) || Math.abs(now - captureTime) > 5 * 60 * 1000) {
+      res.status(400).json({
+        success: false,
+        error: 'Timestamp de captura invalido o expirado (max 5 minutos)',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    console.log('[scan/nueva] Procesando cedula nueva (MRZ)');
+
+    const { buffer: imageBuffer, metadata } = await decodeAndValidateImage(frame1);
+    console.log(`[scan/nueva] Imagen: ${metadata.width}x${metadata.height}, ${metadata.format}, ${imageBuffer.length} bytes`);
+
+    if (metadata.width! < 320 || metadata.height! < 240) {
+      res.status(400).json({
+        success: false,
+        error: 'Imagen demasiado pequena. Se requiere minimo 320x240 pixeles.',
+        authenticityScore: 0,
+        checks: [],
+      } satisfies ScanResponse);
+      return;
+    }
+
+    let frame2Buffer: Buffer | undefined;
+    if (frame2) {
+      try {
+        const decoded2 = await decodeAndValidateImage(frame2);
+        frame2Buffer = decoded2.buffer;
+      } catch {
+        console.warn('[scan/nueva] frame2 invalido, continuando sin anti-spoofing multi-frame');
+      }
+    }
+
+    const [result, spoofResult] = await Promise.all([
+      processDocumentNueva(imageBuffer),
+      runAntiSpoofingChecks(imageBuffer, frame2Buffer),
+    ]);
+
+    let finalResult = result;
+    if (!finalResult.data && frame2Buffer) {
+      console.log('[scan/nueva] frame1 sin datos, intentando frame2 como fallback...');
+      finalResult = await processDocumentNueva(frame2Buffer);
+      if (finalResult.data) {
+        console.log(`[scan/nueva] frame2 fallback exitoso: metodo=${finalResult.method}`);
+      }
+    }
+
+    if (!finalResult.data) {
+      const totalMs = Date.now() - startTime;
+      console.log(`[scan/nueva] No se pudo extraer datos (${totalMs}ms)`);
+
+      res.status(422).json({
+        success: false,
+        error: 'No se pudo leer la zona MRZ de la cedula. Asegurese de que las tres lineas de texto en la parte inferior sean visibles y legibles.',
+        authenticityScore: spoofResult.score,
+        checks: spoofResult.checks,
+      } satisfies ScanResponse);
+      return;
+    }
+
+    const totalMs = Date.now() - startTime;
+    const parsingScore = finalResult.data.confianza ?? 85;
+    const combinedScore = Math.round((parsingScore * 0.6) + (spoofResult.score * 0.4));
+
+    console.log(`[scan/nueva] Exito: metodo=${finalResult.method}, parsing=${parsingScore}, spoofing=${spoofResult.score}, combined=${combinedScore}, tiempo=${totalMs}ms`);
+
+    const allChecks = [
+      {
+        name: 'document_readable',
+        passed: true,
+        score: parsingScore,
+        details: `Documento leido via ${finalResult.method} en ${finalResult.processingTimeMs}ms`,
+      },
+      ...spoofResult.checks,
+    ];
+
+    res.json({
+      success: true,
+      data: finalResult.data,
+      authenticityScore: combinedScore,
+      checks: allChecks,
+    } satisfies ScanResponse);
+
+  } catch (error) {
+    const totalMs = Date.now() - startTime;
+    console.error(`[scan/nueva] Error (${totalMs}ms):`, error);
 
     res.status(500).json({
       success: false,

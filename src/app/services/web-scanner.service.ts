@@ -98,9 +98,19 @@ export class WebScannerService {
       const cw = Math.min(vw - cx, Math.round(gw / scale));
       const ch = Math.min(vh - cy, Math.round(gh / scale));
 
-      canvas.width = cw;
-      canvas.height = ch;
-      ctx.drawImage(video, cx, cy, cw, ch, 0, 0, cw, ch);
+      // Add margin around guide frame to avoid clipping MRZ/text at the borders.
+      const padX = Math.max(6, Math.round(cw * 0.10));
+      const padY = Math.max(6, Math.round(ch * 0.10));
+      const sx = Math.max(0, cx - padX);
+      const sy = Math.max(0, cy - padY);
+      const ex = Math.min(vw, cx + cw + padX);
+      const ey = Math.min(vh, cy + ch + padY);
+      const sw = Math.max(1, ex - sx);
+      const sh = Math.max(1, ey - sy);
+
+      canvas.width = sw;
+      canvas.height = sh;
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
     } else {
       canvas.width = vw;
       canvas.height = vh;
@@ -418,6 +428,36 @@ export class WebScannerService {
 
     return firstValueFrom(
       this.http.post<ScanResponse>(`${environment.apiUrl}/scan/document`, body)
+    );
+  }
+
+  /**
+   * Envia frame(s) al endpoint de cedula antigua (PDF417)
+   */
+  async processAntiguaOnServer(frame1: string, frame2?: string): Promise<ScanResponse> {
+    const body = {
+      frame1,
+      frame2,
+      timestamp: new Date().toISOString(),
+    };
+
+    return firstValueFrom(
+      this.http.post<ScanResponse>(`${environment.apiUrl}/scan/antigua`, body)
+    );
+  }
+
+  /**
+   * Envia frame(s) al endpoint de cedula nueva (MRZ)
+   */
+  async processNuevaOnServer(frame1: string, frame2?: string): Promise<ScanResponse> {
+    const body = {
+      frame1,
+      frame2,
+      timestamp: new Date().toISOString(),
+    };
+
+    return firstValueFrom(
+      this.http.post<ScanResponse>(`${environment.apiUrl}/scan/nueva`, body)
     );
   }
 

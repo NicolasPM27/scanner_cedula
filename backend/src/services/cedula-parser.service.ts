@@ -230,10 +230,19 @@ export function parseMRZ(lines: string[], format: 'TD1' | 'TD3' = 'TD1'): Cedula
     throw new Error('Se requieren 3 lineas MRZ para formato TD1');
   }
 
-  const cleanLines = lines.map(cleanMRZLine);
+  const rawCleanLines = lines.map(cleanMRZLine);
+  const cleanLines = reorderTD1Lines(rawCleanLines);
+  if (
+    rawCleanLines[0] !== cleanLines[0]
+    || rawCleanLines[1] !== cleanLines[1]
+    || rawCleanLines[2] !== cleanLines[2]
+  ) {
+    console.log('[scan] MRZ TD1 reordenado para parseo');
+  }
+  const minLineLen = 24;
 
   for (let i = 0; i < 3; i++) {
-    if (cleanLines[i].length < MRZ_TD1_CONSTANTS.LINE_LENGTH - 2) {
+    if (cleanLines[i].length < minLineLen) {
       throw new Error(`Linea ${i + 1} muy corta: ${cleanLines[i].length} caracteres`);
     }
   }
@@ -249,10 +258,12 @@ export function parseMRZ(lines: string[], format: 'TD1' | 'TD3' = 'TD1'): Cedula
   try {
     const padded = [l1, l2, l3].map(l => l.substring(0, 30).padEnd(30, '<'));
     const result = parseMRZLib(padded, { autocorrect: true });
-    if (result.fields.documentNumber) {
+    if (result.valid && result.fields?.documentNumber) {
       mrzFields = result.fields;
-      if (!result.valid) confianza -= 5;
       console.log(`[scan] MRZ autocorrect: valid=${result.valid}, doc=${result.fields.documentNumber}`);
+    } else if (result.fields?.documentNumber) {
+      confianza -= 10;
+      console.warn(`[scan] MRZ autocorrect descartado (valid=false), doc=${result.fields.documentNumber}`);
     }
   } catch (e) {
     console.warn('[scan] MRZ autocorrect fallo, usando parser manual:', (e as Error).message);
@@ -261,7 +272,8 @@ export function parseMRZ(lines: string[], format: 'TD1' | 'TD3' = 'TD1'): Cedula
   // ── NUIP (numero de cedula colombiana, L2 pos 18-28) ──
   // En cedulas colombianas TD1, el numero real esta despues del codigo de pais (COL)
   // en la linea 2, NO en el campo estandar ICAO de la linea 1 (que es un serial interno)
-  const nuip = l2.substring(18, 28).replace(/<|^0+/g, '');
+  const nuipDigits = l2.substring(18, 28).replace(/[^0-9]/g, '').replace(/^0+/, '');
+  const nuip = nuipDigits.length >= 6 ? nuipDigits : '';
   const icoaDocNum = mrzFields?.documentNumber
     || l1.substring(5, 14).replace(/<|^0+/g, '');
   const numeroDocumento = nuip || icoaDocNum;
@@ -287,21 +299,23 @@ export function parseMRZ(lines: string[], format: 'TD1' | 'TD3' = 'TD1'): Cedula
   let primerNombre = '', segundoNombre = '';
   let truncado = false;
 
-  if (mrzFields?.lastName) {
-    const lastParts = mrzFields.lastName.split(' ');
-    const firstParts = (mrzFields.firstName || '').split(' ');
-    primerApellido = lastParts[0] || '';
-    segundoApellido = lastParts.slice(1).join(' ');
-    primerNombre = firstParts[0] || '';
-    segundoNombre = firstParts.slice(1).join(' ');
+  // En cedula colombiana TD1, la linea 3 trae apellidos<<nombres; es la fuente mas confiable para orden.
+  const parsed = parseNombresMRZ(l3);
+  primerApellido = parsed.primerApellido;
+  segundoApellido = parsed.segundoApellido;
+  primerNombre = parsed.primerNombre;
+  segundoNombre = parsed.segundoNombre;
+  truncado = parsed.truncado;
+
+  // Fallback: si OCR no separo bien con "<<", usar mrz package para rescatar nombres.
+  if (!primerNombre && mrzFields?.firstName) {
+    const lastParts = (mrzFields.lastName || '').split(' ').filter(Boolean);
+    const firstParts = (mrzFields.firstName || '').split(' ').filter(Boolean);
+    primerApellido = lastParts[0] || primerApellido;
+    segundoApellido = lastParts.slice(1).join(' ') || segundoApellido;
+    primerNombre = firstParts[0] || primerNombre;
+    segundoNombre = firstParts.slice(1).join(' ') || segundoNombre;
     truncado = !primerNombre;
-  } else {
-    const parsed = parseNombresMRZ(l3);
-    primerApellido = parsed.primerApellido;
-    segundoApellido = parsed.segundoApellido;
-    primerNombre = parsed.primerNombre;
-    segundoNombre = parsed.segundoNombre;
-    truncado = parsed.truncado;
   }
 
   // ── Campos colombianos (no estan en libreria mrz estandar) ──
@@ -365,10 +379,12 @@ function parseMRZ_TD3(lines: string[]): CedulaData {
   try {
     const padded = [l1, l2].map(l => l.substring(0, 44).padEnd(44, '<'));
     const result = parseMRZLib(padded, { autocorrect: true });
-    if (result.fields.documentNumber) {
+    if (result.valid && result.fields?.documentNumber) {
       mrzFields = result.fields;
-      if (!result.valid) confianza -= 5;
       console.log(`[scan] MRZ TD3 autocorrect: valid=${result.valid}, doc=${result.fields.documentNumber}`);
+    } else if (result.fields?.documentNumber) {
+      confianza -= 10;
+      console.warn(`[scan] MRZ TD3 autocorrect descartado (valid=false), doc=${result.fields.documentNumber}`);
     }
   } catch (e) {
     console.warn('[scan] MRZ TD3 autocorrect fallo:', (e as Error).message);
@@ -471,19 +487,82 @@ function normalizeMRZDocType(char: string): string {
 
 function parseMRZDate(dateStr: string, isPast: boolean): string {
   if (!dateStr || dateStr.length < 6) return '';
-  const yy = parseInt(dateStr.substring(0, 2), 10);
-  const mm = dateStr.substring(2, 4);
-  const dd = dateStr.substring(4, 6);
+  const raw = dateStr.substring(0, 6);
+  if (!/^\d{6}$/.test(raw)) return '';
+
+  const yy = parseInt(raw.substring(0, 2), 10);
+  const mm = parseInt(raw.substring(2, 4), 10);
+  const dd = parseInt(raw.substring(4, 6), 10);
 
   const currentYear = new Date().getFullYear() % 100;
   const year = isPast
     ? (yy > currentYear ? 1900 + yy : 2000 + yy)
     : 2000 + yy;
 
-  if (parseInt(mm, 10) < 1 || parseInt(mm, 10) > 12) return '';
-  if (parseInt(dd, 10) < 1 || parseInt(dd, 10) > 31) return '';
+  if (mm < 1 || mm > 12) return '';
+  if (dd < 1 || dd > 31) return '';
 
-  return `${year}-${mm}-${dd}`;
+  const parsed = new Date(Date.UTC(year, mm - 1, dd));
+  if (
+    parsed.getUTCFullYear() !== year
+    || parsed.getUTCMonth() !== mm - 1
+    || parsed.getUTCDate() !== dd
+  ) return '';
+
+  const mmStr = mm.toString().padStart(2, '0');
+  const ddStr = dd.toString().padStart(2, '0');
+  return `${year}-${mmStr}-${ddStr}`;
+}
+
+function looksLikeTD1DocLine(line: string): boolean {
+  const prefix = line.substring(0, 12);
+  return (
+    /^[I1L|][<C]COL/.test(prefix)
+    || /^[I1L|]DCOL/.test(prefix)
+    || /^[I1L|]CCOL/.test(prefix)
+    || /^[I1L|][<C][A-Z0-9<]COL/.test(prefix)
+  );
+}
+
+function looksLikeTD1DateLine(line: string): boolean {
+  const normalized = line.replace(/[OQ]/g, '0');
+  return /^\d{6}[0-9<][MF<]\d{6}/.test(normalized);
+}
+
+function looksLikeTD1NameLine(line: string): boolean {
+  if (/<<+/.test(line) && /[A-Z]{2,}/.test(line)) return true;
+  const letters = (line.match(/[A-Z]/g) || []).length;
+  const fillers = (line.match(/</g) || []).length;
+  return (
+    letters >= 10
+    && fillers >= 1
+    && !looksLikeTD1DocLine(line)
+    && !looksLikeTD1DateLine(line)
+  );
+}
+
+function reorderTD1Lines(lines: string[]): string[] {
+  if (lines.length < 3) return lines;
+  const remaining = [...lines];
+
+  const takeFirst = (predicate: (line: string) => boolean): string | undefined => {
+    const idx = remaining.findIndex(predicate);
+    if (idx === -1) return undefined;
+    const [picked] = remaining.splice(idx, 1);
+    return picked;
+  };
+
+  const docLine = takeFirst(looksLikeTD1DocLine);
+  const dateLine = takeFirst(looksLikeTD1DateLine);
+  const nameLine = takeFirst(looksLikeTD1NameLine);
+
+  const ordered = [
+    docLine || remaining.shift() || '',
+    dateLine || remaining.shift() || '',
+    nameLine || remaining.shift() || '',
+  ];
+
+  return ordered.some(l => !l) ? lines : ordered;
 }
 
 function parseNombresMRZ(line: string) {
