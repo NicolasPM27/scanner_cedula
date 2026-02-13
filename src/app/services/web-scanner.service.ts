@@ -121,6 +121,21 @@ export class WebScannerService {
   }
 
   /**
+   * Captura el frame completo del video (sin recorte de guia).
+   * Util para fallback de PDF417 cuando el recorte no incluye todo el codigo.
+   */
+  private captureFullFrameCanvas(video: HTMLVideoElement): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D } {
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = vw;
+    canvas.height = vh;
+    ctx.drawImage(video, 0, 0, vw, vh, 0, 0, vw, vh);
+    return { canvas, ctx };
+  }
+
+  /**
    * Captura un solo frame recortado al guide-frame
    */
   captureFrame(video: HTMLVideoElement, quality = 0.85): string {
@@ -153,6 +168,30 @@ export class WebScannerService {
       if (i > 0) await new Promise(r => setTimeout(r, 120));
 
       const { canvas, ctx } = this.cropToGuideFrame(video);
+      const sharpness = this.computeSharpness(ctx, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg', quality).replace(/^data:image\/\w+;base64,/, '');
+      captured.push({ base64, sharpness });
+    }
+
+    captured.sort((a, b) => b.sharpness - a.sharpness);
+    return captured.slice(0, topN).map(c => c.base64);
+  }
+
+  /**
+   * Igual que captureBestFrames, pero usando frame completo (sin crop de guia).
+   */
+  async captureBestFullFrames(
+    video: HTMLVideoElement,
+    numFrames = 5,
+    topN = 2,
+    quality = 0.85,
+  ): Promise<string[]> {
+    const captured: { base64: string; sharpness: number }[] = [];
+
+    for (let i = 0; i < numFrames; i++) {
+      if (i > 0) await new Promise(r => setTimeout(r, 120));
+
+      const { canvas, ctx } = this.captureFullFrameCanvas(video);
       const sharpness = this.computeSharpness(ctx, canvas.width, canvas.height);
       const base64 = canvas.toDataURL('image/jpeg', quality).replace(/^data:image\/\w+;base64,/, '');
       captured.push({ base64, sharpness });

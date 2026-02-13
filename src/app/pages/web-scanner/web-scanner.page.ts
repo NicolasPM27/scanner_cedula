@@ -1270,13 +1270,29 @@ export class WebScannerPage implements OnDestroy {
     if (!videoEl) return;
 
     const selector = this.docSelector();
-    const framesToCapture = selector === 'CC_ANTIGUA' ? 8 : 5;
-    const jpegQuality = selector === 'CC_ANTIGUA' ? 0.9 : 0.85;
+    let frame1 = '';
+    let frame2: string | undefined;
 
-    // Capture top 2 frames by sharpness BEFORE stopping camera
-    const frames = await this.webScanner.captureBestFrames(videoEl, framesToCapture, 2, jpegQuality);
-    const frame1 = frames[0];
-    const frame2 = frames.length > 1 ? frames[1] : undefined;
+    if (selector === 'CC_ANTIGUA') {
+      // Para PDF417: frame1 con recorte guiado + frame2 con frame completo (fallback).
+      const guideFrames = await this.webScanner.captureBestFrames(videoEl, 8, 1, 0.92);
+      const fullFrames = await this.webScanner.captureBestFullFrames(videoEl, 8, 1, 0.95);
+      frame1 = guideFrames[0] || fullFrames[0];
+      frame2 = fullFrames[0];
+    } else {
+      // MRZ/otros: mantener estrategia actual.
+      const frames = await this.webScanner.captureBestFrames(videoEl, 5, 2, 0.85);
+      frame1 = frames[0];
+      frame2 = frames.length > 1 ? frames[1] : undefined;
+    }
+
+    if (!frame1) {
+      this.webScanner.stopCamera();
+      this.stopOrientationListener();
+      this.errorMsg.set('No se pudo capturar una imagen valida. Intente de nuevo.');
+      this.state.set('error');
+      return;
+    }
 
     this.webScanner.stopCamera();
     this.stopOrientationListener();
