@@ -291,24 +291,30 @@ async function preprocessForMRZ(
 }
 
 /**
- * Pure binarization for PDF417: resize → grayscale → normalize → threshold.
+ * Pure binarization for PDF417: resize → grayscale → [normalize] → threshold.
  * No contrast manipulation that could distort bar widths — ideal for wide-bar
  * barcodes found on 8-digit cédulas antiguas.
+ *
+ * @param normalize - When true (default), stretches histogram before thresholding.
+ *   Set to false for images where normalise shifts the effective threshold point.
  */
 async function preprocessForBarcodeThreshold(
   buffer: Buffer,
   thresholdValue: number,
+  normalize = true,
 ): Promise<Buffer> {
   const meta = await sharp(buffer).metadata();
   const isSmall = (meta.width ?? 0) < 800;
 
-  return sharp(buffer)
+  let pipeline = sharp(buffer)
     .resize({ width: isSmall ? 2000 : 1600, withoutEnlargement: false })
-    .grayscale()
-    .normalise()
-    .threshold(thresholdValue)
-    .png()
-    .toBuffer();
+    .grayscale();
+
+  if (normalize) {
+    pipeline = pipeline.normalise();
+  }
+
+  return pipeline.threshold(thresholdValue).png().toBuffer();
 }
 
 // ============================================================
@@ -360,18 +366,23 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
       maxNumberOfSymbols: 1,
     };
 
-    // Pre-generate multiple preprocessing variants in parallel
+    // Pre-generate multiple preprocessing variants in parallel.
+    // Threshold variants (pure binarization) are critical for 8-digit cédulas
+    // with wider PDF417 bars that standard contrast preprocessing distorts.
     const basePromises: Promise<Buffer>[] = [
-      preprocessForBarcodeZoneCrop(imageBuffer),
-      preprocessForBarcodeSideCrop(imageBuffer, 'left'),
-      preprocessForBarcodeSideCrop(imageBuffer, 'right'),
       preprocessForBarcodeCenterCrop(imageBuffer),
+      preprocessForBarcodeThreshold(imageBuffer, 160),
+      preprocessForBarcodeThreshold(imageBuffer, 128),
+      preprocessForBarcodeThreshold(imageBuffer, 140),
+      preprocessForBarcodeThreshold(imageBuffer, 170),
+      preprocessForBarcodeThreshold(imageBuffer, 160, false),
+      preprocessForBarcodeZoneCrop(imageBuffer),
       preprocessForBarcode(imageBuffer),
       preprocessForBarcodeHighContrast(imageBuffer),
       preprocessForBarcodeGamma(imageBuffer),
+      preprocessForBarcodeSideCrop(imageBuffer, 'left'),
+      preprocessForBarcodeSideCrop(imageBuffer, 'right'),
       sharp(imageBuffer).png().toBuffer(),
-      preprocessForBarcodeThreshold(imageBuffer, 128),
-      preprocessForBarcodeThreshold(imageBuffer, 160),
     ];
 
     const lowResPromises: Promise<Buffer>[] = isLowRes
@@ -384,32 +395,40 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
 
     const allBuffers = await Promise.all([...basePromises, ...lowResPromises]);
     const [
-      barcodeCrop,
-      sideLeft,
-      sideRight,
       centerCrop,
+      thresh160,
+      thresh128,
+      thresh140,
+      thresh170,
+      threshRaw160,
+      barcodeCrop,
       standard,
       highContrast,
       gamma,
+      sideLeft,
+      sideRight,
       raw,
-      thresh128,
-      thresh160,
       lowResBoost,
       lowResBin110,
       lowResBin140,
     ] = allBuffers;
 
+    // Order: most successful variants first (center-crop for 10-digit,
+    // threshold variants for 8-digit), then fallbacks.
     const variants: Array<{ label: string; buffer: Buffer | undefined }> = [
-      { label: 'barcode-crop', buffer: barcodeCrop },
-      { label: 'side-left', buffer: sideLeft },
-      { label: 'side-right', buffer: sideRight },
       { label: 'center-crop', buffer: centerCrop },
+      { label: 'thresh-160', buffer: thresh160 },
+      { label: 'thresh-128', buffer: thresh128 },
+      { label: 'thresh-140', buffer: thresh140 },
+      { label: 'thresh-170', buffer: thresh170 },
+      { label: 'thresh-raw-160', buffer: threshRaw160 },
+      { label: 'barcode-crop', buffer: barcodeCrop },
       { label: 'standard', buffer: standard },
       { label: 'high-contrast', buffer: highContrast },
       { label: 'gamma', buffer: gamma },
+      { label: 'side-left', buffer: sideLeft },
+      { label: 'side-right', buffer: sideRight },
       { label: 'raw', buffer: raw },
-      { label: 'thresh-128', buffer: thresh128 },
-      { label: 'thresh-160', buffer: thresh160 },
       { label: 'lowres-boost', buffer: lowResBoost },
       { label: 'lowres-bin110', buffer: lowResBin110 },
       { label: 'lowres-bin140', buffer: lowResBin140 },
