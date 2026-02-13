@@ -1,42 +1,16 @@
 # ── FOMAG ActDatos ────────────────────────────────────────
-# Frontend (nginx) + API (Node.js) + SQL Server
+# Frontend (nginx) + API (Node.js)
+# SQL Server es externo: contenedor existente `fomag-sqlserver`
 #
 # Prerequisitos:
 #   docker network create fomag-network
+#   (y tener disponible la red donde vive `fomag-sqlserver`)
 #
 # Uso:
 #   docker compose up -d --build
 # ──────────────────────────────────────────────────────────
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    platform: linux/amd64
-    container_name: fomag-sqlserver
-    user: "0:0"
-    command: >
-      /bin/bash -c "mkdir -p /var/opt/mssql/data &&
-      chown -R 10001:0 /var/opt/mssql &&
-      chmod -R g=u /var/opt/mssql &&
-      /opt/mssql/bin/sqlservr"
-    environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "${DB_PASSWORD:-FomagDB2024!Secure}"
-      MSSQL_PID: "Developer"
-    ports:
-      - "${DB_PORT:-1433}:1433"
-    volumes:
-      - sqlserver_data:/var/opt/mssql/data
-    networks:
-      - fomag-network
-    healthcheck:
-      test: [CMD, "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_PASSWORD:-FomagDB2024!Secure}", "-C", "-Q", "SELECT 1"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
-    restart: unless-stopped
-
   frontend:
     build:
       context: .
@@ -66,19 +40,20 @@ services:
       - DB_PORT=1433
       - DB_USER=sa
       - DB_PASSWORD=${DB_PASSWORD:-FomagDB2024!Secure}
+      - DB_NAME=fomag_db
     volumes:
       - uploads_data:/app/uploads
-    depends_on:
-      sqlserver:
-        condition: service_healthy
     networks:
       - fomag-network
+      - sqlserver-network
     restart: unless-stopped
 
 networks:
   fomag-network:
     driver: bridge
+  sqlserver-network:
+    external: true
+    name: ${SQLSERVER_NETWORK:-limpiezabd_default}
 
 volumes:
-  sqlserver_data:
   uploads_data:
