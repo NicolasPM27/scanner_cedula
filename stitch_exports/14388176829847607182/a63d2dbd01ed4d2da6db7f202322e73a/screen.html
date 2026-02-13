@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Actualización de Perfil Profesional Docente</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#312E81", // Deep Indigo/Blue from screenshot button
+                        secondary: "#4338CA", // Slightly lighter indigo
+                        "background-light": "#F3F4F6", // Light gray background
+                        "background-dark": "#111827", // Dark gray background
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1F2937",
+                        "input-bg-light": "#F0F4F8", // Very light blue-gray for inputs
+                        "input-bg-dark": "#374151",
+                    },
+                    fontFamily: {
+                        display: ["Roboto", "sans-serif"],
+                        body: ["Roboto", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                        'xl': '1rem',
+                        '2xl': '1.5rem',
+                    },
+                },
+            },
+        };
+    </script>
+<style>*:focus-visible {
+            outline: 3px solid #FCD34D;outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-body text-gray-900 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+<header class="bg-surface-light dark:bg-surface-dark shadow-md sticky top-0 z-50">
+<div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<button aria-label="Volver" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+<span class="material-icons text-3xl text-primary dark:text-white">arrow_back</span>
+</button>
+<h1 class="text-2xl md:text-3xl font-bold text-primary dark:text-white tracking-tight">
+                    Perfil Profesional
+                </h1>
+</div>
+<button aria-label="Cambiar tema" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-icons text-gray-600 dark:text-gray-300">brightness_medium</span>
+</button>
+</div>
+</header>
+<main class="flex-grow w-full max-w-3xl mx-auto px-4 py-8 md:py-12">
+<div class="mb-10 bg-surface-light dark:bg-surface-dark p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+<div class="flex justify-between items-end mb-3">
+<span class="text-lg font-bold text-primary dark:text-indigo-300 uppercase tracking-wider">Paso 1 de 3</span>
+<span class="text-gray-500 dark:text-gray-400 font-medium">Datos Profesionales</span>
+</div>
+<div class="h-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-1/3 rounded-full transition-all duration-500 ease-out"></div>
+</div>
+</div>
+<form action="#" class="space-y-8" method="POST" onsubmit="event.preventDefault();">
+<section class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm p-6 md:p-8 border border-gray-100 dark:border-gray-700">
+<h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                    Información Académica
+                </h2>
+<div class="space-y-6">
+<div class="group relative">
+<label class="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1 ml-1" for="nivel-educativo">
+                            Nivel Educativo
+                        </label>
+<div class="relative">
+<select class="appearance-none w-full bg-input-bg-light dark:bg-input-bg-dark border-0 rounded-xl px-4 py-4 text-lg text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-primary shadow-inner cursor-pointer" id="nivel-educativo">
+<option disabled="" selected="" value="">Seleccione su nivel</option>
+<option value="licenciatura">Licenciatura</option>
+<option value="maestria">Maestría</option>
+<option value="doctorado">Doctorado</option>
+<option value="especializacion">Especialización</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+<span class="material-icons text-2xl">arrow_drop_down</span>
+</div>
+</div>
+</div>
+<div class="group relative">
+<label class="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1 ml-1" for="especialidad">
+                            Especialidad Principal
+                        </label>
+<div class="relative">
+<select class="appearance-none w-full bg-input-bg-light dark:bg-input-bg-dark border-0 rounded-xl px-4 py-4 text-lg text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-primary shadow-inner cursor-pointer" id="especialidad">
+<option disabled="" selected="" value="">Seleccione su especialidad</option>
+<option value="matematicas">Matemáticas</option>
+<option value="ciencias">Ciencias Naturales</option>
+<option value="lenguaje">Lenguaje y Literatura</option>
+<option value="historia">Historia y Ciencias Sociales</option>
+<option value="idiomas">Idiomas Extranjeros</option>
+<option value="artes">Artes</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+<span class="material-icons text-2xl">arrow_drop_down</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-sm p-6 md:p-8 border border-gray-100 dark:border-gray-700">
+<h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+                    Experiencia Laboral
+                </h2>
+<div class="space-y-6">
+<div class="group">
+<label class="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1 ml-1" for="experiencia">
+                            Años de Experiencia Docente
+                        </label>
+<div class="relative flex items-center">
+<input class="w-full bg-input-bg-light dark:bg-input-bg-dark border-0 rounded-xl px-4 py-4 text-lg text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-primary shadow-inner placeholder-gray-400" id="experiencia" max="60" min="0" placeholder="Ej: 25" type="number"/>
+<div class="absolute right-4 text-gray-500 font-medium">Años</div>
+</div>
+</div>
+<div class="group">
+<label class="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1 ml-1" for="institucion">
+                            Última Institución Educativa
+                        </label>
+<div class="relative">
+<input class="w-full bg-input-bg-light dark:bg-input-bg-dark border-0 rounded-xl px-4 py-4 text-lg text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-primary shadow-inner placeholder-gray-400" id="institucion" maxlength="200" placeholder="Nombre del colegio o universidad" type="text"/>
+<div class="text-right mt-1 text-xs text-gray-500">0 / 200</div>
+</div>
+</div>
+</div>
+</section>
+<div class="pt-6 pb-20">
+<button class="w-full bg-primary hover:bg-secondary text-white text-xl font-bold py-5 px-6 rounded-2xl shadow-lg transform transition hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-700 flex justify-center items-center gap-3" type="submit">
+<span>Guardar y Continuar</span>
+<span class="material-icons">arrow_forward</span>
+</button>
+</div>
+</form>
+</main>
+<div class="fixed bottom-6 right-6 z-40">
+<button aria-label="Abrir ayuda" class="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-full px-6 py-4 shadow-xl flex items-center gap-2 transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300">
+<span class="material-icons text-2xl">help_outline</span>
+<span class="text-lg font-semibold">Ayuda</span>
+</button>
+</div>
+
+</body></html>

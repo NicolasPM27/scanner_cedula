@@ -296,6 +296,7 @@ ion-button[fill="outline"] {
 :host-context(body.simple-mode) {
   .auth-container {
     min-height: 0;
+    max-width: 760px;
   }
 
   .auth-content {
@@ -384,6 +385,10 @@ ion-button[fill="outline"] {
     height: 3.25rem;
     font-size: 1rem;
     font-weight: 600;
+  }
+
+  .consent-item {
+    border-radius: var(--radius-lg, 20px);
   }
 }
 

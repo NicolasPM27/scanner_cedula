@@ -1,15 +1,42 @@
 # ── FOMAG ActDatos ────────────────────────────────────────
-# Frontend (nginx) + API (Node.js)
+# Frontend (nginx) + API (Node.js) + SQL Server
 #
 # Prerequisitos:
 #   docker network create fomag-network
-#   docker network connect fomag-network fomag-sqlserver
 #
 # Uso:
 #   docker compose up -d --build
 # ──────────────────────────────────────────────────────────
 
 services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: fomag-sqlserver
+    user: "0:0"
+    command: >
+      /bin/bash -c "mkdir -p /var/opt/mssql/data &&
+      chown -R 10001:0 /var/opt/mssql &&
+      chmod -R g=u /var/opt/mssql &&
+      /opt/mssql/bin/sqlservr"
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${DB_PASSWORD:-FomagDB2024!Secure}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data
+    networks:
+      - fomag-network
+    healthcheck:
+      test: [CMD, "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_PASSWORD:-FomagDB2024!Secure}", "-C", "-Q", "SELECT 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
   frontend:
     build:
       context: .
@@ -18,7 +45,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-80}:80"
     depends_on:
-      - api
+      api:
+        condition: service_started
     networks:
       - fomag-network
     restart: unless-stopped
@@ -35,15 +63,22 @@ services:
     environment:
       - NODE_ENV=production
       - DB_HOST=fomag-sqlserver
+      - DB_PORT=1433
+      - DB_USER=sa
+      - DB_PASSWORD=${DB_PASSWORD:-FomagDB2024!Secure}
     volumes:
       - uploads_data:/app/uploads
+    depends_on:
+      sqlserver:
+        condition: service_healthy
     networks:
       - fomag-network
     restart: unless-stopped
 
 networks:
   fomag-network:
-    external: true
+    driver: bridge
 
 volumes:
+  sqlserver_data:
   uploads_data:

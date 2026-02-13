@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonIcon } from '@ionic/angular/standalone';
+import { NavigationEnd, Router } from '@angular/router';
 import { addIcons } from 'ionicons';
 import {
   helpCircleOutline,
@@ -30,6 +31,7 @@ import {
   standalone: true,
   imports: [CommonModule, IonIcon],
   template: `
+    @if (isVisible()) {
     <div class="help-fab-container">
       <!-- Botón principal de ayuda -->
       <button
@@ -90,6 +92,7 @@ import {
         <div class="help-backdrop" (click)="toggle()" aria-hidden="true"></div>
       }
     </div>
+    }
   `,
   styles: [`
     :host {
@@ -392,14 +395,31 @@ import {
 export class HelpFabComponent {
   /** Estado del menú (abierto/cerrado) */
   isOpen = signal(false);
+  isVisible = signal(true);
 
   /** Número de WhatsApp mock de FOMAG */
   private readonly WHATSAPP_NUMBER = '573001234567';
   private readonly WHATSAPP_MESSAGE = '¡Hola! Necesito ayuda con la actualización de mis datos en FOMAG.';
   private readonly SUPPORT_EMAIL = 'soporte@fomag.gov.co';
 
-  constructor() {
+  constructor(private router: Router) {
     addIcons({ helpCircleOutline, logoWhatsapp, mailOutline, closeOutline });
+
+    this.updateVisibility(this.router.url);
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.updateVisibility(event.urlAfterRedirects);
+      }
+    });
+  }
+
+  private updateVisibility(url: string): void {
+    const inFormsFlow = url.startsWith('/forms/');
+    this.isVisible.set(!inFormsFlow);
+
+    if (inFormsFlow) {
+      this.isOpen.set(false);
+    }
   }
 
   /** Alterna el estado del menú */

@@ -3,12 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
   IonButton,
-  IonIcon,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -18,10 +13,6 @@ import {
   IonSelect,
   IonSelectOption,
   IonList,
-  IonProgressBar,
-  IonText,
-  IonButtons,
-  IonBackButton,
   IonNote,
   IonChip,
   IonToggle,
@@ -44,6 +35,7 @@ import {
   GRUPOS_ETNICOS,
   POBLACIONES_LGBTIQ,
 } from '../../models/afiliado.model';
+import { SimpleFormLayoutComponent } from '../../components/simple-form-layout/simple-form-layout.component';
 
 @Component({
   selector: 'app-caracterizacion-form',
@@ -51,12 +43,8 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
+    SimpleFormLayoutComponent,
     IonButton,
-    IonIcon,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -65,38 +53,22 @@ import {
     IonSelect,
     IonSelectOption,
     IonList,
-    IonProgressBar,
-    IonButtons,
-    IonBackButton,
     IonChip,
     IonToggle,
     IonTextarea,
   ],
   template: `
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/forms/employment"></ion-back-button>
-        </ion-buttons>
-        <ion-title>Enfoque de Diversidad</ion-title>
-      </ion-toolbar>
-      <ion-toolbar>
-        <div class="progress-container">
-          <div class="progress-info">
-            <span class="step-label">PASO 4 DE 4</span>
-            <span class="step-title">Enfoque de Diversidad</span>
-          </div>
-          <ion-progress-bar [value]="1" color="primary"></ion-progress-bar>
-        </div>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content [fullscreen]="true" class="form-content">
-      <div class="form-container">
-        
+    <app-simple-form-layout
+      title="Enfoque de Diversidad"
+      stepTitle="Enfoque de Diversidad"
+      [currentStep]="4"
+      [totalSteps]="4"
+      [progressValue]="1"
+      backHref="/forms/employment"
+    >
+      <div class="simple-form-stack">
         <!-- Nota informativa -->
         <div class="info-banner">
-          <ion-icon name="information-circle-outline"></ion-icon>
           <p><strong>Todos los campos son opcionales</strong> y confidenciales.</p>
         </div>
 
@@ -106,7 +78,6 @@ import {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="accessibility-outline"></ion-icon>
                 Discapacidad
               </ion-card-title>
             </ion-card-header>
@@ -161,7 +132,6 @@ import {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="people-outline"></ion-icon>
                 Grupo Étnico
               </ion-card-title>
             </ion-card-header>
@@ -202,7 +172,6 @@ import {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="heart-outline"></ion-icon>
                 Diversidad
               </ion-card-title>
             </ion-card-header>
@@ -243,7 +212,6 @@ import {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="information-circle-outline"></ion-icon>
                 Observaciones
                 <ion-chip color="medium" class="optional-chip">Opcional</ion-chip>
               </ion-card-title>
@@ -273,20 +241,18 @@ import {
               (click)="volver()"
               type="button"
             >
-              <ion-icon slot="start" name="arrow-back"></ion-icon>
               Volver
             </ion-button>
             
             <ion-button type="submit">
               Finalizar
-              <ion-icon slot="end" name="checkmark-circle"></ion-icon>
             </ion-button>
           </div>
 
         </form>
 
       </div>
-    </ion-content>
+    </app-simple-form-layout>
   `,
   styles: [`
     /* ===========================================
@@ -294,7 +260,7 @@ import {
        =========================================== */
 
     :host {
-      --form-max-width: 600px;
+      --form-max-width: 920px;
       --sp-xs: 0.5rem;
       --sp-sm: 0.75rem;
       --sp-md: 1rem;

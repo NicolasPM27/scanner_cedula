@@ -51,6 +51,47 @@
   }
 }
 
+:host-context(body.simple-mode) {
+  ion-content {
+    --padding-start: var(--space-md);
+    --padding-end: var(--space-md);
+  }
+
+  .fomag-branding-section,
+  .simple-hero,
+  .simple-actions,
+  .simple-instructions,
+  .simple-settings-link,
+  .dev-bypass-separator {
+    width: min(100%, 760px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .simple-hero h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .simple-hero p,
+  .simple-instruction-text p {
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+
+  .simple-scan-button {
+    --border-radius: var(--radius-lg);
+    min-height: 64px;
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  .simple-settings-link ion-button {
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+}
+
 @keyframes fadeInScale {
   from {
     opacity: 0;

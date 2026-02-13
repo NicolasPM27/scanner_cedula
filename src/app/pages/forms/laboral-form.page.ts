@@ -3,12 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
   IonButton,
-  IonIcon,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -19,10 +14,6 @@ import {
   IonSelect,
   IonSelectOption,
   IonList,
-  IonProgressBar,
-  IonText,
-  IonButtons,
-  IonBackButton,
   IonNote,
   IonChip,
   IonToggle,
@@ -49,6 +40,7 @@ import {
   Establecimiento,
   Sede,
 } from '../../services/instituciones-api.service';
+import { SimpleFormLayoutComponent } from '../../components/simple-form-layout/simple-form-layout.component';
 
 @Component({
   selector: 'app-laboral-form',
@@ -56,12 +48,8 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
+    SimpleFormLayoutComponent,
     IonButton,
-    IonIcon,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -71,41 +59,25 @@ import {
     IonSelect,
     IonSelectOption,
     IonList,
-    IonProgressBar,
-    IonButtons,
-    IonBackButton,
     IonNote,
     IonSpinner,
   ],
   template: `
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/forms/contact"></ion-back-button>
-        </ion-buttons>
-        <ion-title>Datos Laborales</ion-title>
-      </ion-toolbar>
-      <ion-toolbar>
-        <div class="progress-container">
-          <div class="progress-info">
-            <span class="step-label">PASO 3 DE 4</span>
-            <span class="step-title">Laboral</span>
-          </div>
-          <ion-progress-bar [value]="0.75" color="primary"></ion-progress-bar>
-        </div>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content [fullscreen]="true" class="form-content">
-      <div class="form-container">
-        
+    <app-simple-form-layout
+      title="Datos Laborales"
+      stepTitle="Laboral"
+      [currentStep]="3"
+      [totalSteps]="4"
+      [progressValue]="0.75"
+      backHref="/forms/contact"
+    >
+      <div class="simple-form-stack">
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           
           <!-- Tipo de Afiliado -->
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="briefcase-outline"></ion-icon>
                 Afiliación
               </ion-card-title>
             </ion-card-header>
@@ -141,7 +113,6 @@ import {
             <ion-card class="form-card animate-slide-in">
               <ion-card-header>
                 <ion-card-title>
-                  <ion-icon name="school-outline"></ion-icon>
                   Información Institucional
                 </ion-card-title>
               </ion-card-header>
@@ -342,7 +313,6 @@ import {
             <ion-card class="form-card animate-slide-in">
               <ion-card-header>
                 <ion-card-title>
-                  <ion-icon name="calendar-outline"></ion-icon>
                   Pensión
                 </ion-card-title>
               </ion-card-header>
@@ -350,7 +320,6 @@ import {
                 
                 <!-- Nota informativa -->
                 <div class="info-banner">
-                  <ion-icon name="information-circle-outline"></ion-icon>
                   <p>Campos opcionales para pensionados.</p>
                 </div>
 
@@ -395,7 +364,6 @@ import {
             <ion-card class="form-card info-card">
               <ion-card-content>
                 <div class="beneficiary-info">
-                  <ion-icon name="information-circle-outline"></ion-icon>
                   <div>
                     <h3>No requerido</h3>
                     <p>Como beneficiario, puede continuar al siguiente paso.</p>
@@ -412,7 +380,6 @@ import {
               (click)="volver()"
               type="button"
             >
-              <ion-icon slot="start" name="arrow-back"></ion-icon>
               Volver
             </ion-button>
             
@@ -421,14 +388,13 @@ import {
               [disabled]="!puedeAvanzar()"
             >
               Continuar
-              <ion-icon slot="end" name="arrow-forward"></ion-icon>
             </ion-button>
           </div>
 
         </form>
 
       </div>
-    </ion-content>
+    </app-simple-form-layout>
   `,
   styles: [`
     /* ===========================================
@@ -436,7 +402,7 @@ import {
        =========================================== */
 
     :host {
-      --form-max-width: 600px;
+      --form-max-width: 920px;
       --sp-xs: 0.5rem;
       --sp-sm: 0.75rem;
       --sp-md: 1rem;

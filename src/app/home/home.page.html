@@ -2,9 +2,15 @@
   <ion-toolbar>
     <ion-title>Actualización de datos</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="goToSettings()" aria-label="Configuración">
-        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
-      </ion-button>
+      @if (a11y.isSimpleMode()) {
+        <!-- <ion-button fill="clear" (click)="goToSettings()" aria-label="Configuración">
+          Configuración
+        </ion-button> -->
+      } @else {
+        <ion-button fill="clear" (click)="goToSettings()" aria-label="Configuración">
+          <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+        </ion-button>
+      }
     </ion-buttons>
   </ion-toolbar>
 </ion-header>

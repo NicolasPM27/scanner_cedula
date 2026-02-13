@@ -1239,7 +1239,7 @@ body.simple-mode {
 
   // ─── SHARED FORM PAGES — TEXT-FIRST ─────────────────────────────────
   .progress-container {
-    padding: var(--space-md) !important;
+    padding: var(--space-sm) var(--space-md) !important;
   }
 
   .step-label {
@@ -1254,34 +1254,60 @@ body.simple-mode {
 
   .form-container {
     padding: var(--space-lg) var(--space-md) !important;
+    max-width: 720px !important;
+    margin: 0 auto !important;
+  }
+
+  .simple-shell-container {
+    max-width: 920px !important;
+    margin: 0 auto !important;
+    padding: var(--space-md) !important;
+  }
+
+  .simple-form-stack {
+    max-width: 920px !important;
+    margin: 0 auto !important;
   }
 
   .info-banner {
-    padding: var(--space-lg) !important;
+    padding: var(--space-md) !important;
     border-radius: var(--radius-lg) !important;
-    border-width: 2px !important;
+    border: 1px solid var(--ion-border-color) !important;
     border-left: 4px solid var(--ion-color-primary) !important;
-    background: var(--surface-container) !important;
+    background: var(--surface-container-low) !important;
 
     ion-icon {
       display: none !important; // Text is enough
     }
 
     p {
-      font-size: 1.0625rem !important;
+      font-size: 1.125rem !important;
       line-height: 1.65 !important;
       color: var(--ion-text-color) !important;
     }
   }
 
   .form-card {
-    border: 2px solid var(--ion-border-color) !important;
-    border-radius: var(--radius-lg) !important;
-    box-shadow: var(--elevation-1) !important;
+    border: 1px solid var(--ion-border-color) !important;
+    border-radius: 2rem !important;
+    box-shadow: none !important;
+    background: var(--surface-bright) !important;
+    margin-bottom: var(--space-lg) !important;
+
+    ion-card-header {
+      padding: 1.875rem 1.875rem 1.25rem !important;
+      border-bottom: 1px solid var(--ion-border-color) !important;
+    }
+
+    ion-card-content {
+      padding: 1.375rem 1.875rem 1.875rem !important;
+    }
 
     ion-card-title {
-      font-size: 1.375rem !important;
-      font-weight: 700 !important;
+      font-size: clamp(2rem, 3vw, 3rem) !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      line-height: 1.15 !important;
 
       ion-icon {
         font-size: 1.125rem !important;
@@ -1289,9 +1315,15 @@ body.simple-mode {
     }
   }
 
+  .form-card ion-note,
+  .field-hint,
+  .hint-note {
+    font-size: 1rem !important;
+  }
+
   .optional-chip {
-    font-size: 0.875rem !important;
-    height: 28px !important;
+    font-size: 0.9375rem !important;
+    height: 32px !important;
   }
 
   .error-note {
@@ -1312,12 +1344,143 @@ body.simple-mode {
   .form-actions {
     gap: var(--space-lg) !important;
     padding-bottom: var(--space-xxl) !important;
+    margin-top: var(--space-lg) !important;
 
     ion-button {
       min-height: 64px !important;
       font-size: 1.125rem !important;
       font-weight: 700 !important;
     }
+  }
+
+  .form-card ion-item {
+    --background: var(--surface-container-high) !important;
+    --border-color: var(--ion-border-color) !important;
+    --border-style: solid !important;
+    --border-width: 1px !important;
+    --border-radius: 1.9rem !important;
+    --min-height: 88px !important;
+    --padding-start: 1.5rem !important;
+    --padding-end: 1.5rem !important;
+    margin-bottom: var(--space-sm) !important;
+  }
+
+  .form-card ion-input,
+  .form-card ion-select,
+  .form-card ion-textarea {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    --padding-top: 1rem !important;
+    --padding-bottom: 1rem !important;
+  }
+
+  .form-card ion-select::part(label),
+  .form-card ion-input::part(label),
+  .form-card ion-textarea::part(label) {
+    font-size: 1.0625rem !important;
+    font-weight: 700 !important;
+    color: var(--ion-color-medium-shade) !important;
+  }
+
+  // ─── REMAINING FLOW PAGES — SIMPLE MODERN LAYOUT ───────────────────
+  .verificacion-container,
+  .confirmation-container,
+  .content-container,
+  .scanner-container,
+  .auth-container {
+    width: min(100%, 760px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .verificacion-container,
+  .confirmation-container,
+  .content-container,
+  .scanner-container {
+    padding: var(--space-md) !important;
+  }
+
+  .verificacion-container h1,
+  .verificacion-container h2,
+  .confirmation-container h1,
+  .confirmation-container h2,
+  .content-container h1,
+  .scanner-container h1,
+  .auth-title {
+    font-size: 1.75rem !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .verificacion-container p,
+  .confirmation-container p,
+  .content-container p,
+  .scanner-container p,
+  .auth-container p {
+    font-size: 1.0625rem !important;
+    line-height: 1.6 !important;
+  }
+
+  .verificacion-container ion-card,
+  .confirmation-container ion-card,
+  .content-container ion-card,
+  .scanner-container ion-card,
+  .auth-container ion-card {
+    width: 100% !important;
+    margin: 0 0 var(--space-md) !important;
+    border: 1px solid var(--ion-border-color) !important;
+    box-shadow: none !important;
+    background: var(--surface-bright) !important;
+  }
+
+  .options-section ion-button,
+  .actions-section ion-button,
+  .auth-actions ion-button,
+  .simple-actions ion-button,
+  .quick-actions ion-button {
+    min-height: 64px !important;
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    --border-radius: var(--radius-lg) !important;
+  }
+
+  // Eliminar iconografía decorativa/no esencial en modo simple
+  .header-icon,
+  .result-icon,
+  .success-icon,
+  .sparkles,
+  .card-icon-container,
+  .beneficiary-action .chevron-icon,
+  .info-banner > ion-icon,
+  .section-header ion-icon,
+  .card-header-custom ion-icon,
+  .device-status,
+  .nuip-badge ion-icon,
+  .beneficiary-chips ion-icon,
+  .auth-actions ion-button ion-icon,
+  .options-section ion-button ion-icon[slot="start"],
+  .actions-section ion-button ion-icon[slot="start"],
+  .form-actions ion-button ion-icon[slot="start"],
+  .form-actions ion-button ion-icon[slot="end"] {
+    display: none !important;
+  }
+
+  .step ion-icon,
+  .status-icon,
+  ion-icon[color="danger"],
+  ion-icon[color="warning"],
+  ion-icon[color="success"] {
+    display: inline-flex !important;
+  }
+
+  .beneficiary-avatar,
+  .beneficiary-header-card .beneficiary-avatar {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .camera-wrapper .guide-frame {
+    border-width: 2px !important;
   }
 
   // ─── CONFIRMATION PAGE — TEXT-FIRST ──────────────────────────────────
@@ -1854,6 +2017,115 @@ ion-select::part(text) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+// ─── STRUCTURAL FIX — SIMPLE MODE FORMS (Responsive Distribution) ───
+// High-priority overrides to avoid cumulative paddings/margins and
+// tablet max-width collisions (e.g., global ion-card max-width: 560px).
+body.simple-mode {
+  .simple-shell-content {
+    --padding-start: 0 !important;
+    --padding-end: 0 !important;
+    --padding-top: 0 !important;
+    --padding-bottom: 0 !important;
+  }
+
+  .simple-shell-container {
+    width: min(100%, 980px) !important;
+    max-width: 980px !important;
+    margin: 0 auto !important;
+    padding: clamp(12px, 2.8vw, 28px) !important;
+  }
+
+  .simple-form-stack {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .simple-form-stack .info-banner,
+  .simple-form-stack .form-actions,
+  .simple-form-stack .form-card {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .simple-form-stack .form-card {
+    width: 100% !important;
+    max-width: none !important;
+    margin-top: 0 !important;
+    margin-bottom: clamp(14px, 2.4vw, 24px) !important;
+  }
+
+  .simple-form-stack .form-card ion-card-header {
+    padding: clamp(18px, 2.8vw, 32px) clamp(16px, 3vw, 34px) clamp(12px, 2vw, 20px) !important;
+  }
+
+  .simple-form-stack .form-card ion-card-content {
+    padding: clamp(14px, 2.4vw, 24px) clamp(16px, 3vw, 34px) clamp(18px, 2.8vw, 32px) !important;
+  }
+
+  .simple-form-stack .form-card ion-item {
+    width: 100% !important;
+    max-width: none !important;
+    --min-height: clamp(74px, 11vw, 92px) !important;
+    --padding-start: clamp(14px, 2.2vw, 24px) !important;
+    --padding-end: clamp(14px, 2.2vw, 24px) !important;
+    margin-bottom: clamp(10px, 1.6vw, 16px) !important;
+  }
+
+  .simple-form-stack .form-card ion-card-title {
+    font-size: clamp(1.8rem, 4.5vw, 3rem) !important;
+  }
+
+  .simple-form-stack .form-card ion-select::part(label),
+  .simple-form-stack .form-card ion-input::part(label),
+  .simple-form-stack .form-card ion-textarea::part(label) {
+    font-size: clamp(0.98rem, 1.8vw, 1.125rem) !important;
+  }
+
+  .simple-form-stack .toggle-item {
+    --background: var(--surface-container-high) !important;
+    --min-height: clamp(84px, 12vw, 104px) !important;
+  }
+
+  .simple-form-stack .toggle-item ion-toggle {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: clamp(1rem, 2.1vw, 1.25rem) !important;
+    line-height: 1.35 !important;
+    transform: none !important;
+    --padding-start: 0 !important;
+    --padding-end: 0 !important;
+    --handle-width: 30px !important;
+    --handle-height: 30px !important;
+    --handle-max-height: 30px !important;
+  }
+
+  .simple-form-stack .toggle-item ion-toggle::part(label) {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    padding-right: clamp(14px, 2vw, 24px) !important;
+  }
+
+  @media (max-width: 480px) {
+    .simple-shell-container {
+      width: 100% !important;
+      padding: 12px !important;
+    }
+
+    .simple-form-stack .form-card {
+      border-radius: 1.5rem !important;
+    }
+
+    .simple-form-stack .form-actions {
+      gap: 12px !important;
+      margin-top: 16px !important;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    }
   }
 }
 

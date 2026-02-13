@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -10,10 +10,6 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
   IonButton,
   IonIcon,
   IonCard,
@@ -24,10 +20,6 @@ import {
   IonLabel,
   IonInput,
   IonList,
-  IonProgressBar,
-  IonText,
-  IonButtons,
-  IonBackButton,
   IonNote,
   IonChip,
 } from '@ionic/angular/standalone';
@@ -43,6 +35,7 @@ import {
 } from 'ionicons/icons';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
 import { InformacionContacto } from '../../models/afiliado.model';
+import { SimpleFormLayoutComponent } from '../../components/simple-form-layout/simple-form-layout.component';
 
 // Validador personalizado para confirmar campos
 function matchValidator(controlName: string, matchingControlName: string) {
@@ -74,10 +67,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
+    SimpleFormLayoutComponent,
     IonButton,
     IonIcon,
     IonCard,
@@ -88,37 +78,21 @@ function matchValidator(controlName: string, matchingControlName: string) {
     IonLabel,
     IonInput,
     IonList,
-    IonProgressBar,
-    IonButtons,
-    IonBackButton,
     IonNote,
     IonChip,
   ],
   template: `
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/verification"></ion-back-button>
-        </ion-buttons>
-        <ion-title>Contacto</ion-title>
-      </ion-toolbar>
-      <ion-toolbar>
-        <div class="progress-container">
-          <div class="progress-info">
-            <span class="step-label">PASO 1 DE 4</span>
-            <span class="step-title">Contacto</span>
-          </div>
-          <ion-progress-bar [value]="0.25" color="primary"></ion-progress-bar>
-        </div>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content [fullscreen]="true" class="form-content">
-      <div class="form-container">
-        
+    <app-simple-form-layout
+      title="Contacto"
+      stepTitle="Contacto"
+      [currentStep]="1"
+      [totalSteps]="4"
+      [progressValue]="0.25"
+      backHref="/verification"
+    >
+      <div class="simple-form-stack">
         <!-- Nota informativa -->
         <div class="info-banner">
-          <ion-icon name="information-circle-outline"></ion-icon>
           <p>Los datos mostrados provienen de nuestros registros. Puede actualizarlos si han cambiado. Ingrese cada dato dos veces para verificar.</p>
         </div>
 
@@ -128,7 +102,6 @@ function matchValidator(controlName: string, matchingControlName: string) {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="mail-outline"></ion-icon>
                 Correo
               </ion-card-title>
             </ion-card-header>
@@ -213,7 +186,6 @@ function matchValidator(controlName: string, matchingControlName: string) {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="call-outline"></ion-icon>
                 Celular
               </ion-card-title>
             </ion-card-header>
@@ -299,7 +271,6 @@ function matchValidator(controlName: string, matchingControlName: string) {
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="call-outline"></ion-icon>
                 Fijo
                 <ion-chip color="medium" class="optional-chip">Opcional</ion-chip>
               </ion-card-title>
@@ -337,7 +308,6 @@ function matchValidator(controlName: string, matchingControlName: string) {
               (click)="volver()"
               type="button"
             >
-              <ion-icon slot="start" name="arrow-back"></ion-icon>
               Volver
             </ion-button>
             
@@ -346,14 +316,12 @@ function matchValidator(controlName: string, matchingControlName: string) {
               [disabled]="!form.valid"
             >
               Continuar
-              <ion-icon slot="end" name="arrow-forward"></ion-icon>
             </ion-button>
           </div>
 
         </form>
-
       </div>
-    </ion-content>
+    </app-simple-form-layout>
   `,
   styles: [`
     /* ===========================================
@@ -361,7 +329,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
        =========================================== */
 
     :host {
-      --form-max-width: 600px;
+      --form-max-width: 920px;
       --sp-xs: 0.5rem;
       --sp-sm: 0.75rem;
       --sp-md: 1rem;
@@ -372,48 +340,9 @@ function matchValidator(controlName: string, matchingControlName: string) {
       --radius-lg: 1.5rem;
     }
 
-    .form-content {
-      --background: var(--ion-background-color);
-    }
-
-    /* Progress Indicator */
-    .progress-container {
-      padding: var(--sp-sm) var(--sp-md);
-    }
-
-    .progress-info {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: var(--sp-xs);
-    }
-
-    .step-label {
-      font-size: 0.8125rem;
-      color: var(--ion-color-primary);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .step-title {
-      font-size: 0.875rem;
-      color: var(--ion-color-medium);
-      font-weight: 500;
-    }
-
-    ion-progress-bar {
-      height: 0.375rem;
-      border-radius: 9999px;
-      --buffer-background: rgba(var(--ion-color-primary-rgb), 0.08);
-    }
-
-    /* Form Container */
-    .form-container {
-      padding: var(--sp-md);
+    .simple-form-stack {
       max-width: var(--form-max-width);
       margin: 0 auto;
-      padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Info Banner */
@@ -613,7 +542,7 @@ function matchValidator(controlName: string, matchingControlName: string) {
 
     /* Responsive: tablets+ */
     @media (min-width: 768px) {
-      .form-container {
+      .simple-form-stack {
         padding: var(--sp-lg);
       }
 

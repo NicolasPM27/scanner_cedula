@@ -3,12 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
   IonButton,
-  IonIcon,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -19,10 +14,6 @@ import {
   IonSelect,
   IonSelectOption,
   IonList,
-  IonProgressBar,
-  IonText,
-  IonButtons,
-  IonBackButton,
   IonNote,
   IonSpinner,
 } from '@ionic/angular/standalone';
@@ -48,6 +39,7 @@ import {
   Barrio,
 } from '../../data/datos-geograficos';
 import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo-api.service';
+import { SimpleFormLayoutComponent } from '../../components/simple-form-layout/simple-form-layout.component';
 
 @Component({
   selector: 'app-sociodemografico-form',
@@ -55,12 +47,8 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonContent,
+    SimpleFormLayoutComponent,
     IonButton,
-    IonIcon,
     IonCard,
     IonCardHeader,
     IonCardTitle,
@@ -70,41 +58,25 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
     IonSelect,
     IonSelectOption,
     IonList,
-    IonProgressBar,
-    IonButtons,
-    IonBackButton,
     IonNote,
     IonSpinner,
   ],
   template: `
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/forms/contact"></ion-back-button>
-        </ion-buttons>
-        <ion-title>Residencia</ion-title>
-      </ion-toolbar>
-      <ion-toolbar>
-        <div class="progress-container">
-          <div class="progress-info">
-            <span class="step-label">PASO 2 DE 4</span>
-            <span class="step-title">Residencia</span>
-          </div>
-          <ion-progress-bar [value]="0.5" color="primary"></ion-progress-bar>
-        </div>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content [fullscreen]="true" class="form-content">
-      <div class="form-container">
-        
+    <app-simple-form-layout
+      title="Residencia"
+      stepTitle="Residencia"
+      [currentStep]="2"
+      [totalSteps]="4"
+      [progressValue]="0.5"
+      backHref="/forms/contact"
+    >
+      <div class="simple-form-stack">
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
           
           <!-- Estado Civil -->
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="home-outline"></ion-icon>
                 Estado Civil
               </ion-card-title>
             </ion-card-header>
@@ -137,7 +109,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="location-outline"></ion-icon>
                 Ubicación
               </ion-card-title>
             </ion-card-header>
@@ -281,7 +252,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
           <ion-card class="form-card">
             <ion-card-header>
               <ion-card-title>
-                <ion-icon name="business-outline"></ion-icon>
                 Estrato
               </ion-card-title>
             </ion-card-header>
@@ -317,7 +287,6 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
               (click)="volver()"
               type="button"
             >
-              <ion-icon slot="start" name="arrow-back"></ion-icon>
               Volver
             </ion-button>
             
@@ -326,14 +295,13 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
               [disabled]="!form.valid"
             >
               Continuar
-              <ion-icon slot="end" name="arrow-forward"></ion-icon>
             </ion-button>
           </div>
 
         </form>
 
       </div>
-    </ion-content>
+    </app-simple-form-layout>
   `,
   styles: [`
     /* ===========================================
@@ -341,7 +309,7 @@ import { GeoApiService, GeoDepartamento, GeoMunicipio } from '../../services/geo
        =========================================== */
 
     :host {
-      --form-max-width: 600px;
+      --form-max-width: 920px;
       --sp-xs: 0.5rem;
       --sp-sm: 0.75rem;
       --sp-md: 1rem;
