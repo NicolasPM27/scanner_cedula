@@ -27,6 +27,7 @@ import {
   IonSpinner,
   IonSelect,
   IonSelectOption,
+  IonInput,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -45,6 +46,7 @@ import {
   stopCircleOutline,
   flashlight,
   flashlightOutline,
+  searchOutline,
 } from 'ionicons/icons';
 import {
   WebScannerService,
@@ -53,9 +55,11 @@ import {
 } from '../../services/web-scanner.service';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
 import { CedulaData } from '../../models/cedula.model';
+import { PoblacionApiService } from '../../services/poblacion-api.service';
+import { isDevModeEnabled } from '../../utils/dev-mode.util';
 
 type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
-type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
+type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI' | 'DEV_MANUAL';
 
 @Component({
   selector: 'app-web-scanner',
@@ -81,6 +85,7 @@ type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
     IonSpinner,
     IonSelect,
     IonSelectOption,
+    IonInput,
   ],
   template: `
     <ion-header [translucent]="true">
@@ -186,18 +191,75 @@ type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
                     label="Tipo de documento"
                     labelPlacement="stacked"
                     [value]="docSelector()"
-                    (ionChange)="docSelector.set($any($event).detail.value)"
+                    (ionChange)="docSelector.set($any($event).detail.value); devValidationError.set('')"
                     interface="action-sheet">
                     <ion-select-option value="CC_ANTIGUA">Cédula Antigua (código de barras)</ion-select-option>
                     <ion-select-option value="CC_NUEVA">Cédula Nueva (MRZ + QR)</ion-select-option>
                     <ion-select-option value="CE">Cédula de Extranjería</ion-select-option>
                     <ion-select-option value="PA">Pasaporte</ion-select-option>
                     <ion-select-option value="TI">Tarjeta de Identidad</ion-select-option>
+                    @if (isDev) {
+                      <ion-select-option value="DEV_MANUAL">DEV · Validación manual con BD</ion-select-option>
+                    }
                   </ion-select>
                 </ion-item>
               </ion-list>
 
-              @if (!webScanner.isCameraSupported) {
+              <!-- DEV Manual Validation Form -->
+              @if (docSelector() === 'DEV_MANUAL') {
+                <div class="dev-manual-form-card">
+                  <div class="dev-form-header">
+                    <h3 class="dev-form-title">Contraste manual con base de datos</h3>
+                    <p class="dev-form-subtitle">Ingrese número de cédula y fecha de expedición para validar coincidencia.</p>
+                  </div>
+
+                  <form class="dev-form-inputs">
+                    <ion-input
+                      class="dev-form-input"
+                      label="Número de cédula"
+                      labelPlacement="stacked"
+                      type="tel"
+                      inputmode="numeric"
+                      maxlength="12"
+                      [value]="devCedula()"
+                      (ionInput)="devCedula.set(($any($event).detail.value || '').toString())"
+                      placeholder="Ej: 1234567890">
+                    </ion-input>
+
+                    <ion-input
+                      class="dev-form-input"
+                      label="Fecha de expedición"
+                      labelPlacement="stacked"
+                      type="date"
+                      [value]="devFechaExpedicion()"
+                      (ionInput)="devFechaExpedicion.set(($any($event).detail.value || '').toString())">
+                    </ion-input>
+                  </form>
+
+                  @if (devValidationError()) {
+                    <div class="dev-error-message">
+                      <ion-icon name="alert-circle"></ion-icon>
+                      <span>{{ devValidationError() }}</span>
+                    </div>
+                  }
+
+                  <ion-button
+                    expand="block"
+                    size="large"
+                    color="primary"
+                    [disabled]="!isDevFormComplete() || devValidationLoading()"
+                    (click)="validarManualDev()"
+                    class="primary-action-btn">
+                    @if (devValidationLoading()) {
+                      <ion-spinner slot="start" name="crescent"></ion-spinner>
+                      <span>Validando...</span>
+                    } @else {
+                      <ion-icon slot="start" name="search-outline"></ion-icon>
+                      <span>Validar y continuar</span>
+                    }
+                  </ion-button>
+                </div>
+              } @else if (!webScanner.isCameraSupported) {
                 <div class="error-banner">
                   <ion-icon name="alert-circle" color="danger"></ion-icon>
                   <span>Su navegador no soporta acceso a la cámara. Use Chrome o Safari.</span>
@@ -813,6 +875,78 @@ type DocSelector = 'CC_ANTIGUA' | 'CC_NUEVA' | 'CE' | 'PA' | 'TI';
       gap: var(--spacing-sm);
     }
 
+    /* DEV Manual Form */
+    .dev-manual-form-card {
+      margin-top: var(--spacing-lg);
+      padding: var(--spacing-lg);
+      border-radius: var(--border-radius-lg);
+      background: rgba(var(--ion-color-primary-rgb), 0.04);
+      border: 1px solid rgba(var(--ion-color-primary-rgb), 0.12);
+    }
+
+    .dev-form-header {
+      margin-bottom: var(--spacing-lg);
+      text-align: left;
+    }
+
+    .dev-form-title {
+      margin: 0 0 var(--spacing-xs);
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--ion-text-color);
+      line-height: 1.4;
+    }
+
+    .dev-form-subtitle {
+      margin: 0;
+      font-size: 0.9375rem;
+      color: var(--ion-color-medium);
+      line-height: 1.5;
+    }
+
+    .dev-form-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .dev-form-input {
+      --background: var(--ion-background-color);
+      --padding-start: var(--spacing-md);
+      --padding-end: var(--spacing-md);
+      --min-height: 3.5rem;
+      border-radius: var(--border-radius-md);
+      border: 1px solid rgba(var(--ion-color-medium-rgb), 0.15);
+      margin: 0;
+    }
+
+    .dev-form-input ion-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--ion-text-color);
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .dev-error-message {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      background: rgba(var(--ion-color-danger-rgb), 0.08);
+      border-left: 3px solid var(--ion-color-danger);
+      border-radius: var(--border-radius-sm);
+      font-size: 0.875rem;
+      color: var(--ion-color-danger);
+      line-height: 1.5;
+    }
+
+    .dev-error-message ion-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
     /* Result state */
     .result-header {
       background: linear-gradient(135deg, var(--ion-color-success), var(--ion-color-success-shade));
@@ -1149,10 +1283,16 @@ export class WebScannerPage implements OnDestroy {
   sharpnessScore = signal(0);
   proximityScore = signal(0);
   torchOn = signal(false);
+  isDev = isDevModeEnabled();
+  devCedula = signal('');
+  devFechaExpedicion = signal('');
+  devValidationError = signal('');
+  devValidationLoading = signal(false);
 
   constructor(
     public webScanner: WebScannerService,
     private flujoActualizacion: FlujoActualizacionService,
+    private poblacionApi: PoblacionApiService,
     private router: Router
   ) {
     addIcons({
@@ -1171,6 +1311,7 @@ export class WebScannerPage implements OnDestroy {
       stopCircleOutline,
       flashlight,
       flashlightOutline,
+      searchOutline,
     });
   }
 
@@ -1340,7 +1481,54 @@ export class WebScannerPage implements OnDestroy {
     this.webScanner.stopCamera();
     this.stopOrientationListener();
     this.cedulaData.set(null);
+    this.devValidationError.set('');
+    this.devValidationLoading.set(false);
     this.state.set('idle');
+  }
+
+  isDevFormComplete(): boolean {
+    const cedula = this.devCedula().trim();
+    const fecha = this.devFechaExpedicion().trim();
+    return cedula.length >= 6 && cedula.length <= 12 && fecha.length > 0;
+  }
+
+  async validarManualDev(): Promise<void> {
+    if (!this.isDevFormComplete()) {
+      return;
+    }
+
+    const cedula = this.devCedula().replace(/\D/g, '');
+    const fechaIngresada = this.normalizeDateValue(this.devFechaExpedicion());
+
+    this.devValidationLoading.set(true);
+    this.devValidationError.set('');
+
+    try {
+      const resultado = await this.poblacionApi.buscarAfiliado(cedula);
+      if (!resultado.existe || !resultado.afiliado) {
+        this.devValidationError.set('No se encontró afiliado con ese número de cédula.');
+        return;
+      }
+
+      const fechaBd = this.extraerFechaExpedicion(resultado.afiliado);
+      if (!fechaBd) {
+        this.devValidationError.set('El registro no tiene fecha de expedición disponible para contraste en BD.');
+        return;
+      }
+
+      if (fechaBd !== fechaIngresada) {
+        this.devValidationError.set('La fecha de expedición no coincide con la registrada en la base de datos.');
+        return;
+      }
+
+      const data = this.mapRegistroToCedulaData(resultado.afiliado, cedula);
+      await this.flujoActualizacion.iniciarFlujo(data);
+    } catch (error: any) {
+      const serverMessage = error?.error?.error || error?.error?.mensaje;
+      this.devValidationError.set(serverMessage || 'No fue posible validar con la base de datos en este momento.');
+    } finally {
+      this.devValidationLoading.set(false);
+    }
   }
 
   private listenOrientationChanges(videoEl: HTMLVideoElement): void {
@@ -1370,6 +1558,88 @@ export class WebScannerPage implements OnDestroy {
     const data = this.cedulaData();
     if (!data) return;
     await this.flujoActualizacion.iniciarFlujo(data);
+  }
+
+  private mapRegistroToCedulaData(afiliado: Record<string, any>, numeroDocumento: string): CedulaData {
+    const primerNombre = String(afiliado['primer_nombre'] || '').trim();
+    const segundoNombre = String(afiliado['segundo_nombre'] || '').trim();
+    const primerApellido = String(afiliado['primer_apellido'] || '').trim();
+    const segundoApellido = String(afiliado['segundo_apellido'] || '').trim();
+    const fechaNacimiento = this.normalizeDateValue(afiliado['fecha_nacimiento']) || '';
+
+    return {
+      numeroDocumento,
+      primerNombre,
+      segundoNombre,
+      primerApellido,
+      segundoApellido,
+      nombres: `${primerNombre} ${segundoNombre}`.trim(),
+      fechaNacimiento,
+      rh: 'DESCONOCIDO',
+      genero: Number(afiliado['sexo_id']) === 2 ? 'F' : 'M',
+      tipoDocumento: this.docSelector() === 'CC_NUEVA' ? 'NUEVA' : 'ANTIGUA',
+    };
+  }
+
+  private extraerFechaExpedicion(afiliado: Record<string, any>): string | null {
+    const keysPrioritarias = [
+      'fecha_expedicion',
+      'fechaExpedicion',
+      'fecha_expedicion_documento',
+      'fecha_documento_expedicion',
+    ];
+
+    for (const key of keysPrioritarias) {
+      const value = afiliado[key];
+      const normalized = this.normalizeDateValue(value);
+      if (normalized) {
+        return normalized;
+      }
+    }
+
+    const dynamicKey = Object.keys(afiliado).find((key) => key.toLowerCase().includes('expedicion'));
+    if (!dynamicKey) {
+      return null;
+    }
+
+    return this.normalizeDateValue(afiliado[dynamicKey]);
+  }
+
+  private normalizeDateValue(rawValue: unknown): string | null {
+    if (!rawValue) {
+      return null;
+    }
+
+    if (rawValue instanceof Date && !Number.isNaN(rawValue.getTime())) {
+      const year = rawValue.getFullYear();
+      const month = String(rawValue.getMonth() + 1).padStart(2, '0');
+      const day = String(rawValue.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    const value = String(rawValue).trim();
+    if (!value) {
+      return null;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+      return value.slice(0, 10);
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/');
+      return `${year}-${month}-${day}`;
+    }
+
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return null;
+    }
+
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   formatCedula(n: string): string {

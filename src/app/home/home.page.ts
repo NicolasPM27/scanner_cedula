@@ -37,7 +37,7 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { ScannerService } from '../services/scanner.service';
 import { AccessibilityService } from '../services/accessibility.service';
-import { environment } from '../../environments/environment';
+import { isDevModeEnabled } from '../utils/dev-mode.util';
 
 @Component({
   selector: 'app-home',
@@ -71,7 +71,7 @@ export class HomePage implements OnInit {
     hasTorch: boolean;
     hasPermissions: boolean;
   } | null = null;
-  isDev = !environment.production || this.isLocalhost();
+  isDev = isDevModeEnabled();
 
   constructor(
     private router: Router,
@@ -129,9 +129,4 @@ export class HomePage implements OnInit {
     this.router.navigate(['/settings']);
   }
 
-  private isLocalhost(): boolean {
-    if (typeof window === 'undefined') return false;
-    const host = window.location.hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
-  }
 }

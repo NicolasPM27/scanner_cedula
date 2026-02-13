@@ -109,3 +109,7 @@ Poblacion\ prueba\ .csv
 .env.*.local
 
 .fake
+
+# VsCode settings
+.vscode/
+!.vscode/settings.json

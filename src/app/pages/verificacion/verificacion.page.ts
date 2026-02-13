@@ -38,7 +38,7 @@ import {
 } from 'ionicons/icons';
 import { FlujoActualizacionService } from '../../services/flujo-actualizacion.service';
 import { DatosAfiliado, Beneficiario } from '../../models/afiliado.model';
-import { environment } from '../../../environments/environment';
+import { isDevModeEnabled } from '../../utils/dev-mode.util';
 import { AuthService } from '../../auth/auth.service';
 
 type EstadoVerificacion = 'verificando' | 'encontrado' | 'no_encontrado' | 'error';
@@ -520,7 +520,7 @@ export class VerificacionPage implements OnInit {
   progreso = signal(0);
   afiliado = signal<DatosAfiliado | undefined>(undefined);
   beneficiarios = signal<Beneficiario[]>([]);
-  isDev = !environment.production || this.isLocalhost();
+  isDev = isDevModeEnabled();
 
   constructor(
     private flujoService: FlujoActualizacionService,
@@ -649,9 +649,4 @@ export class VerificacionPage implements OnInit {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private isLocalhost(): boolean {
-    if (typeof window === 'undefined') return false;
-    const host = window.location.hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
-  }
 }
