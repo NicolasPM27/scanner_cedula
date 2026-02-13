@@ -123,22 +123,33 @@ export class WebScannerService {
    * Esto compensa variaciones de enfoque entre frames.
    */
   async captureBestFrame(video: HTMLVideoElement, numFrames = 4, quality = 0.85): Promise<string> {
-    let bestBase64 = '';
-    let bestSharpness = -1;
+    const frames = await this.captureBestFrames(video, numFrames, 1, quality);
+    return frames[0];
+  }
+
+  /**
+   * Captura N frames, calcula nitidez y retorna los top `topN` ordenados
+   * por nitidez descendente. Util para enviar frame2 como fallback al backend.
+   */
+  async captureBestFrames(
+    video: HTMLVideoElement,
+    numFrames = 5,
+    topN = 2,
+    quality = 0.85,
+  ): Promise<string[]> {
+    const captured: { base64: string; sharpness: number }[] = [];
 
     for (let i = 0; i < numFrames; i++) {
       if (i > 0) await new Promise(r => setTimeout(r, 120));
 
       const { canvas, ctx } = this.cropToGuideFrame(video);
       const sharpness = this.computeSharpness(ctx, canvas.width, canvas.height);
-
-      if (sharpness > bestSharpness) {
-        bestSharpness = sharpness;
-        bestBase64 = canvas.toDataURL('image/jpeg', quality).replace(/^data:image\/\w+;base64,/, '');
-      }
+      const base64 = canvas.toDataURL('image/jpeg', quality).replace(/^data:image\/\w+;base64,/, '');
+      captured.push({ base64, sharpness });
     }
 
-    return bestBase64;
+    captured.sort((a, b) => b.sharpness - a.sharpness);
+    return captured.slice(0, topN).map(c => c.base64);
   }
 
   /**

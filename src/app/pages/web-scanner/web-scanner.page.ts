@@ -109,6 +109,47 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                 Debe tener el documento físico en mano.
               </p>
 
+              @if (tipoDocumento() === 'CC') {
+                <div class="document-guide-section">
+                  <span class="document-side-badge">PARTE POSTERIOR</span>
+                  <svg class="cc-back-diagram" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="316" height="196" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+                    <rect x="16" y="16" width="180" height="10" rx="3" fill="#dee2e6"/>
+                    <rect x="16" y="34" width="140" height="8" rx="3" fill="#e9ecef"/>
+                    <rect x="16" y="50" width="160" height="8" rx="3" fill="#e9ecef"/>
+                    <rect x="16" y="66" width="120" height="8" rx="3" fill="#e9ecef"/>
+                    <rect x="14" y="100" width="292" height="86" rx="6"
+                          fill="rgba(var(--ion-color-primary-rgb), 0.06)"
+                          stroke="var(--ion-color-primary)"
+                          stroke-width="2" stroke-dasharray="6 4"/>
+                    <g transform="translate(40, 115)">
+                      <rect width="240" height="56" rx="4" fill="rgba(var(--ion-color-primary-rgb), 0.12)"/>
+                      @for (i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]; track i) {
+                        <rect [attr.x]="6 + i * 6" y="6" width="3" [attr.height]="44" rx="0.5"
+                              fill="var(--ion-color-primary)" opacity="0.5"/>
+                      }
+                    </g>
+                    <text x="160" y="195" text-anchor="middle" font-size="11" fill="var(--ion-color-primary)" font-weight="600">
+                      Código de barras PDF417
+                    </text>
+                  </svg>
+                  <ol class="instruction-steps">
+                    <li class="step-item">
+                      <span class="step-number">1</span>
+                      <span>Voltee la cédula (parte de atrás)</span>
+                    </li>
+                    <li class="step-item">
+                      <span class="step-number">2</span>
+                      <span>Ubique el código de barras</span>
+                    </li>
+                    <li class="step-item">
+                      <span class="step-number">3</span>
+                      <span>Acerque la cámara hasta que llene el recuadro</span>
+                    </li>
+                  </ol>
+                </div>
+              }
+
               <ion-list class="document-type-list" lines="none">
                 <ion-item class="select-item">
                   <ion-select
@@ -157,11 +198,26 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
             <!-- Guia visual -->
             <div class="camera-overlay">
+              @if (tipoDocumento() === 'CC') {
+                <div class="camera-top-label">
+                  <span class="persistent-badge">PARTE POSTERIOR</span>
+                </div>
+              }
               <div class="guide-frame" [class.guide-frame-ready]="isReadyToCapture()">
                 <div class="corner corner-tl" [class.corner-ready]="isReadyToCapture()"></div>
                 <div class="corner corner-tr" [class.corner-ready]="isReadyToCapture()"></div>
                 <div class="corner corner-bl" [class.corner-ready]="isReadyToCapture()"></div>
                 <div class="corner corner-br" [class.corner-ready]="isReadyToCapture()"></div>
+                @if (tipoDocumento() === 'CC') {
+                  <div class="barcode-zone-indicator">
+                    <svg class="barcode-icon" viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg">
+                      @for (i of [0,1,2,3,4,5,6,7,8,9,10,11]; track i) {
+                        <rect [attr.x]="i * 2" y="0" width="1.2" height="16" rx="0.3" fill="currentColor"/>
+                      }
+                    </svg>
+                    <span>Alinee el código de barras aquí</span>
+                  </div>
+                }
               </div>
 
               <!-- Quality indicator -->
@@ -185,7 +241,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                   } @else if (sharpnessScore() < 60) {
                     Mantenga firme, enfocando...
                   } @else if (tipoDocumento() === 'CC') {
-                    Ubique la parte posterior de la cédula dentro del recuadro
+                    Alinee el código de barras en la zona indicada
                   } @else {
                     Ubique el documento dentro del recuadro
                   }
@@ -883,6 +939,119 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       }
     }
 
+    /* CC back-side guide (IDLE) */
+    .document-guide-section {
+      margin-bottom: var(--spacing-lg);
+      text-align: center;
+    }
+
+    .document-side-badge {
+      display: inline-block;
+      background: var(--ion-color-primary);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .cc-back-diagram {
+      display: block;
+      width: 100%;
+      max-width: 280px;
+      margin: 0 auto var(--spacing-md);
+    }
+
+    .instruction-steps {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-xs) 0;
+      font-size: 0.9375rem;
+      color: var(--ion-color-dark);
+      line-height: 1.5;
+    }
+
+    .step-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      min-width: 1.75rem;
+      background: rgba(var(--ion-color-primary-rgb), 0.1);
+      color: var(--ion-color-primary);
+      border-radius: 50%;
+      font-size: 0.8125rem;
+      font-weight: 700;
+    }
+
+    /* Camera overlay: CC badge + barcode indicator */
+    .camera-top-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      padding: calc(var(--spacing-md) + env(safe-area-inset-top, 0px)) var(--spacing-md) var(--spacing-md);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .persistent-badge {
+      display: inline-block;
+      background: rgba(var(--ion-color-primary-rgb), 0.85);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .barcode-zone-indicator {
+      position: absolute;
+      bottom: 8%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 999px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .barcode-icon {
+      width: 1.5rem;
+      height: 1rem;
+      color: rgba(255, 255, 255, 0.85);
+      flex-shrink: 0;
+    }
+
+    .barcode-zone-indicator span {
+      font-size: 0.6875rem;
+      color: rgba(255, 255, 255, 0.9);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
     /* Dark mode support */
     @media (prefers-color-scheme: dark) {
       .scanner-card,
@@ -901,6 +1070,10 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       }
 
       .data-value {
+        color: var(--ion-color-light);
+      }
+
+      .step-item {
         color: var(--ion-color-light);
       }
     }
@@ -1040,15 +1213,17 @@ export class WebScannerPage implements OnDestroy {
     const videoEl = this.videoRef()?.nativeElement;
     if (!videoEl) return;
 
-    // Capture best frame (multi-frame + sharpness) BEFORE stopping camera
-    const frame1 = await this.webScanner.captureBestFrame(videoEl);
+    // Capture top 2 frames by sharpness BEFORE stopping camera
+    const frames = await this.webScanner.captureBestFrames(videoEl, 5, 2);
+    const frame1 = frames[0];
+    const frame2 = frames.length > 1 ? frames[1] : undefined;
 
     this.webScanner.stopCamera();
     this.stopOrientationListener();
     this.state.set('processing');
 
     try {
-      const response = await this.webScanner.processOnServer(frame1, this.tipoDocumento());
+      const response = await this.webScanner.processOnServer(frame1, this.tipoDocumento(), frame2);
 
       if (response.success && response.data) {
         this.cedulaData.set(response.data);

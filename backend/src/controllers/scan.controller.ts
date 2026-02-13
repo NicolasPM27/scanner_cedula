@@ -103,12 +103,23 @@ export async function scanDocument(req: Request, res: Response): Promise<void> {
     }
 
     // Ejecutar procesamiento de documento y anti-spoofing en paralelo
+    // Anti-spoofing siempre se ejecuta sobre frame1
     const [result, spoofResult] = await Promise.all([
       processDocument(imageBuffer, tipoDocumento),
       runAntiSpoofingChecks(imageBuffer, frame2Buffer),
     ]);
 
-    if (!result.data) {
+    // ── Frame2 fallback: si frame1 no extrajo datos, intentar con frame2 ──
+    let finalResult = result;
+    if (!finalResult.data && frame2Buffer) {
+      console.log('[scan] frame1 sin datos, intentando frame2 como fallback...');
+      finalResult = await processDocument(frame2Buffer, tipoDocumento);
+      if (finalResult.data) {
+        console.log(`[scan] frame2 fallback exitoso: metodo=${finalResult.method}`);
+      }
+    }
+
+    if (!finalResult.data) {
       const totalMs = Date.now() - startTime;
       console.log(`[scan] No se pudo extraer datos (${totalMs}ms)`);
 
@@ -125,24 +136,24 @@ export async function scanDocument(req: Request, res: Response): Promise<void> {
     const totalMs = Date.now() - startTime;
 
     // Combinar score de parsing con score de anti-spoofing
-    const parsingScore = result.data.confianza ?? 85;
+    const parsingScore = finalResult.data.confianza ?? 85;
     const combinedScore = Math.round((parsingScore * 0.6) + (spoofResult.score * 0.4));
 
-    console.log(`[scan] Exito: metodo=${result.method}, parsing=${parsingScore}, spoofing=${spoofResult.score}, combined=${combinedScore}, tiempo=${totalMs}ms`);
+    console.log(`[scan] Exito: metodo=${finalResult.method}, parsing=${parsingScore}, spoofing=${spoofResult.score}, combined=${combinedScore}, tiempo=${totalMs}ms`);
 
     const allChecks = [
       {
         name: 'document_readable',
         passed: true,
         score: parsingScore,
-        details: `Documento leido via ${result.method} en ${result.processingTimeMs}ms`,
+        details: `Documento leido via ${finalResult.method} en ${finalResult.processingTimeMs}ms`,
       },
       ...spoofResult.checks,
     ];
 
     const response: ScanResponse = {
       success: true,
-      data: result.data,
+      data: finalResult.data,
       authenticityScore: combinedScore,
       checks: allChecks,
     };

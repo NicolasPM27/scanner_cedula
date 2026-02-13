@@ -123,6 +123,38 @@ async function preprocessForBarcodeGamma(buffer: Buffer): Promise<Buffer> {
 }
 
 /**
+ * Crops the bottom 50% of a landscape image (where the CC PDF417 barcode lives)
+ * and applies standard barcode preprocessing. Falls back to full-image preprocessing
+ * if the image is portrait.
+ */
+async function preprocessForBarcodeZoneCrop(buffer: Buffer): Promise<Buffer> {
+  const meta = await sharp(buffer).metadata();
+  const w = meta.width ?? 0;
+  const h = meta.height ?? 0;
+
+  // Only crop if landscape (barcode is in lower half of CC back)
+  if (w <= h || h < 200) {
+    return preprocessForBarcode(buffer);
+  }
+
+  const cropTop = Math.floor(h * 0.5);
+  const cropHeight = h - cropTop;
+
+  const cropped = await sharp(buffer)
+    .extract({ left: 0, top: cropTop, width: w, height: cropHeight })
+    .toBuffer();
+
+  const isSmall = w < 800;
+  return sharp(cropped)
+    .resize({ width: isSmall ? 2000 : 1600, withoutEnlargement: false })
+    .grayscale()
+    .sharpen({ sigma: isSmall ? 3 : 1.5 })
+    .normalise()
+    .png()
+    .toBuffer();
+}
+
+/**
  * Preprocesa imagen para OCR de zona MRZ
  * - Recorta el tercio inferior (donde esta el MRZ)
  * - Binariza con threshold alto para maximo contraste
@@ -175,7 +207,8 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
     };
 
     // Pre-generate multiple preprocessing variants in parallel
-    const [standard, highContrast, gamma, raw] = await Promise.all([
+    const [barcodeCrop, standard, highContrast, gamma, raw] = await Promise.all([
+      preprocessForBarcodeZoneCrop(imageBuffer),
       preprocessForBarcode(imageBuffer),
       preprocessForBarcodeHighContrast(imageBuffer),
       preprocessForBarcodeGamma(imageBuffer),
@@ -183,6 +216,7 @@ async function decodePDF417(imageBuffer: Buffer): Promise<string | null> {
     ]);
 
     const variants = [
+      { label: 'barcode-crop', buffer: barcodeCrop },
       { label: 'standard', buffer: standard },
       { label: 'high-contrast', buffer: highContrast },
       { label: 'gamma', buffer: gamma },
