@@ -471,7 +471,25 @@ export async function processDocument(
         return { ...mrzResult, processingTimeMs: Date.now() - startTime };
       }
 
-      // Intento 3: MRZ con imagen rotada 180° (documento al reves)
+      // Intento 3: MRZ con imagen rotada 90° CCW
+      // La cedula digital nueva tiene el MRZ impreso verticalmente;
+      // rotar 270° (90° CCW) lo convierte a texto horizontal izq→der
+      const rotated270 = await sharp(imageBuffer).rotate(270).toBuffer();
+      const mrzResult270 = await tryMRZ(rotated270);
+      if (mrzResult270) {
+        console.log('[scan] MRZ detectado tras rotacion 270° (MRZ vertical cedula nueva)');
+        return { ...mrzResult270, processingTimeMs: Date.now() - startTime };
+      }
+
+      // Intento 4: MRZ rotada 90° CW (tarjeta al revés)
+      const rotated90 = await sharp(imageBuffer).rotate(90).toBuffer();
+      const mrzResult90 = await tryMRZ(rotated90);
+      if (mrzResult90) {
+        console.log('[scan] MRZ detectado tras rotacion 90°');
+        return { ...mrzResult90, processingTimeMs: Date.now() - startTime };
+      }
+
+      // Intento 5: MRZ con imagen rotada 180° (documento al reves)
       const rotated180 = await sharp(imageBuffer).rotate(180).toBuffer();
       const mrzResult180 = await tryMRZ(rotated180);
       if (mrzResult180) {

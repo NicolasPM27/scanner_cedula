@@ -305,11 +305,12 @@ export class WebScannerService {
       }
     }
 
-    // Normalize: 70%+ active cells = 100 (document fills the frame completely)
-    // Below 25% = 0 (document too far or not present)
+    // Normalize: 55%+ active cells = 100 (document fills the frame)
+    // Below 12% = 0 (document too far or not present)
+    // Rango ajustado para soportar cédulas nuevas (menos contenido de alto contraste)
     const coverage = activeCells / totalCells;
-    const minCoverage = 0.25;
-    const maxCoverage = 0.70;
+    const minCoverage = 0.12;
+    const maxCoverage = 0.55;
     const score = Math.min(100, Math.max(0,
       Math.round(((coverage - minCoverage) / (maxCoverage - minCoverage)) * 100)
     ));
@@ -326,8 +327,8 @@ export class WebScannerService {
     video: HTMLVideoElement,
     onScore: (sharpness: number, proximity: number) => void,
     onAutoCapture: () => void,
-    sharpnessThreshold = 60,
-    proximityThreshold = 65,
+    sharpnessThreshold = 50,
+    proximityThreshold = 45,
     sustainedMs = 1500,
   ): void {
     this.stopSharpnessMonitor();

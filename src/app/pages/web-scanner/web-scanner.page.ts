@@ -112,27 +112,54 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
               @if (tipoDocumento() === 'CC') {
                 <div class="document-guide-section">
                   <span class="document-side-badge">PARTE POSTERIOR</span>
-                  <svg class="cc-back-diagram" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="2" y="2" width="316" height="196" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
-                    <rect x="16" y="16" width="180" height="10" rx="3" fill="#dee2e6"/>
-                    <rect x="16" y="34" width="140" height="8" rx="3" fill="#e9ecef"/>
-                    <rect x="16" y="50" width="160" height="8" rx="3" fill="#e9ecef"/>
-                    <rect x="16" y="66" width="120" height="8" rx="3" fill="#e9ecef"/>
-                    <rect x="14" y="100" width="292" height="86" rx="6"
-                          fill="rgba(var(--ion-color-primary-rgb), 0.06)"
-                          stroke="var(--ion-color-primary)"
-                          stroke-width="2" stroke-dasharray="6 4"/>
-                    <g transform="translate(40, 115)">
-                      <rect width="240" height="56" rx="4" fill="rgba(var(--ion-color-primary-rgb), 0.12)"/>
-                      @for (i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39]; track i) {
-                        <rect [attr.x]="6 + i * 6" y="6" width="3" [attr.height]="44" rx="0.5"
-                              fill="var(--ion-color-primary)" opacity="0.5"/>
-                      }
-                    </g>
-                    <text x="160" y="195" text-anchor="middle" font-size="11" fill="var(--ion-color-primary)" font-weight="600">
-                      Código de barras PDF417
-                    </text>
-                  </svg>
+
+                  <!-- Two CC back variants side by side -->
+                  <div class="cc-variants-row">
+                    <!-- Old CC: PDF417 barcode -->
+                    <div class="cc-variant">
+                      <svg class="cc-back-diagram" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="1" width="158" height="98" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+                        <rect x="10" y="10" width="90" height="5" rx="2" fill="#dee2e6"/>
+                        <rect x="10" y="20" width="70" height="4" rx="2" fill="#e9ecef"/>
+                        <rect x="8" y="50" width="144" height="40" rx="4"
+                              fill="rgba(var(--ion-color-primary-rgb), 0.06)"
+                              stroke="var(--ion-color-primary)"
+                              stroke-width="1.5" stroke-dasharray="4 3"/>
+                        <g transform="translate(20, 56)">
+                          @for (i of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]; track i) {
+                            <rect [attr.x]="i * 6" y="0" width="3" height="28" rx="0.5"
+                                  fill="var(--ion-color-primary)" opacity="0.4"/>
+                          }
+                        </g>
+                      </svg>
+                      <span class="cc-variant-label">Cédula antigua</span>
+                      <span class="cc-variant-detail">Código de barras</span>
+                    </div>
+
+                    <!-- New CC: MRZ + QR -->
+                    <div class="cc-variant">
+                      <svg class="cc-back-diagram" viewBox="0 0 160 100" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="1" width="158" height="98" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+                        <!-- MRZ lines highlighted -->
+                        <rect x="8" y="8" width="90" height="84" rx="4"
+                              fill="rgba(var(--ion-color-primary-rgb), 0.06)"
+                              stroke="var(--ion-color-primary)"
+                              stroke-width="1.5" stroke-dasharray="4 3"/>
+                        <rect x="14" y="14" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
+                        <rect x="14" y="22" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
+                        <rect x="14" y="30" width="78" height="4" rx="1.5" fill="var(--ion-color-primary)" opacity="0.35"/>
+                        <!-- QR code -->
+                        <rect x="112" y="52" width="36" height="36" rx="3" fill="#e9ecef" stroke="#dee2e6" stroke-width="1"/>
+                        <rect x="117" y="57" width="8" height="8" rx="1" fill="#bbb"/>
+                        <rect x="135" y="57" width="8" height="8" rx="1" fill="#bbb"/>
+                        <rect x="117" y="75" width="8" height="8" rx="1" fill="#bbb"/>
+                        <rect x="128" y="68" width="4" height="4" fill="#ccc"/>
+                      </svg>
+                      <span class="cc-variant-label">Cédula nueva</span>
+                      <span class="cc-variant-detail">Texto MRZ + QR</span>
+                    </div>
+                  </div>
+
                   <ol class="instruction-steps">
                     <li class="step-item">
                       <span class="step-number">1</span>
@@ -140,7 +167,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                     </li>
                     <li class="step-item">
                       <span class="step-number">2</span>
-                      <span>Ubique el código de barras</span>
+                      <span>Asegúrese de que todo el texto sea visible</span>
                     </li>
                     <li class="step-item">
                       <span class="step-number">3</span>
@@ -211,11 +238,12 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
                 @if (tipoDocumento() === 'CC') {
                   <div class="barcode-zone-indicator">
                     <svg class="barcode-icon" viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg">
-                      @for (i of [0,1,2,3,4,5,6,7,8,9,10,11]; track i) {
-                        <rect [attr.x]="i * 2" y="0" width="1.2" height="16" rx="0.3" fill="currentColor"/>
-                      }
+                      <rect x="2" y="1" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                      <rect x="5" y="4" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="5" y="7.5" width="14" height="2" rx="0.5" fill="currentColor" opacity="0.6"/>
+                      <rect x="5" y="11" width="10" height="2" rx="0.5" fill="currentColor" opacity="0.6"/>
                     </svg>
-                    <span>Alinee el código de barras aquí</span>
+                    <span>Parte posterior dentro del recuadro</span>
                   </div>
                 }
               </div>
@@ -236,12 +264,12 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
               <div class="guide-text-container">
                 <p class="guide-text">
-                  @if (proximityScore() < 65) {
+                  @if (proximityScore() < 45) {
                     Acerque más el documento hasta que llene el recuadro
                   } @else if (sharpnessScore() < 60) {
                     Mantenga firme, enfocando...
                   } @else if (tipoDocumento() === 'CC') {
-                    Alinee el código de barras en la zona indicada
+                    Ubique la parte posterior de la cédula dentro del recuadro
                   } @else {
                     Ubique el documento dentro del recuadro
                   }
@@ -459,7 +487,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       font-size: 1.375rem;
       font-weight: 600;
       line-height: 1.3;
-      color: var(--ion-color-dark);
+      color: var(--ion-text-color);
     }
 
     /* Instruction text */
@@ -714,7 +742,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       margin: 0 0 var(--spacing-sm);
       font-weight: 600;
       font-size: 1.25rem;
-      color: var(--ion-color-dark);
+      color: var(--ion-text-color);
     }
 
     .processing-text {
@@ -749,7 +777,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       margin: 0 0 var(--spacing-sm);
       font-weight: 600;
       font-size: 1.25rem;
-      color: var(--ion-color-dark);
+      color: var(--ion-text-color);
     }
 
     .error-message {
@@ -825,6 +853,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
     .data-item {
       --background: var(--ion-color-light);
+      --color: var(--ion-text-color);
       --padding-start: var(--spacing-md);
       --padding-end: var(--spacing-md);
       --min-height: 4rem;
@@ -839,7 +868,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
 
     .data-label {
       font-size: 0.8125rem;
-      color: var(--ion-color-medium);
+      color: var(--ion-color-medium) !important;
       margin: 0 0 0.25rem;
       font-weight: 500;
     }
@@ -848,7 +877,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       font-size: 1rem;
       font-weight: 600;
       margin: 0;
-      color: var(--ion-color-dark);
+      color: var(--ion-text-color) !important;
       line-height: 1.4;
     }
 
@@ -958,11 +987,36 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       margin-bottom: var(--spacing-md);
     }
 
+    .cc-variants-row {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .cc-variant {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      max-width: 160px;
+    }
+
+    .cc-variant-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin-top: var(--spacing-xs);
+    }
+
+    .cc-variant-detail {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+    }
+
     .cc-back-diagram {
       display: block;
       width: 100%;
-      max-width: 280px;
-      margin: 0 auto var(--spacing-md);
     }
 
     .instruction-steps {
@@ -978,7 +1032,7 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       gap: var(--spacing-sm);
       padding: var(--spacing-xs) 0;
       font-size: 0.9375rem;
-      color: var(--ion-color-dark);
+      color: var(--ion-text-color);
       line-height: 1.5;
     }
 
@@ -1059,23 +1113,6 @@ type PageState = 'idle' | 'camera' | 'processing' | 'result' | 'error';
       .result-card {
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
-
-      ion-card-title {
-        color: var(--ion-color-light);
-      }
-
-      .error-title,
-      .processing-title {
-        color: var(--ion-color-light);
-      }
-
-      .data-value {
-        color: var(--ion-color-light);
-      }
-
-      .step-item {
-        color: var(--ion-color-light);
-      }
     }
   `],
 })
@@ -1119,17 +1156,17 @@ export class WebScannerPage implements OnDestroy {
 
   /** True when both proximity and sharpness are good enough to capture */
   isReadyToCapture(): boolean {
-    return this.proximityScore() >= 65 && this.sharpnessScore() >= 50;
+    return this.proximityScore() >= 45 && this.sharpnessScore() >= 50;
   }
 
   /** Color based on the weakest metric (proximity first, then sharpness) */
   qualityColor(): string {
     const p = this.proximityScore();
     const s = this.sharpnessScore();
-    if (p < 35) return '#FF5252';         // red - too far
-    if (p < 65) return '#FFD740';         // yellow - getting closer
+    if (p < 25) return '#FF5252';         // red - too far
+    if (p < 45) return '#FFD740';         // yellow - getting closer
     if (s < 30) return '#FFD740';         // yellow - close but blurry
-    if (s < 60) return '#B2FF59';         // light green - almost there
+    if (s < 50) return '#B2FF59';         // light green - almost there
     return '#00E676';                     // green - ready
   }
 
@@ -1137,10 +1174,10 @@ export class WebScannerPage implements OnDestroy {
   qualityText(): string {
     const p = this.proximityScore();
     const s = this.sharpnessScore();
-    if (p < 35) return 'Muy lejos';
-    if (p < 65) return 'Acérquese';
+    if (p < 25) return 'Muy lejos';
+    if (p < 45) return 'Acérquese';
     if (s < 30) return 'Borroso';
-    if (s < 60) return 'Enfocando...';
+    if (s < 50) return 'Enfocando...';
     return 'Listo';
   }
 
